@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ILO Practice{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    // Public Firebase web config: it identifies the project, it grants nothing.
+    window.__ILO = {
+      firebaseConfig: {{ firebase_config | tojson }},
+      loggedIn: {{ 'true' if current_user else 'false' }}
+    };
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">ILO</span>
+      <span class="brand-text">Practice</span>
+    </a>
+    <nav class="nav-links">
+      {% if current_user %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <span class="nav-user">{{ current_user['username'] }}</span>
+        <a class="btn btn-ghost" id="logout-btn" href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a class="btn btn-primary" href="{{ url_for('register') }}">Sign up</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="{% block main_class %}{% endblock %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>ILO Practice &middot; an unofficial training tool for the International Logic Olympiad.</p>
+  </footer>
+
+  <script type="module" src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>

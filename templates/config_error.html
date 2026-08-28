@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Firebase not configured &middot; ILO Practice{% endblock %}
+{% block main_class %}auth-main{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <h1>Firebase isn&rsquo;t configured</h1>
+  <p class="auth-sub">The app is running, but it can&rsquo;t reach Firestore yet.</p>
+  <pre class="config-error">{{ message }}</pre>
+  <p class="hint">
+    Create a Firebase project, enable <strong>Cloud Firestore</strong>, download a
+    service-account key, then start the app with
+    <code>FIREBASE_CREDENTIALS=/path/to/key.json python3 app.py</code>.
+    See <code>README.md</code> for the full steps.
+  </p>
+</div>
+{% endblock %}

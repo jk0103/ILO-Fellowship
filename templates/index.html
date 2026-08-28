@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}ILO Practice &middot; Train for the International Logic Olympiad{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">International Logic Olympiad</p>
+  <h1>Sharpen your reasoning,<br>one problem at a time.</h1>
+  <p class="lede">
+    A practice ground for ILO-style problems &mdash; propositional and predicate logic,
+    knights and knaves, grid puzzles, and formal proofs. Work at your own pace and
+    watch your accuracy climb.
+  </p>
+  <div class="hero-actions">
+    {% if current_user %}
+      <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}">Go to dashboard</a>
+    {% else %}
+      <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}">Start practicing</a>
+      <a class="btn btn-ghost btn-lg" href="{{ url_for('login') }}">I already have an account</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="features">
+  <article class="card">
+    <div class="card-icon">&#9673;</div>
+    <h3>Topic-based sets</h3>
+    <p>Problems grouped by the reasoning skill they test, so you can drill exactly what is shaky.</p>
+  </article>
+  <article class="card">
+    <div class="card-icon">&#9202;</div>
+    <h3>Timed rounds</h3>
+    <p>Practice under contest conditions and learn to budget the clock across a full paper.</p>
+  </article>
+  <article class="card">
+    <div class="card-icon">&#9998;</div>
+    <h3>Worked solutions</h3>
+    <p>Every problem comes with a step-by-step explanation, not just the final answer.</p>
+  </article>
+  <article class="card">
+    <div class="card-icon">&#9650;</div>
+    <h3>Progress tracking</h3>
+    <p>Accuracy and speed per topic, so improvement is something you can actually see.</p>
+  </article>
+</section>
+
+<section class="topics">
+  <h2>What you'll practice</h2>
+  <ul class="topic-list">
+    <li>Propositional logic &amp; truth tables</li>
+    <li>Predicate logic &amp; quantifiers</li>
+    <li>Knights, knaves, and self-reference</li>
+    <li>Constraint and grid puzzles</li>
+    <li>Syllogisms &amp; formal fallacies</li>
+    <li>Proof construction</li>
+  </ul>
+</section>
+{% endblock %}

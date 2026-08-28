@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.db
+.idea/
+.env
+
+# Never commit the service-account key: it is full admin access to the project.
+serviceAccountKey.json
+*-firebase-adminsdk-*.json

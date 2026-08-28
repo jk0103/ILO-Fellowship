@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Dashboard &middot; ILO Practice{% endblock %}
+
+{% block content %}
+{% set stats = current_user.get('stats') or {} %}
+<section class="hero hero-compact">
+  <h1>Hi, {{ current_user['username'] }}.</h1>
+  <p class="lede">Your practice sets will live here. Nothing to solve just yet &mdash;
+     the problem engine is the next piece to build.</p>
+  <p class="hint">
+    Signed in as {{ current_user['email'] }}
+    {%- if current_user.get('providers') %} via
+      {{ current_user['providers'] | map('replace', 'password', 'email') | map('replace', 'google.com', 'Google') | join(', ') }}
+    {%- endif %}.
+  </p>
+</section>
+
+<section class="features">
+  <article class="card">
+    <h3>Problems solved</h3>
+    <p class="stat">{{ stats.get('solved', 0) }}</p>
+  </article>
+  <article class="card">
+    <h3>Attempted</h3>
+    <p class="stat">{{ stats.get('attempted', 0) }}</p>
+  </article>
+  <article class="card">
+    <h3>Current streak</h3>
+    <p class="stat">{{ stats.get('streak', 0) }} days</p>
+  </article>
+</section>
+{% endblock %}

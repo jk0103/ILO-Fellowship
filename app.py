@@ -1,0 +1,209 @@
+import datetime
+import json
+import os
+
+from flask import (
+    Flask, flash, g, jsonify, redirect, render_template, request, url_for
+)
+from firebase_admin import auth as fb_auth
+
+import firestore_db as store
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+app = Flask(__name__)
+# For production, set ILO_SECRET_KEY in the environment.
+app.config["SECRET_KEY"] = os.environ.get("ILO_SECRET_KEY", "dev-secret-change-me")
+
+# Firebase session cookie. Named "__session" because that is the only cookie
+# Firebase Hosting will forward if this is ever deployed there.
+SESSION_COOKIE = "__session"
+SESSION_DURATION = datetime.timedelta(days=5)
+
+with open(os.path.join(BASE_DIR, "firebase_web_config.json")) as fh:
+    # Public config: it identifies the project, it does not grant access.
+    FIREBASE_WEB_CONFIG = json.load(fh)
+
+
+# --- current user -----------------------------------------------------------
+
+def current_user():
+    """The signed-in user for this request, or None.
+
+    Verifies the Firebase session cookie and pairs it with the Firestore
+    profile. Cached on `g` so a request hits Firebase at most once.
+    """
+    if "user" in g:
+        return g.user
+
+    g.user = None
+    cookie = request.cookies.get(SESSION_COOKIE)
+    if cookie:
+        store.ensure_app()
+        try:
+            claims = fb_auth.verify_session_cookie(cookie, check_revoked=True)
+        except store.ConfigError:
+            raise
+        except Exception:
+            # Expired, revoked, or tampered with — treat as signed out.
+            return None
+        g.user = store.get_profile(claims["uid"])
+    return g.user
+
+
+@app.context_processor
+def inject_globals():
+    return {
+        "current_user": current_user(),
+        "firebase_config": FIREBASE_WEB_CONFIG,
+    }
+
+
+def login_required(view):
+    from functools import wraps
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if current_user() is None:
+            flash("Please log in to continue.", "error")
+            return redirect(url_for("login", next=request.path))
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+@app.errorhandler(store.ConfigError)
+def handle_config_error(exc):
+    """Firebase isn't set up yet — say so clearly instead of a bare 500."""
+    app.logger.error("Firebase configuration error: %s", exc)
+    if request.path.startswith("/api/"):
+        return jsonify(error=str(exc)), 500
+    return render_template("config_error.html", message=str(exc)), 500
+
+
+# --- pages ------------------------------------------------------------------
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/login")
+def login():
+    if current_user():
+        return redirect(url_for("dashboard"))
+    return render_template("login.html")
+
+
+@app.route("/register")
+def register():
+    if current_user():
+        return redirect(url_for("dashboard"))
+    return render_template("register.html")
+
+
+@app.route("/logout")
+def logout():
+    response = redirect(url_for("index"))
+    response.delete_cookie(SESSION_COOKIE)
+    flash("You have been logged out.", "success")
+    return response
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
+# --- auth API (called by the Firebase JS SDK in the browser) ----------------
+
+@app.post("/api/session")
+def create_session():
+    """Exchange a Firebase ID token for an HttpOnly session cookie.
+
+    The client signs in with the Firebase JS SDK (email/password or Google),
+    then posts the resulting ID token here. Passwords never reach this server.
+    """
+    payload = request.get_json(silent=True) or {}
+    id_token = payload.get("idToken")
+    desired_username = (payload.get("username") or "").strip() or None
+
+    if not id_token:
+        return jsonify(error="Missing ID token."), 400
+
+    store.ensure_app()
+
+    try:
+        # A short max_age means a freshly-minted token, which is what we want
+        # in exchange for a five-day cookie.
+        decoded = fb_auth.verify_id_token(id_token, check_revoked=True)
+    except store.ConfigError:
+        raise
+    except Exception as exc:
+        app.logger.warning("Rejected ID token: %s", exc)
+        return jsonify(error="Could not verify your sign-in. Please try again."), 401
+
+    uid = decoded["uid"]
+    provider = (decoded.get("firebase") or {}).get("sign_in_provider")
+
+    profile, created = store.ensure_profile(
+        uid,
+        email=decoded.get("email"),
+        display_name=decoded.get("name"),
+        photo_url=decoded.get("picture"),
+        provider=provider,
+        desired_username=desired_username,
+    )
+
+    try:
+        cookie = fb_auth.create_session_cookie(id_token, expires_in=SESSION_DURATION)
+    except Exception as exc:
+        app.logger.error("Could not mint session cookie: %s", exc)
+        return jsonify(error="Could not start your session. Please try again."), 500
+
+    response = jsonify(
+        ok=True,
+        created=created,
+        username=profile.get("username"),
+        redirect=url_for("dashboard"),
+    )
+    response.set_cookie(
+        SESSION_COOKIE,
+        cookie,
+        max_age=int(SESSION_DURATION.total_seconds()),
+        httponly=True,
+        samesite="Lax",
+        secure=request.is_secure,
+    )
+    return response
+
+
+@app.post("/api/logout")
+def api_logout():
+    """Clear the session cookie and revoke refresh tokens for the user."""
+    cookie = request.cookies.get(SESSION_COOKIE)
+    if cookie:
+        store.ensure_app()
+        try:
+            claims = fb_auth.verify_session_cookie(cookie)
+            fb_auth.revoke_refresh_tokens(claims["sub"])
+        except Exception:
+            pass  # Already invalid; clearing the cookie is enough.
+    response = jsonify(ok=True, redirect=url_for("index"))
+    response.delete_cookie(SESSION_COOKIE)
+    return response
+
+
+@app.get("/api/username-available")
+def username_available():
+    """Live check for the signup form. Advisory only — the write is what counts."""
+    username = (request.args.get("u") or "").strip()
+    if not store.is_valid_username(username):
+        return jsonify(valid=False, available=False)
+    return jsonify(valid=True, available=not store.username_taken(username))
+
+
+if __name__ == "__main__":
+    # macOS uses port 5000 for AirPlay Receiver, so default to 5001.
+    app.run(debug=True, port=int(os.environ.get("PORT", 5001)))
