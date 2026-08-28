@@ -5,6 +5,7 @@ import os
 from flask import (
     Flask, flash, g, jsonify, redirect, render_template, request, url_for
 )
+from werkzeug.middleware.proxy_fix import ProxyFix
 from firebase_admin import auth as fb_auth
 
 import firestore_db as store
@@ -14,6 +15,12 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 # For production, set ILO_SECRET_KEY in the environment.
 app.config["SECRET_KEY"] = os.environ.get("ILO_SECRET_KEY", "dev-secret-change-me")
+
+# Railway (and most PaaS hosts) terminate TLS at a proxy and forward plain HTTP.
+# Without this, request.is_secure is False and the session cookie would never
+# get its Secure flag, so trust the forwarding headers when deployed.
+if os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("TRUST_PROXY"):
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Firebase session cookie. Named "__session" because that is the only cookie
 # Firebase Hosting will forward if this is ever deployed there.
@@ -147,12 +154,21 @@ def create_session():
     uid = decoded["uid"]
     provider = (decoded.get("firebase") or {}).get("sign_in_provider")
 
+    # The token only names the method used right now. Ask Firebase for the
+    # account's full provider list, which is also the only way to notice that
+    # a provider was removed (e.g. linking Google drops an unverified password).
+    try:
+        providers = [p.provider_id for p in fb_auth.get_user(uid).provider_data]
+    except Exception:
+        providers = [provider] if provider else []
+
     profile, created = store.ensure_profile(
         uid,
         email=decoded.get("email"),
         display_name=decoded.get("name"),
         photo_url=decoded.get("picture"),
         provider=provider,
+        providers=providers,
         desired_username=desired_username,
     )
 

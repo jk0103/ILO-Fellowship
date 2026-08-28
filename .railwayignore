@@ -1,0 +1,11 @@
+# NEVER upload the admin key. On Railway it is supplied as the
+# FIREBASE_CREDENTIALS_JSON environment variable instead.
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
+__pycache__/
+*.pyc
+.idea/
+.env
+*.db
+test_app.py

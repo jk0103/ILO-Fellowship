@@ -1,4 +1,4 @@
-"""Firestore data layer for ILO Practice.
+"""Firestore data layer for ILO Prep.
 
 Identity lives in Firebase Authentication; this module stores everything else.
 
@@ -157,7 +157,7 @@ def get_profile(uid):
 
 
 def ensure_profile(uid, email, display_name=None, photo_url=None,
-                   provider=None, desired_username=None):
+                   provider=None, providers=None, desired_username=None):
     """Create the profile on first sign-in, or refresh it on later ones.
 
     Returns (profile, created). The username is reserved transactionally; if
@@ -175,8 +175,13 @@ def ensure_profile(uid, email, display_name=None, photo_url=None,
             updates["display_name"] = display_name
         if photo_url and existing.get("photo_url") != photo_url:
             updates["photo_url"] = photo_url
-        if provider and provider not in (existing.get("providers") or []):
-            updates["providers"] = firestore.ArrayUnion([provider])
+        # Firebase can *remove* a provider — linking Google to an account whose
+        # email was unverified drops the password provider — so mirror the
+        # current list rather than accumulating one.
+        current = providers if providers is not None else (
+            [provider] if provider else None)
+        if current is not None and sorted(current) != sorted(existing.get("providers") or []):
+            updates["providers"] = current
         db.collection(USERS).document(uid).update(updates)
         return get_profile(uid), False
 
@@ -187,13 +192,15 @@ def ensure_profile(uid, email, display_name=None, photo_url=None,
     # actually guarantees uniqueness; the loop just finds a free candidate.
     for attempt in range(25):
         candidate = seed if attempt == 0 else "%s%d" % (seed[:18], attempt + 1)
-        if _claim(db, uid, candidate, email, display_name, photo_url, provider):
+        if _claim(db, uid, candidate, email, display_name, photo_url,
+                  providers if providers is not None else
+                  ([provider] if provider else [])):
             return get_profile(uid), True
 
     raise RuntimeError("Could not allocate a username for uid %s" % uid)
 
 
-def _claim(db, uid, username, email, display_name, photo_url, provider):
+def _claim(db, uid, username, email, display_name, photo_url, providers):
     """Reserve `username` and write the profile atomically. False if taken."""
     name_ref = db.collection(USERNAMES).document(username.lower())
     user_ref = db.collection(USERS).document(uid)
@@ -209,7 +216,8 @@ def _claim(db, uid, username, email, display_name, photo_url, provider):
             "email": (email or "").lower(),
             "display_name": display_name or username,
             "photo_url": photo_url,
-            "providers": [provider] if provider else [],
+            "providers": providers if providers is not None else (
+                [provider] if provider else []),
             "created_at": firestore.SERVER_TIMESTAMP,
             "last_login": firestore.SERVER_TIMESTAMP,
             "stats": {"solved": 0, "attempted": 0, "streak": 0},

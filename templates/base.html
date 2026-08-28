@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}ILO Practice{% endblock %}</title>
+  <title>{% block title %}ILO Prep{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script>
     // Public Firebase web config: it identifies the project, it grants nothing.
@@ -17,7 +17,7 @@
   <header class="nav">
     <a class="brand" href="{{ url_for('index') }}">
       <span class="brand-mark">ILO</span>
-      <span class="brand-text">Practice</span>
+      <span class="brand-text">Prep</span>
     </a>
     <nav class="nav-links">
       {% if current_user %}
@@ -46,7 +46,7 @@
   </main>
 
   <footer class="footer">
-    <p>ILO Practice &middot; an unofficial training tool for the International Logic Olympiad.</p>
+    <p>ILO Prep &middot; an unofficial training tool for the International Logic Olympiad.</p>
   </footer>
 
   <script type="module" src="{{ url_for('static', filename='auth.js') }}"></script>

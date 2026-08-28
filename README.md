@@ -1,4 +1,4 @@
-# ILO Practice
+# ILO Prep
 
 A practice site for International Logic Olympiad problems.
 
