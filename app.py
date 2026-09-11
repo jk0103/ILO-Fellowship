@@ -8,6 +8,8 @@ from flask import (
 from werkzeug.middleware.proxy_fix import ProxyFix
 from firebase_admin import auth as fb_auth
 
+import fitch_checker as checker
+import fitch_generator as generator
 import firestore_db as store
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -117,6 +119,33 @@ def logout():
     return response
 
 
+@app.route("/fitch")
+def fitch():
+    """Fitch proof practice. The checker runs entirely in the browser.
+
+    With ?q=<id> the editor opens on a stored question instead of the built-in
+    list, which is how the Generate page hands a problem over.
+    """
+    question = None
+    qid = (request.args.get("q") or "").strip()
+    if qid:
+        question = store.get_question(qid)
+        if question is None:
+            flash("That question could not be found.", "error")
+    return render_template("fitch.html", question=question)
+
+
+@app.route("/generate")
+@login_required
+def generate_page():
+    """Generate new exercises with the model, and browse the ones already saved."""
+    return render_template(
+        "generate.html",
+        difficulties=checker.DIFFICULTIES,
+        generator_ready=bool(os.environ.get("OPENAI_API_KEY")),
+    )
+
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -209,6 +238,74 @@ def api_logout():
     response = jsonify(ok=True, redirect=url_for("index"))
     response.delete_cookie(SESSION_COOKIE)
     return response
+
+
+# --- questions API ----------------------------------------------------------
+
+MAX_PER_REQUEST = 5
+
+
+@app.post("/api/questions/generate")
+@login_required
+def api_generate_questions():
+    """Generate exercises, verify them, save them, and return them.
+
+    Generation is slow and costs money per call, so it is behind a login and
+    capped. Nothing reaches Firestore until its proof has passed the same
+    checker the browser editor runs.
+    """
+    payload = request.get_json(silent=True) or {}
+    difficulty = (payload.get("difficulty") or "").strip() or None
+    try:
+        count = int(payload.get("count") or 1)
+    except (TypeError, ValueError):
+        return jsonify(error="count must be a number."), 400
+
+    if difficulty and difficulty not in checker.DIFFICULTIES:
+        return jsonify(error="Unknown difficulty."), 400
+    count = max(1, min(count, MAX_PER_REQUEST))
+
+    try:
+        questions = generator.generate(count=count, difficulty=difficulty)
+    except generator.GeneratorError as exc:
+        app.logger.warning("Generation failed: %s", exc)
+        return jsonify(error=str(exc)), 502
+
+    if not questions:
+        return jsonify(
+            error="Nothing the model produced passed verification. Try again."
+        ), 502
+
+    uid = (current_user() or {}).get("uid")
+    saved = []
+    for question in questions:
+        # Belt and braces: never store an answer this server has not checked.
+        problems = checker.check_proof(question["premises"], question["goal"],
+                                       question["proof"])
+        if problems:
+            app.logger.error("Unverified proof reached the route: %s", problems)
+            continue
+        question["id"] = store.save_question(question, created_by=uid)
+        saved.append(question)
+
+    if not saved:
+        return jsonify(error="The generated proofs did not verify."), 502
+    return jsonify(questions=saved)
+
+
+@app.get("/api/questions")
+@login_required
+def api_list_questions():
+    """Stored questions, newest first, optionally filtered by difficulty."""
+    difficulty = (request.args.get("difficulty") or "").strip() or None
+    if difficulty and difficulty not in checker.DIFFICULTIES:
+        return jsonify(error="Unknown difficulty."), 400
+    questions = store.list_questions(difficulty=difficulty, limit=100)
+    for question in questions:
+        # created_at is a Firestore timestamp; the page only needs a date.
+        stamp = question.pop("created_at", None)
+        question["created"] = stamp.isoformat() if hasattr(stamp, "isoformat") else None
+    return jsonify(questions=questions, counts=store.question_counts())
 
 
 @app.get("/api/username-available")

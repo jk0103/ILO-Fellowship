@@ -17,6 +17,11 @@
 
 <section class="features">
   <article class="card">
+    <div class="card-icon">&#8866;</div>
+    <h3><a href="{{ url_for('fitch') }}">Fitch practice</a></h3>
+    <p>Build natural-deduction proofs with live rule checking.</p>
+  </article>
+  <article class="card">
     <h3>Problems solved</h3>
     <p class="stat">{{ stats.get('solved', 0) }}</p>
   </article>

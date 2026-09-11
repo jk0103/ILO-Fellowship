@@ -1,0 +1,1456 @@
+[
+  {
+    "prompt": "Given ∀x.p(x), use the Fitch System to prove ∃x.p(x).",
+    "premises": [
+      "∀x.p(x)"
+    ],
+    "goal": "∃x.p(x)",
+    "constants": [],
+    "hint": "Use Universal Elimination to get p(a) for an arbitrary object constant, then Existential Introduction.",
+    "rules_used": [
+      "ue",
+      "ei"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.p(x)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.p(x)",
+        "rule": "ei",
+        "depth": 0,
+        "refs": [
+          2
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "easy",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∀x.(r(x) ⇒ s(x)), and r(a), use the Fitch System to prove s(a).",
+    "premises": [
+      "∀x.(r(x) ⇒ s(x))",
+      "r(a)"
+    ],
+    "goal": "s(a)",
+    "constants": [],
+    "hint": "Eliminate the universal to get r(a) ⇒ s(a), then use Implication Elimination.",
+    "rules_used": [
+      "ue",
+      "ie"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(r(x) ⇒ s(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "r(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "r(a) ⇒ s(a)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "s(a)",
+        "rule": "ie",
+        "depth": 0,
+        "refs": [
+          3,
+          2
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "easy",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∃x.p(x), use the Fitch System to prove ∃x.(p(x) ∨ q(x)).",
+    "premises": [
+      "∃x.p(x)"
+    ],
+    "goal": "∃x.(p(x) ∨ q(x))",
+    "constants": [],
+    "hint": "Use the existential pattern: assume p(c), get p(c) ∨ q(c), generalize, discharge.",
+    "rules_used": [
+      "oi",
+      "ei",
+      "ii",
+      "ui",
+      "ee"
+    ],
+    "proof": [
+      {
+        "formula": "∃x.p(x)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∨ q(c)",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.(p(x) ∨ q(x))",
+        "rule": "ei",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ ∃x.(p(x) ∨ q(x))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          2,
+          4
+        ]
+      },
+      {
+        "formula": "∀x.(p(x) ⇒ ∃x.(p(x) ∨ q(x)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.(p(x) ∨ q(x))",
+        "rule": "ee",
+        "depth": 0,
+        "refs": [
+          1,
+          6
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "easy",
+    "chapter": 10
+  },
+  {
+    "prompt": "Use the Fitch System to prove ∀x.(q(x) ⇒ q(x)).",
+    "premises": [],
+    "goal": "∀x.(q(x) ⇒ q(x))",
+    "constants": [],
+    "hint": "Proof by opening with a placeholder and using Implication Introduction.",
+    "rules_used": [
+      "assume",
+      "ii",
+      "ui"
+    ],
+    "proof": [
+      {
+        "formula": "q(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "q(c)",
+        "rule": "reit",
+        "depth": 1,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c) ⇒ q(c)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          1,
+          2
+        ]
+      },
+      {
+        "formula": "∀x.(q(x) ⇒ q(x))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          3
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "easy",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∀x.(p(x) ⇒ q(x)), ∃x.p(x), use the Fitch System to prove ∃x.q(x).",
+    "premises": [
+      "∀x.(p(x) ⇒ q(x))",
+      "∃x.p(x)"
+    ],
+    "goal": "∃x.q(x)",
+    "constants": [],
+    "hint": "EE the existential for a new placeholder, use UE on the universal with that placeholder, and then conclude by existential introduction.",
+    "rules_used": [
+      "assume",
+      "ue",
+      "ie",
+      "ei",
+      "ii",
+      "ui",
+      "ee"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(p(x) ⇒ q(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∃x.p(x)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a) ⇒ q(a)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(a)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          3,
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.q(x)",
+        "rule": "ei",
+        "depth": 1,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(a) ⇒ ∃x.q(x)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          3,
+          6
+        ]
+      },
+      {
+        "formula": "∀x.(p(x) ⇒ ∃x.q(x))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          7
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.q(x)",
+        "rule": "ee",
+        "depth": 0,
+        "refs": [
+          2,
+          8
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "easy",
+    "chapter": 10
+  },
+  {
+    "prompt": "Consider a language with just two object constants - jack and jill. Given ∀x.(loves(x,jack)), use the Fitch System to prove ∃x.(loves(jack,x) ∧ loves(jill,x)).",
+    "premises": [
+      "∀x.(loves(x,jack))"
+    ],
+    "goal": "∃x.(loves(jack,x) ∧ loves(jill,x))",
+    "constants": [
+      "jack",
+      "jill"
+    ],
+    "hint": "With a finite domain, check each constant. Use the universal to get facts about both and combine with conjunction, then existentially introduce.",
+    "rules_used": [
+      "ue",
+      "ue",
+      "ai",
+      "ei"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(loves(x,jack))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "loves(jack,jack)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "loves(jill,jack)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "loves(jack,jack) ∧ loves(jill,jack)",
+        "rule": "ai",
+        "depth": 0,
+        "refs": [
+          2,
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.(loves(jack,x) ∧ loves(jill,x))",
+        "rule": "ei",
+        "depth": 0,
+        "refs": [
+          4
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "easy",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∀x.(p(x) ⇒ (q(x) ∨ r(x))) and ∀x.(r(x) ⇒ q(x)), use the Fitch System to prove ∀x.(p(x) ⇒ q(x)).",
+    "premises": [
+      "∀x.(p(x) ⇒ (q(x) ∨ r(x)))",
+      "∀x.(r(x) ⇒ q(x))"
+    ],
+    "goal": "∀x.(p(x) ⇒ q(x))",
+    "constants": [],
+    "hint": "Instantiate the universals with a fresh placeholder, derive a disjunction, then use Disjunction Elimination with q(c) ⇒ q(c) and r(c) ⇒ q(c). Close with Implication Introduction and then generalize using Universal Introduction (placeholders must be arbitrary per the Chapter 10 UI guidance ).",
+    "rules_used": [
+      "assume",
+      "reit",
+      "oe",
+      "ue",
+      "ie",
+      "ii",
+      "ui",
+      "premise"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(p(x) ⇒ (q(x) ∨ r(x)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀x.(r(x) ⇒ q(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ (q(c) ∨ r(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c) ∨ r(c)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          4,
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "q(c)",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c) ⇒ q(c)",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "r(c) ⇒ q(c)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c)",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          5,
+          8,
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ q(c)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          3,
+          10
+        ]
+      },
+      {
+        "formula": "∀x.(p(x) ⇒ q(x))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          11
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "medium",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∃x.(p(x) ∧ ∀y.(p(y) ⇒ r(x,y))) and ∀y.p(y), use the Fitch System to prove ∀y.∃x.r(x,y).",
+    "premises": [
+      "∃x.(p(x) ∧ ∀y.(p(y) ⇒ r(x,y)))",
+      "∀y.p(y)"
+    ],
+    "goal": "∀y.∃x.r(x,y)",
+    "constants": [],
+    "hint": "Follow the existential pattern: assume the existential’s scope for a fresh placeholder c, derive ∀y.∃x.r(x,y) inside using UE and EI, close by Implication Introduction and then use UI to generalize c; finally apply EE to discharge the original existential (see the pattern explained in Chapter 10’s example of EE usage  and the formal EE rule statement ).",
+    "rules_used": [
+      "assume",
+      "ae",
+      "ue",
+      "ie",
+      "ei",
+      "ui",
+      "ii",
+      "ee",
+      "premise"
+    ],
+    "proof": [
+      {
+        "formula": "∃x.(p(x) ∧ ∀y.(p(y) ⇒ r(x,y)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀y.p(y)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∧ ∀y.(p(y) ⇒ r(c,y))",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀y.(p(y) ⇒ r(c,y))",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(d)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(d) ⇒ r(c,d)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(c,d)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          6,
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.r(x,d)",
+        "rule": "ei",
+        "depth": 1,
+        "refs": [
+          7
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀y.∃x.r(x,y)",
+        "rule": "ui",
+        "depth": 1,
+        "refs": [
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "(p(c) ∧ ∀y.(p(y) ⇒ r(c,y))) ⇒ ∀y.∃x.r(x,y)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          3,
+          9
+        ]
+      },
+      {
+        "formula": "∀x.((p(x) ∧ ∀y.(p(y) ⇒ r(x,y))) ⇒ ∀y.∃x.r(x,y))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          10
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀y.∃x.r(x,y)",
+        "rule": "ee",
+        "depth": 0,
+        "refs": [
+          1,
+          11
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "medium",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∀x.(p(x) ⇒ q(x)) and ¬∃x.q(x), use the Fitch System to prove ¬∃x.p(x).",
+    "premises": [
+      "∀x.(p(x) ⇒ q(x))",
+      "¬∃x.q(x)"
+    ],
+    "goal": "¬∃x.p(x)",
+    "constants": [],
+    "hint": "To prove a negation, build two separate subproofs to apply Negation Introduction: first derive ∃x.q(x) from ∃x.p(x) using the existential pattern (UE, IE, EI, UI, EE as in Chapter 10’s worked pattern ), and second derive ¬∃x.q(x) from ∃x.p(x) by reiterating the premise; then conclude ¬∃x.p(x) by NI.",
+    "rules_used": [
+      "assume",
+      "ue",
+      "ie",
+      "ei",
+      "ii",
+      "ui",
+      "ee",
+      "reit",
+      "ni",
+      "premise"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(p(x) ⇒ q(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "¬∃x.q(x)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∃x.p(x)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ q(c)",
+        "rule": "ue",
+        "depth": 2,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c)",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          5,
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.q(x)",
+        "rule": "ei",
+        "depth": 2,
+        "refs": [
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ ∃x.q(x)",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          4,
+          7
+        ]
+      },
+      {
+        "formula": "∀x.(p(x) ⇒ ∃x.q(x))",
+        "rule": "ui",
+        "depth": 1,
+        "refs": [
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.q(x)",
+        "rule": "ee",
+        "depth": 1,
+        "refs": [
+          3,
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.p(x) ⇒ ∃x.q(x)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          3,
+          10
+        ]
+      },
+      {
+        "formula": "∃x.p(x)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "¬∃x.q(x)",
+        "rule": "reit",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.p(x) ⇒ ¬∃x.q(x)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          12,
+          13
+        ]
+      },
+      {
+        "formula": "¬∃x.p(x)",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          11,
+          14
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "medium",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∀x.(p(x) ⇒ ∃y.(r(x,y) ∧ t(y))) and ∀x.∀y.((r(x,y) ∧ t(y)) ⇒ s(x)) and ∀x.(s(x) ⇒ u(x)) and ∀x.(u(x) ⇒ v(x)), use the Fitch System to prove ∀x.(p(x) ⇒ v(x)).",
+    "premises": [
+      "∀x.(p(x) ⇒ ∃y.(r(x,y) ∧ t(y)))",
+      "∀x.∀y.((r(x,y) ∧ t(y)) ⇒ s(x))",
+      "∀x.(s(x) ⇒ u(x))",
+      "∀x.(u(x) ⇒ v(x))"
+    ],
+    "goal": "∀x.(p(x) ⇒ v(x))",
+    "constants": [],
+    "hint": "Follow the chapter’s existential pattern: assume an instance of the existential’s scope for a fresh placeholder, derive a consequent that does not contain that placeholder free, close with Implication Introduction, generalize by Universal Introduction, and apply Existential Elimination; also respect that UI must generalize only truly arbitrary placeholders and that EE’s consequent cannot contain the eliminated variable free (see the worked existential pattern and UI discussion in Chapter 10  ).",
+    "rules_used": [
+      "ae",
+      "ee",
+      "ie",
+      "ii",
+      "ue",
+      "ui",
+      "premise"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(p(x) ⇒ ∃y.(r(x,y) ∧ t(y)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀x.∀y.((r(x,y) ∧ t(y)) ⇒ s(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀x.(s(x) ⇒ u(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀x.(u(x) ⇒ v(x))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ ∃y.(r(c,y) ∧ t(y))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃y.(r(c,y) ∧ t(y))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          6,
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(c,d) ∧ t(d)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "r(c,d)",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "t(d)",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀y.((r(c,y) ∧ t(y)) ⇒ s(c))",
+        "rule": "ue",
+        "depth": 2,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "(r(c,d) ∧ t(d)) ⇒ s(c)",
+        "rule": "ue",
+        "depth": 2,
+        "refs": [
+          11
+        ],
+        "subref": null
+      },
+      {
+        "formula": "s(c)",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          12,
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "(r(c,d) ∧ t(d)) ⇒ s(c)",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          8,
+          13
+        ]
+      },
+      {
+        "formula": "∀y.((r(c,y) ∧ t(y)) ⇒ s(c))",
+        "rule": "ui",
+        "depth": 1,
+        "refs": [
+          14
+        ],
+        "subref": null
+      },
+      {
+        "formula": "s(c)",
+        "rule": "ee",
+        "depth": 1,
+        "refs": [
+          7,
+          15
+        ],
+        "subref": null
+      },
+      {
+        "formula": "s(c) ⇒ u(c)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "u(c)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          16,
+          17
+        ],
+        "subref": null
+      },
+      {
+        "formula": "u(c) ⇒ v(c)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "v(c)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          19,
+          18
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ v(c)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          20
+        ]
+      },
+      {
+        "formula": "∀x.(p(x) ⇒ v(x))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          21
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "hard",
+    "chapter": 10
+  },
+  {
+    "prompt": "Given ∀x.(p(x) ⇒ ∀y.(r(y) ⇒ s(x,y))) and ∃x.p(x) and ∃y.r(y) and ∀x.∀y.(s(x,y) ⇒ (t(x) ∧ u(y))), use the Fitch System to prove ∃x.∃y.(t(x) ∧ u(y)).",
+    "premises": [
+      "∀x.(p(x) ⇒ ∀y.(r(y) ⇒ s(x,y)))",
+      "∃x.p(x)",
+      "∃y.r(y)",
+      "∀x.∀y.(s(x,y) ⇒ (t(x) ∧ u(y)))"
+    ],
+    "goal": "∃x.∃y.(t(x) ∧ u(y))",
+    "constants": [],
+    "hint": "Work inside a p(c)-subproof, and then inside an r(d)-subproof; derive s(c,d), push it through to t(c) ∧ u(d), and existentially generalize c and d in the right order so that the final consequent is independent of the eliminated variable when you apply EE. This is exactly the existential pattern emphasized in Chapter 10 (assume scope → derive target → II → UI → EE) and requires care with UI’s arbitrariness condition for placeholders  .",
+    "rules_used": [
+      "ae",
+      "ei",
+      "ee",
+      "ie",
+      "ii",
+      "oi",
+      "ue",
+      "ui",
+      "premise"
+    ],
+    "proof": [
+      {
+        "formula": "∀x.(p(x) ⇒ ∀y.(r(y) ⇒ s(x,y)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∃x.p(x)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∃y.r(y)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀x.∀y.(s(x,y) ⇒ (t(x) ∧ u(y)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ ∀y.(r(y) ⇒ s(c,y))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀y.(r(y) ⇒ s(c,y))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          6,
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(d)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "r(d) ⇒ s(c,d)",
+        "rule": "ue",
+        "depth": 2,
+        "refs": [
+          7
+        ],
+        "subref": null
+      },
+      {
+        "formula": "s(c,d)",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          9,
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀y.(s(c,y) ⇒ (t(c) ∧ u(y)))",
+        "rule": "ue",
+        "depth": 2,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "s(c,d) ⇒ (t(c) ∧ u(d))",
+        "rule": "ue",
+        "depth": 2,
+        "refs": [
+          11
+        ],
+        "subref": null
+      },
+      {
+        "formula": "t(c) ∧ u(d)",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          12,
+          10
+        ],
+        "subref": null
+      },
+      {
+        "formula": "t(c)",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "u(d)",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃y.(t(c) ∧ u(y))",
+        "rule": "ei",
+        "depth": 2,
+        "refs": [
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.∃y.(t(x) ∧ u(y))",
+        "rule": "ei",
+        "depth": 2,
+        "refs": [
+          16
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(d) ⇒ ∃x.∃y.(t(x) ∧ u(y))",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          8,
+          17
+        ]
+      },
+      {
+        "formula": "∀y.(r(y) ⇒ ∃x.∃y.(t(x) ∧ u(y)))",
+        "rule": "ui",
+        "depth": 1,
+        "refs": [
+          18
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.∃y.(t(x) ∧ u(y))",
+        "rule": "ee",
+        "depth": 1,
+        "refs": [
+          3,
+          19
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ ∃x.∃y.(t(x) ∧ u(y))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          20
+        ]
+      },
+      {
+        "formula": "∀x.(p(x) ⇒ ∃x.∃y.(t(x) ∧ u(y)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          21
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∃x.∃y.(t(x) ∧ u(y))",
+        "rule": "ee",
+        "depth": 0,
+        "refs": [
+          2,
+          22
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "hard",
+    "chapter": 10
+  },
+  {
+    "prompt": "Consider a language with just two object constants - a and b. Given p(a) ⇒ q(a) and p(b) ⇒ q(b) and p(a) ∨ p(b) and ∀x.(q(x) ⇒ (r(a) ∧ r(b))), use the Fitch System to prove ∀x.r(x).",
+    "premises": [
+      "p(a) ⇒ q(a)",
+      "p(b) ⇒ q(b)",
+      "p(a) ∨ p(b)",
+      "∀x.(q(x) ⇒ (r(a) ∧ r(b)))"
+    ],
+    "goal": "∀x.r(x)",
+    "constants": [
+      "a",
+      "b"
+    ],
+    "hint": "Prove the same consequent from each disjunct (use Or Elimination), then extract r(a) and r(b) and close with Domain Closure over the fixed domain {a, b}. Remember DC applies only when every object constant has been instantiated, and that Or Elimination needs one implication per disjunct with a shared consequent  .",
+    "rules_used": [
+      "ae",
+      "ai",
+      "dc",
+      "ie",
+      "ii",
+      "oe",
+      "ue",
+      "premise",
+      "assume"
+    ],
+    "proof": [
+      {
+        "formula": "p(a) ⇒ q(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(b) ⇒ q(b)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a) ∨ p(b)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀x.(q(x) ⇒ (r(a) ∧ r(b)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "q(a)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          1,
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(a) ⇒ (r(a) ∧ r(b))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(a) ∧ r(b)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          7,
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(a) ⇒ (r(a) ∧ r(b))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          8
+        ]
+      },
+      {
+        "formula": "p(b)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "q(b)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          2,
+          10
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(b) ⇒ (r(a) ∧ r(b))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(a) ∧ r(b)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          12,
+          11
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(b) ⇒ (r(a) ∧ r(b))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          10,
+          13
+        ]
+      },
+      {
+        "formula": "r(a) ∧ r(b)",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          3,
+          9,
+          14
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(a)",
+        "rule": "ae",
+        "depth": 0,
+        "refs": [
+          15
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(b)",
+        "rule": "ae",
+        "depth": 0,
+        "refs": [
+          15
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(a) ∧ r(b)",
+        "rule": "ai",
+        "depth": 0,
+        "refs": [
+          16,
+          17
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀x.r(x)",
+        "rule": "dc",
+        "depth": 0,
+        "refs": [
+          16,
+          17
+        ],
+        "subref": null
+      }
+    ],
+    "difficulty": "medium",
+    "chapter": 10
+  }
+]

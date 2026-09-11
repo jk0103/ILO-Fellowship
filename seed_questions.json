@@ -1,0 +1,806 @@
+[
+  {
+    "premises": [
+      "(p ⇒ q) ∨ (q ⇒ r)"
+    ],
+    "goal": "(¬q ⇒ ¬p) ∨ (¬r ⇒ ¬q)",
+    "hint": "Or Elimination on the premise; each case is a contraposition, which needs Negation Introduction.",
+    "proof": [
+      {
+        "formula": "(p ⇒ q) ∨ (q ⇒ r)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬q",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "p ⇒ ¬q",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          4,
+          5
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          2,
+          6
+        ]
+      },
+      {
+        "formula": "¬q ⇒ ¬p",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          7
+        ]
+      },
+      {
+        "formula": "(¬q ⇒ ¬p) ∨ (¬r ⇒ ¬q)",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          8
+        ]
+      },
+      {
+        "formula": "(p ⇒ q) ⇒ ((¬q ⇒ ¬p) ∨ (¬r ⇒ ¬q))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          9
+        ]
+      },
+      {
+        "formula": "q ⇒ r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬r",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬r",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          12
+        ]
+      },
+      {
+        "formula": "q ⇒ ¬r",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          13,
+          14
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          11,
+          15
+        ]
+      },
+      {
+        "formula": "¬r ⇒ ¬q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          12,
+          16
+        ]
+      },
+      {
+        "formula": "(¬q ⇒ ¬p) ∨ (¬r ⇒ ¬q)",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          17
+        ]
+      },
+      {
+        "formula": "(q ⇒ r) ⇒ ((¬q ⇒ ¬p) ∨ (¬r ⇒ ¬q))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          11,
+          18
+        ]
+      },
+      {
+        "formula": "(¬q ⇒ ¬p) ∨ (¬r ⇒ ¬q)",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          1,
+          10,
+          19
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "¬p ⇒ (q ∧ r)"
+    ],
+    "goal": "(¬q ∨ ¬r) ⇒ p",
+    "hint": "Assume the antecedent, then Or Elimination on it with p as the shared conclusion.",
+    "proof": [
+      {
+        "formula": "¬p ⇒ (q ∧ r)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "¬q ∨ ¬r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "q ∧ r",
+        "rule": "ie",
+        "depth": 3,
+        "refs": [
+          1,
+          4
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 3,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "¬p ⇒ q",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          4,
+          6
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬q",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "¬p ⇒ ¬q",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          8,
+          9
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          7,
+          10
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 2,
+        "refs": [
+          11
+        ]
+      },
+      {
+        "formula": "¬q ⇒ p",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          12
+        ]
+      },
+      {
+        "formula": "¬r",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "q ∧ r",
+        "rule": "ie",
+        "depth": 3,
+        "refs": [
+          1,
+          15
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 3,
+        "refs": [
+          16
+        ]
+      },
+      {
+        "formula": "¬p ⇒ r",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          15,
+          17
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬r",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          14
+        ]
+      },
+      {
+        "formula": "¬p ⇒ ¬r",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          19,
+          20
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          18,
+          21
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 2,
+        "refs": [
+          22
+        ]
+      },
+      {
+        "formula": "¬r ⇒ p",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          14,
+          23
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          2,
+          13,
+          24
+        ]
+      },
+      {
+        "formula": "(¬q ∨ ¬r) ⇒ p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          25
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ∨ q",
+      "¬p ∨ r"
+    ],
+    "goal": "q ∨ r",
+    "hint": "Nested Or Elimination. In the ¬p case there is no ex falso, so reach q ∨ r by contradiction.",
+    "proof": [
+      {
+        "formula": "p ∨ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "¬p ∨ r",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬(q ∨ r)",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "p",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "¬(q ∨ r) ⇒ p",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          5,
+          6
+        ]
+      },
+      {
+        "formula": "¬(q ∨ r)",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬p",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          4
+        ]
+      },
+      {
+        "formula": "¬(q ∨ r) ⇒ ¬p",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          8,
+          9
+        ]
+      },
+      {
+        "formula": "¬¬(q ∨ r)",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          7,
+          10
+        ]
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "ne",
+        "depth": 2,
+        "refs": [
+          11
+        ]
+      },
+      {
+        "formula": "¬p ⇒ (q ∨ r)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          4,
+          12
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          14
+        ]
+      },
+      {
+        "formula": "r ⇒ (q ∨ r)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          14,
+          15
+        ]
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          2,
+          13,
+          16
+        ]
+      },
+      {
+        "formula": "p ⇒ (q ∨ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          3,
+          17
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          19
+        ]
+      },
+      {
+        "formula": "q ⇒ (q ∨ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          19,
+          20
+        ]
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          1,
+          18,
+          21
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "((p ⇒ q) ∧ (q ⇒ r)) ⇒ (p ⇒ r)",
+    "hint": "Two nested conditional proofs; take the premise apart with And Elimination.",
+    "proof": [
+      {
+        "formula": "(p ⇒ q) ∧ (q ⇒ r)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          3,
+          2
+        ]
+      },
+      {
+        "formula": "q ⇒ r",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          5,
+          4
+        ]
+      },
+      {
+        "formula": "p ⇒ r",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          2,
+          6
+        ]
+      },
+      {
+        "formula": "((p ⇒ q) ∧ (q ⇒ r)) ⇒ (p ⇒ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "¬(p ∧ q)"
+    ],
+    "goal": "¬p ∨ ¬q",
+    "hint": "Assume the negation of the goal; under it both p and q become provable, which contradicts the premise.",
+    "proof": [
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬p ∨ ¬q",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "¬p ⇒ (¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          4
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "¬p ⇒ ¬(¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 1,
+        "refs": [
+          5,
+          8
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 1,
+        "refs": [
+          9
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬p ∨ ¬q",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          11
+        ]
+      },
+      {
+        "formula": "¬q ⇒ (¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          11,
+          12
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "¬q ⇒ ¬(¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          14,
+          15
+        ]
+      },
+      {
+        "formula": "¬¬q",
+        "rule": "ni",
+        "depth": 1,
+        "refs": [
+          13,
+          16
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ne",
+        "depth": 1,
+        "refs": [
+          17
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          10,
+          18
+        ]
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q) ⇒ (p ∧ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          19
+        ]
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "reit",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q) ⇒ ¬(p ∧ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          21,
+          22
+        ]
+      },
+      {
+        "formula": "¬¬(¬p ∨ ¬q)",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          20,
+          23
+        ]
+      },
+      {
+        "formula": "¬p ∨ ¬q",
+        "rule": "ne",
+        "depth": 0,
+        "refs": [
+          24
+        ]
+      }
+    ]
+  }
+]

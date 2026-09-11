@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Fitch practice &middot; ILO Prep{% endblock %}
+{% block main_class %}fitch-main{% endblock %}
+
+{% block content %}
+<section class="hero hero-compact">
+  <h1>Fitch practice</h1>
+  <p class="lede">Check the lines you want to work from, then press a rule.
+     The rule is applied for you and the new lines are added to the proof.</p>
+</section>
+
+{% if question %}
+<section class="fitch-loaded">
+  <span class="badge badge-{{ question['difficulty'] }}">{{ question['difficulty'] }}</span>
+  <p class="gen-statement">{{ question['statement'] }}</p>
+  {% if question.get('hint') %}<p class="hint">Hint: {{ question['hint'] }}</p>{% endif %}
+  <p class="hint">Its worked answer is {{ question['line_count'] }} lines &mdash;
+     see it on the <a href="{{ url_for('generate_page') }}">Generate</a> page.</p>
+</section>
+<script>
+  window.__ILO_QUESTION = {
+    title: "Generated question",
+    premises: {{ question['premises'] | tojson }},
+    goal: {{ question['goal'] | tojson }}
+  };
+</script>
+{% endif %}
+
+<section class="fitch-setup">
+  <label class="field">
+    <span>Problem</span>
+    <select id="fitch-problem"></select>
+  </label>
+
+  <div id="fitch-custom" hidden>
+    <label class="field">
+      <span>Premises (one per line, or comma separated)</span>
+      <textarea id="fitch-custom-premises" rows="3" spellcheck="false"></textarea>
+    </label>
+    <label class="field">
+      <span>Goal</span>
+      <input id="fitch-custom-goal" spellcheck="false">
+    </label>
+    <button class="btn btn-primary" id="fitch-custom-apply" type="button">Start this proof</button>
+    <p class="hint danger" id="fitch-custom-error"></p>
+  </div>
+
+  <dl class="fitch-summary">
+    <dt>Premises</dt><dd id="fitch-premises">&mdash;</dd>
+    <dt>Goal</dt><dd id="fitch-goal-display">&mdash;</dd>
+  </dl>
+</section>
+
+<p id="fitch-verdict" class="fitch-verdict"></p>
+
+<section class="fitch-board">
+  <div class="fitch-selectall">
+    <input type="checkbox" id="fitch-select-all">
+    <label for="fitch-select-all">Select all</label>
+    <span class="fitch-selected" id="fitch-selected"></span>
+  </div>
+
+  <div id="fitch-lines"></div>
+
+  <p class="fitch-message" id="fitch-message"></p>
+
+  <div class="fitch-entry" id="fitch-entry" hidden>
+    <p class="fitch-entry-label" id="fitch-entry-label"></p>
+    <div class="fitch-entry-row">
+      <input id="fitch-entry-input" spellcheck="false" placeholder="formula">
+      <button type="button" class="btn btn-primary" id="fitch-entry-ok">Add</button>
+      <button type="button" class="btn btn-ghost" id="fitch-entry-cancel">Cancel</button>
+    </div>
+    <div class="fitch-palette">
+      <button type="button" class="fitch-sym" data-symbol="¬">¬</button>
+      <button type="button" class="fitch-sym" data-symbol="∧">∧</button>
+      <button type="button" class="fitch-sym" data-symbol="∨">∨</button>
+      <button type="button" class="fitch-sym" data-symbol="⇒">⇒</button>
+      <button type="button" class="fitch-sym" data-symbol="⇔">⇔</button>
+      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code></span>
+    </div>
+  </div>
+
+  <div class="fitch-buttons" id="fitch-buttons"></div>
+</section>
+
+<script src="{{ url_for('static', filename='fitch.js') }}"></script>
+{% endblock %}

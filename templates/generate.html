@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Generate questions &middot; ILO Prep{% endblock %}
+
+{% block content %}
+<section class="hero hero-compact">
+  <h1>Generate questions</h1>
+  <p class="lede">New Fitch exercises written against Chapter&nbsp;5, each with a
+     worked proof. Nothing is saved until the proof passes the same checker the
+     practice editor runs, and the difficulty comes from how long that proof is.</p>
+  <p class="hint">
+    Easy is under 10 lines, medium under 20, hard 20 or more.
+  </p>
+</section>
+
+{% if not generator_ready %}
+<div class="flash flash-error">
+  <strong>OPENAI_API_KEY is not set on the server.</strong>
+  Generation is unavailable until it is; saved questions below still work.
+</div>
+{% endif %}
+
+<section class="gen-controls">
+  <label class="field">
+    <span>Difficulty</span>
+    <select id="gen-difficulty">
+      <option value="">Any</option>
+      {% for band in difficulties %}
+        <option value="{{ band }}">{{ band | capitalize }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field">
+    <span>How many</span>
+    <select id="gen-count">
+      {% for n in [1, 2, 3, 5] %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn btn-primary" id="gen-run" type="button"
+          {% if not generator_ready %}disabled{% endif %}>Generate</button>
+  <p class="hint" id="gen-status"></p>
+</section>
+
+<section class="gen-results" id="gen-results" hidden>
+  <h2>Just generated</h2>
+  <div id="gen-new"></div>
+</section>
+
+<section class="gen-saved">
+  <div class="gen-saved-head">
+    <h2>Saved questions</h2>
+    <div class="gen-filters" id="gen-filters">
+      <button type="button" class="btn btn-ghost is-on" data-band="">All</button>
+      {% for band in difficulties %}
+        <button type="button" class="btn btn-ghost" data-band="{{ band }}">{{ band | capitalize }}</button>
+      {% endfor %}
+    </div>
+  </div>
+  <p class="hint" id="gen-counts"></p>
+  <div id="gen-list"><p class="hint">Loading&hellip;</p></div>
+</section>
+
+<script>
+  window.__ILO_FITCH_URL = "{{ url_for('fitch') }}";
+</script>
+<script src="{{ url_for('static', filename='generate.js') }}"></script>
+{% endblock %}

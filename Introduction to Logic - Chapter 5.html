@@ -1,0 +1,717 @@
+
+<!-- saved from url=(0055)http://intrologic.stanford.edu/chapters/chapter_05.html -->
+<html><!--=======================================================================--><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Introduction to Logic - Chapter 5</title>
+  <style type="text/css">
+    @media print {table {page-break-inside:avoid}}
+  </style>
+</head>
+
+<!--=======================================================================-->
+
+<body style="background-color:#990000">
+  <center>
+    <table width="720" cellpadding="40" bgcolor="#ffffff">
+      <tbody><tr>
+        <td>
+
+<!--=======================================================================-->
+
+  <center>
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <tbody><tr><td><br></td></tr>
+      <tr>
+        <td height="40" align="center">
+          <span style="font-size:18pt; text-align:center">C H A P T E R&nbsp;&nbsp;5</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <table width="100%" height="60" cellspacing="1" cellpadding="0" bgcolor="#dddddd" border="1">
+      <tbody><tr>
+        <td height="30" align="center">
+          <span style="font-size:28pt;text-align:center">Natural Deduction</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <br>
+  </center>
+
+<!--=======================================================================-->
+
+<h3>5.1 <a name="section_05_01">Introduction</a></h3>
+
+<p>Direct deduction has the merit of being simple to understand.  Unfortunately, as we have seen, the proofs can easily become unwieldy.  The deduction theorem helps.  It assures us that, if we have a proof of a conclusion form premises, there is a proof of the corresponding implication.  However, that assurance is not itself a proof.  <i>Natural deduction</i> cures this deficiency through the use of conditional proofs.</p>
+
+<p>We begin this lesson with a discussion of conditional proofs.  We then show how they are combined in the popular <i>Fitch proof system</i>.   We discuss soundness and completeness of the system.  And we finish by providing some tips for finding proofs using the Fitch system. </p>
+
+<!--=======================================================================-->
+
+<h3>5.2 <a name="section_05_02">Conditional Proofs</a></h3>
+
+<p><i>Conditional proofs</i> are similar to direct proofs in that they are sequences of reasoning steps.  However, they differ from direct proofs in that they have more structure.  In particular, sentences can be grouped into <i>subproofs</i> nested within outer <i>superproofs</i>.</p>
+
+<p>As an example, consider the conditional proof shown below.  It resembles a direct proof except that we have grouped the sentences on lines 3 through 5 into a subproof within our overall proof.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td width="20">1.</td>
+      <td><i>p</i> &#8658; <i>q</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td>2.</td>
+      <td><i>q</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>q</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elimination: 3, 1</td>
+    </tr>
+
+    <tr height="30">
+      <td>5.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>r</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elimination: 4, 2</td>
+    </tr>
+
+    <tr height="30">
+      <td>6.</td>
+      <td><i>p</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 3, 5</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>The main benefit of conditional proofs is that they allow us to prove things that cannot be proved using only ordinary rules of inference.  In conditional proofs, we can make assumptions within subproofs; we can prove conclusions from those assumptions; and, from those derivations, we can derive implications outside of those subproofs, with our assumptions as antecedents and our conclusions as consequents.</p>
+
+<p>The conditional proof above illustrates this.  On line 3, we begin a subproof with the assumption that <i>p</i> is true.  Note that <i>p</i> is not a premise in the overall problem.  In a subproof, we can make whatever assumptions that we like.  From <i>p</i>, we derive <i>q</i> using the premise on line 1; and, from that <i>q</i>, we prove <i>r</i> using the premise on line 2.  That terminates the subproof.  Finally, from this subproof, we derive (<i>p</i> &#8658; <i>r</i>) in the outer proof.  Given <i>p</i>, we can prove <i>r</i>; and so we know (<i>p</i> &#8658; <i>r</i>).  The rule used in this case is called Implication Introduction, or II for short.</p>
+
+<p>As this example illustrates, there are three basic operations involved in creating useful subproofs - (1) making assumptions, (2) using ordinary rules of inference to derive conclusions, and (3) using conditional rules of inference to derive conclusions outside of subproofs.  Let's look at each of these operations in turn.</p>
+
+<p>In a conditional proof, it is permissible to make an arbitrary assumption in any subproof.  The assumptions need not be members of the initial premise set.  Note that such assumptions cannot be used directly outside of the subproof, only as conditions in derived implications, so they do not contaminate the superproof or any unrelated subproofs.</p>
+
+<p>For example, in the proof we just saw, we used this assumption operation in the nested subproof even though <i>p</i> was not among the given premises.</p>
+
+<p>An ordinary rule of inference applies to a particular subproof of a conditional proof if and only if there is an instance of the rule in which all of the premises occur earlier in the subproof or in some superproof of the subproof.  Importantly, it is not permissible to use sentences in subproofs of that subproof or in other subproofs of its superproofs.</p>
+
+<p>For example, in the conditional proof we have been looking at, it is okay to apply Implication Elimination to 1 and 3.  And it is okay to use Implication Elimination on lines 2 and 4.</p>
+
+<p>However, it is <i>not</i> acceptable to use a sentence from a subproof in applying an ordinary rule of inference in a superproof.</p>
+
+<p>The last line of the malformed proof shown below gives an example of this.  It is <i>not</i> permissible to use Implication Elimination as shown here because it uses a conclusion from a subproof as a premise in an application of an ordinary rule of inference in its superproof.</p>
+          <p> On the keyboard, there is no and notation. Therefore we use the & symbol instead of the and notation.</p> <p> Instead of the or notation we use the | symbol.</p> <p> Instead of the not notation, we use the ~ symbol</p>
+<p> For implication the => symbol is used and for biconditionals the <=> symbol is used.</p>
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td></td>
+      <td width="20">1.</td>
+      <td><i>p</i> &#8658; <i>q</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>2.</td>
+      <td><i>q</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>q</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elimination: 1, 3</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>5.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>r</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elmination: 2, 4</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>6.</td>
+      <td><i>p</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 3, 5</td>
+    </tr>
+
+    <tr height="30">
+      <td><b>Wrong!</b>&nbsp;&nbsp;</td>
+      <td>7.</td>
+      <td><i>r</i></td>
+      <td>&nbsp;</td>
+      <td>Implication Elimination: 2, 4</td>
+      <td>&nbsp;&nbsp;<b>Wrong!</b></td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>The malformed proof shown below is another example.  Here, line 8 is illegal because line 4 is not in the current subproof or a superproof of this subproof.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td></td>
+      <td width="20">1.</td>
+      <td><i>p</i> &#8658; <i>q</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>2.</td>
+      <td><i>q</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>q</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elimination: 1, 3</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>5.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>r</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elmination: 2, 4</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>6.</td>
+      <td><i>p</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 3, 5</td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>7.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>r</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td><b>Wrong!</b>&nbsp;&nbsp;</td>
+      <td>8.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>r</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elmination: 2, 4</td>
+      <td>&nbsp;&nbsp;<b>Wrong!</b></td>
+    </tr>
+
+    <tr height="30">
+      <td></td>
+      <td>9.</td>
+      <td>¬<i>r</i> &#8658; <i>r</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 7, 8</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Correctly utilizing results derived in subproofs is the responsibility of a new type of rule of inference.  Like an ordinary rule of inference, a conditional rule of inference is a pattern of reasoning consisting of one or more premises and one or more conclusions.  As before, the premises and conclusions can be schemas.  However, the premises can also include conditions of the form &#966; &#8866; &#968;.  The rule in this case is called Implication Introduction, because it allows us to introduce new implications.</p>
+ 
+<center>
+<table>
+<tbody><tr><td>&#966; &#8866; &#968;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966; &#8658; &#968;</td></tr>
+</tbody></table>
+</center>
+
+<p>Finally, we define a <i>conditional proof</i> of a conclusion from a set of premises to be a sequence of (possibly nested) sentences terminating in an occurrence of the conclusion at the <i>top level</i> of the proof.  Each step in the proof must be either (1) a premise (at the top level) or an assumption (other than at the top level) or (2) the result of applying an ordinary or conditional rule of inference to earlier items in the sequence (subject to the constraints given above).</p>
+
+<!--=======================================================================-->
+
+<h3>5.3 <a name="section_05_03">Fitch</a></h3>
+
+<p>Fitch is a proof system that is particularly popular in the Logic community.  It is as powerful as many other proof systems and is far simpler to use.  Fitch achieves this simplicity through its support for conditional proofs and its use of conditional rules of inference in addition to ordinary rules of inference.</p>
+
+<p>Fitch has ten rules of inference in all.  Nine of these are ordinary rules of inference.  The other rule (Implication Introduction) is a conditional rule of inference.</p>
+
+<p><i>And Introduction</i> (shown below on the left) allows us to derive a conjunction from its conjuncts.  If a proof contains sentences &#966;<sub>1</sub> through &#966;<sub><i>n</i></sub>, then we can infer their conjunction.  <i>And Elimination</i> (shown below on the right) allows us to derive conjuncts from a conjunction.  If we have the conjunction of &#966;<sub>1</sub> through &#966;<sub><i>n</i></sub>, then we can infer any of the conjuncts.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td width="160" align="center" valign="top">
+<table>
+<tbody><tr><th>And Introduction</th></tr>
+<tr><td>&#966;<sub>1</sub></td></tr>
+<tr><td>...</td></tr>
+<tr><td>&#966;<sub><i>n</i></sub></td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966;<sub>1</sub> &#8743; ... &#8743; &#966;<sub><i>n</i></sub></td></tr>
+</tbody></table>
+      </td>
+      <td width="50">&nbsp;</td>
+      <td width="160" align="center" valign="top">
+<table>
+<tbody><tr><th>And Elimination</th></tr>
+<tr><td>&#966;<sub>1</sub> &#8743; ...  &#8743; &#966;<sub><i>n</i></sub></td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966;<sub><i>i</i></sub></td></tr>
+</tbody></table>
+      </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p><i>Or Introduction</i> allows us to infer an arbitrary disjunction so long as at least one of the disjuncts is already in the proof.  <i>Or Elimination</i> is a little more complicated than And Elimination.  Since we do not know which of the disjuncts is true, we cannot just drop the &#8744;.  However, if we know that every disjunct entails some sentence, then we can infer that sentence even if we do not know which disjunct is true.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td valign="top">
+<table>
+<tbody><tr><th>Or Introduction</th></tr>
+<tr><td>&#966;<sub><i>i</i></sub></td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966;<sub>1</sub> &#8744; ... &#8744; &#966;<sub><i>n</i></sub></td></tr>
+</tbody></table>
+      </td>
+      <td width="50">&nbsp;</td>
+      <td valign="top">
+<table>
+<tbody><tr><th>Or Elimination</th></tr>
+<tr><td>&#966;<sub>1</sub> &#8744; ...  &#8744; &#966;<sub><i>n</i></sub></td></tr>
+<tr><td>&#966;<sub>1</sub> &#8658; &#968;</td></tr>
+<tr><td>...</td></tr>
+<tr><td>&#966;<sub><i>n</i></sub> &#8658; &#968;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#968;</td></tr>
+</tbody></table>
+      </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p><i>Negation Introduction</i> allows us to derive the negation of a sentence if it leads to a contradiction.  If we believe (&#966; &#8658; &#968;) and (&#966; &#8658; ¬&#968;), then we can derive that &#966; is false.  <i>Negation Elimination</i> allows us to delete double negatives.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td valign="top">
+<table>
+<tbody><tr><th>Negation Introduction</th></tr>
+<tr><td>&#966; &#8658; <i>&#968;</i></td></tr>
+<tr><td>&#966; &#8658; ¬<i>&#968;</i></td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>¬&#966;</td></tr>
+</tbody></table>
+      </td>
+      <td width="50">&nbsp;</td>
+      <td valign="top">
+<table>
+<tbody><tr><th>Negation Elimination</th></tr>
+<tr><td>¬¬&#966;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966;</td></tr>
+</tbody></table>
+      </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p><i>Implication Introduction</i> is the conditional rule we saw in section 5.3.  If, by assuming &#966;, we can derive &#968;, then we can derive (&#966; &#8658; &#968;).  <i>Implication Elimination</i> is the first rule we saw Section 5.2.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td valign="top">
+<table>
+<tbody><tr><th>Implication Introduction</th></tr>
+<tr><td>&#966; &#8866; &#968;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966; &#8658; &#968;</td></tr>
+</tbody></table>
+      </td>
+      <td width="50">&nbsp;</td>
+      <td valign="top">
+<table>
+<tbody><tr><th>Implication Elimination</th></tr>
+<tr><td>&#966; &#8658; &#968;</td></tr>
+<tr><td>&#966;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#968;</td></tr>
+</tbody></table>
+      </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p><i>Biconditional Introduction</i> allows us to deduce a biconditional from an implication and its inverse.  <i>Biconditional Elimination</i> goes the other way, allowing us to deduce two implications from a single biconditional.</p>
+
+<center>
+  <table style="page-break-inside:avoid">
+    <tbody><tr>
+      <td valign="top">
+<table>
+<tbody><tr><th>Biconditional Introduction</th></tr>
+<tr><td>&#966; &#8658; &#968;</td></tr>
+<tr><td>&#968; &#8658; &#966;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966; &#8660; &#968;</td></tr>
+</tbody></table>
+      </td>
+      <td width="50">&nbsp;</td>
+      <td valign="top">
+<table>
+<tbody><tr><th>Biconditional Elimination</th></tr>
+<tr><td>&#966; &#8660; &#968;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#966; &#8658; &#968;</td></tr>
+<tr><td>&#968; &#8658; &#966;</td></tr>
+</tbody></table>
+      </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>In addition to these rules of inference, it is common to include in Fitch proof editors several additional operations that are of use in constructing Fitch proofs.  For example, the Premise operation allows one to add a new premise to a proof.  The Reiteration operation allows one to reproduce an earlier conclusion for the purposes of clarity.  Finally, the Delete operation allows one to delete unnecessary lines.</p>
+
+<!--=======================================================================-->
+
+<h3>5.4 <a name="section_05_04">Soundness And Completeness</a></h3>
+
+<p>In talking about Logic, we now have two notions - logical entailment and provability. A set of premises logically entails a conclusion if and only if every truth assignment that satisfies the premises also satisfies the conclusion.  A sentence is provable from a set of premises if and only if there is a finite proof of the conclusion from the premises.</p>
+
+<p>The concepts are quite different.  One is based on truth assignments; the other is based on symbolic manipulation of expressions.  Yet, for the proof systems we have been examining, they are closely related.</p>
+
+<p>We say that a proof system is <i>sound</i> if and only if every provable conclusion is logically entailed.  In other words, if &#916; &#8866; &#966;, then &#916; &#8872; &#966;.  We say that a proof system is <i>complete</i> if and only if every logical conclusion is provable.  In other words, if &#916; &#8872; &#966;, then &#916; &#8866; &#966;.</p>
+
+<p>The Fitch system is sound and complete for the full language.  In other words, for this system, logical entailment and provability are identical.  An arbitrary set of sentences &#916; logically entails an arbitrary sentence &#966; if and only if &#966; is provable from &#916; using Fitch.</p>
+
+<p>The upshot of this result is significant.  On large problems, the proof method often takes fewer steps than the truth table method.  (Disclaimer: In the worst case, the proof method may take just as many or more steps to find an answer as the truth table method.)  Moreover, proofs are usually much smaller than the corresponding truth tables. So writing an argument to convince others does not take as much space.</p>
+
+<!--=======================================================================-->
+
+<h3>5.5 <a name="section_05_05">Reasoning Tips</a></h3>
+
+<!--
+<p>Although each of the Fitch rules is simple in itself, constructing complex proofs using the Fitch system can sometimes be difficult.  In this section, we describe some strategies to facilitate this process.  We start with some tips based solely on the form of the goal and then we discuss some tips based on the premises as well as the goal.</p>
+
+
+<p>The Fitch rules are all fairly simple to use; and, as we discuss in the next section, they are all that we need to prove any result that follows logically from any set of premises.  Unfortunately, figuring out which rules to use in any given situation is not always that simple.  Fortunately, there are a few tricks that help in many cases.</p>
+
+<p>(1) To prove a conjunction, prove the conjuncts and then use And Introduction to produce the desired conjunction.</p>
+
+<p>(2) To prove an implication, i.e. a sentence of the form &phi; &rArr; &psi;, assume &phi;, thereby starting a subproof; try to prove &psi;; and, if successful, use Implication Introduction to discharge the subproof and prove the desired implication.</p>
+
+<p>(3) To prove a negation, assume the target of the negated sentence to produce two implications with contradictory conclusions and then use negation introduction to produce the desired negation.</p>
+
+<p>These particular tricks are very useful, but there are many more.  The best way to become adept at producing proofs is to start by proving simple things (e.g. various valid sentences) and then build up incrementally to more complex conclusions.</p>
+-->
+
+
+
+<p>The Fitch rules are all fairly simple to use; and, as we discuss in the next section, they are all that we need to prove any result that follows logically from any set of premises.  Unfortunately, figuring out which rules to use in any given situation is not always that simple.  Fortunately, there are a few tricks that help in many cases.</p>
+
+<p>If the goal has the form (&#966; &#8658; &#968;), it is often good to assume &#966; and prove &#968; and then use Implication Introduction to derive the goal.  For example, if we have a premise <i>q</i> and we want to prove (<i>p</i> &#8658; <i>q</i>), we assume <i>p</i>, reiterate <i>q</i>, and then use Implication Introduction to derive the goal.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td width="20">1.</td>
+      <td><i>q</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>q</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Reiteration: 1</td>
+    </tr>
+
+    <tr height="30">
+      <td>4.</td>
+      <td><i>p</i> &#8658; <i>q</i></td>
+      <td>&nbsp;</td>
+      <td>Implication Introduction: 2, 3</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>If the goal has the form (&#966; &#8743; &#968;), we first prove &#966; and then prove &#968; and then use And Introduction to derive (&#966; &#8743; &#968;).</p>
+
+<p>If the goal has the form (&#966; &#8744; &#968;), all we need to do is to prove &#966; or prove &#968;, but we do not need to prove both.   Once we have proved either one, we can disjoin that with anything else whatsoever.</p>
+
+<p>If the goal has the form (¬&#966;), it is often useful to assume &#966; and prove a contradiction, meaning that &#966; must be false.  To do this, we assume &#966; and derive some sentence &#968; leading to (&#966; &#8658; &#968;).  We assume &#966; again and derive some sentence ¬&#968; leading to (&#966; &#8658; ¬&#968;).  Finally, we use Negation Introduction to derive ¬&#966; as desired.</p>
+
+<p>More generally, whenever we want to prove a sentence &#966; of any sort, we can sometimes succeed by assuming ¬&#966;, proving a contradiction as just discussed and thereby deriving ¬¬&#966;.  We can then apply Negation Elimination to get &#966;.</p>
+
+<p>The following two tips suggest useful things we can try based on the form of the premises and the goal or subgoal we are trying to prove.</p>
+
+<p>If there is a premise of the form (&#966; &#8658; &#968;) and our goal is to prove &#968;, then it is often useful to try proving &#966;.  If we succeed, we can then use Implication Elimination to derive &#968;.</p>
+
+<p>If we have a premise (&#966; &#8744; &#968;) and our goal is to prove &#967;, then we should try proving (&#966; &#8658; &#967;) and (&#968; &#8658; &#967;).  If we succeed, we can then use Or Elimination to derive &#967;.</p>
+
+<p>As an example of using these tips in constructing the proof, consider the following problem.  We are given <i>p</i> &#8744; <i>q</i> and ¬<i>p</i>, and we are asked to prove <i>q</i>.  Since the goal is not an implication or a conjunction or a disjunction or a negation, only the last of the goal-based tips applies.  Unfortunately, this does not help us in this case.  Luckily, the second of the premise-based tips is relevant because we have a disjunction as a premise.  To use this all we need is to prove <i>p</i> &#8658; <i>q</i> and <i>q</i> &#8658; <i>q</i>.  To prove <i>p</i> &#8658; <i>q</i>, we use the first goal-based tip.  We assume <i>p</i> and try to prove <i>q</i>.  To do this we use that last goal-based tip.  We assume ~<i>q</i> and prove <i>p</i>.  Then we assume ~<i>q</i> and prove ¬<i>p</i>.  Since we have proved <i>p</i> and ¬<i>p</i> from ¬<i>q</i>, we can infer <i>q</i>. Using Implication Introduction, we then have <i>p</i> &#8658; <i>q</i>.  Proving <i>q</i> &#8658; <i>q</i> is easy.  Finally, we can apply Or Elimination to get the desired result.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30"><td width="28">1.</td><td><i>p</i> | <i>q</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+
+    <tr height="30"><td>2.</td><td>¬<i>p</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+
+    <tr height="30"><td>3.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td><td>&nbsp;&nbsp;</td><td>Assumption</td></tr>
+
+    <tr height="30"><td>4.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px"><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>q</i></div></div></td><td>&nbsp;&nbsp;</td><td>Assumption</td></tr>
+
+    <tr height="30"><td>5.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px"><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></div></td><td>&nbsp;&nbsp;</td><td>Reiteration: 3</td></tr>
+
+    <tr height="30"><td>6.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>q</i> &#8658; <i>p</i></div></td><td>&nbsp;&nbsp;</td><td>Implication Introduction: 4, 5</td></tr>
+
+    <tr height="30"><td>7.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px"><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>q</i></div></div></td><td>&nbsp;&nbsp;</td><td>Assumption</td></tr>
+
+    <tr height="30"><td>8.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px"><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>p</i></div></div></td><td>&nbsp;&nbsp;</td><td>Reiteration: 2</td></tr>
+
+    <tr height="30"><td>9.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>q</i> &#8658; ¬<i>p</i></div></td><td>&nbsp;&nbsp;</td><td>Implication Introduction: 7, 8</td></tr>
+
+    <tr height="30"><td>10.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬¬<i>q</i></div></td><td>&nbsp;&nbsp;</td><td>Negation Introduction: 6, 9</td></tr>
+
+    <tr height="30"><td>11.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>q</i></div></td><td>&nbsp;&nbsp;</td><td>Negation Elimination: 10</td></tr>
+
+    <tr height="30"><td>12.</td><td><i>p</i> &#8658; <i>q</i></td><td>&nbsp;</td><td>Implication Introduction: 3, 11</td></tr>
+
+    <tr height="30"><td>13.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>q</i></div></td><td>&nbsp;&nbsp;</td><td>Assumption</td></tr>
+
+    <tr height="30"><td>14.</td><td><i>q</i> &#8658; <i>q</i></td><td>&nbsp;</td><td>Implication Introduction: 13</td></tr>
+
+    <tr height="30"><td>15.</td><td><i>q</i></td><td>&nbsp;</td><td>Or Elimination: 1, 12, 14</td></tr>
+
+  </tbody></table>
+</center>
+
+<p>In general, when trying to generate a proof, it is useful to apply the premise tips to derive conclusions.  However, this often works only for very short proofs.  For more complex proofs, it is often useful to think backwards from the desired conclusion before starting to prove things from the premises in order to devise a strategy for approaching the proof.  This often suggests subproblems to be solved.  We can then work on these simpler subproblems and put the solutions together to produce a proofs for our overall conclusion.</p>
+
+
+<!--=======================================================================-->
+
+<h3>5.6 <a name="section_05_06">Some Unnecessary But Useful Rules</a></h3>
+
+As just discussed, the Fitch rules of inference discussed above are complete.  They are all we need to prove any logical conclusion from any set of premises.  However, proving some conclusions can be tedious, and the resulting proofs can be hard to understand.  Adding a few additional rules makes some proofs shorter and simpler.  In this section, we discuss two such rules - False Introduction and False Elimination.
+
+<p><i>False Introduction</i> allows us to deduce <i>false</i> if we have proved any sentence and its negation.  <i>False Elimination</i> allows us to deduce the negation of a sentence if we have a proof in which that sentence is an assumption and <i>false</i> is a conclusion.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td valign="top">
+<table>
+<tbody><tr><th>False Introduction</th></tr>
+<tr><td>&#966;</td></tr>
+<tr><td>¬&#966;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td><i>false</i></td></tr>
+</tbody></table>
+      </td>
+      <td width="50">&nbsp;</td>
+      <td valign="top">
+<table>
+<tbody><tr><th>False Elimination</th></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>&#966; &#8866; <i>false</i></td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>¬&#966;</td></tr>
+</tbody></table>
+      </td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>The main benefit of these rules is that they simplify proofs by contradiction.  As an example, consider the problem of proving the sentence ¬(<i>p</i> &#8743; ¬<i>p</i>).  A proof using our basic rules is shown below.  We start by assuming the negation of our conclusion, i.e. <i>p</i>&#8743;¬<i>p</i>.  We then use And Elimination to split the conjunction; and, finally, we use False Elimination to exit the subproof and yield the desired result.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+
+    <tbody><tr height="30">
+      <td width="20">1.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i>&#8743;¬<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td></tr>
+
+    <tr height="30">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>And Elimination: 1</td></tr>
+
+    <tr height="30">
+      <td>3.</td>
+      <td><i>p</i>&#8743;¬<i>p</i> &#8658; <i>p</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 1, 2</td></tr>
+
+    <tr height="30">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i>&#8743;¬<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td></tr>
+
+    <tr height="30">
+      <td>5.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>And Elimination: 4</td></tr>
+
+    <tr height="30">
+      <td>6.</td>
+      <td><i>p</i>&#8743;¬<i>p</i> &#8658; ¬<i>p</i></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 4, 5</td></tr>
+
+    <tr height="30">
+      <td>7.</td>
+      <td>¬(<i>p</i>&#8743;¬<i>p</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Negation Introduction: 3, 6</td></tr>
+
+  </tbody></table>
+</center>
+
+<p>See below for a proof using our new rules.  As before, we start by assuming the negation of our conclusion, i.e. <i>p</i>&#8743;¬<i>p</i>.  We then use And Elimination to split the conjunction, but in this case we use False Introduction to produce <i>false</i> within a single subproof.  Finally, we use False Elimination to exit the subproof and yield the desired result.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+
+    <tbody><tr height="30">
+      <td width="20">1.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i>&#8743;¬<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td></tr>
+
+    <tr height="30">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>And Elimination: 1</td></tr>
+
+    <tr height="30">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;¬<i>p</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>And Elimination: 1</td></tr>
+
+    <tr height="30">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:12px">&nbsp;<i>false</i></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>False Introduction: 2, 3</td></tr>
+
+    <tr height="30">
+      <td>5.</td>
+      <td>¬(<i>p</i>&#8743;¬<i>p</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>False Elimination: 1, 4</td></tr>
+
+  </tbody></table>
+</center>
+
+<p>This proof is only two steps shorter than the proof without the new rules of inference.  However, the proof is simpler; and the savings that comes from doing just one subproof can be more significant for more complex proofs.</p>
+
+<!--=======================================================================-->
+
+<h3>Recap</h3>
+
+<p style="page-break-inside:avoid"><i>Fitch</i> is a powerful yet simple proof system that supports conditional proofs.  Fitch is sound and complete for Propositional Logic.</p><p></p>
+
+<!--=======================================================================-->
+
+<h3>Exercises</h3>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_01.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.1:</a>  Given <i>p</i> and <i>q</i> and (<i>p</i> &#8743; <i>q</i> &#8658; <i>r</i>), use the Fitch system to prove <i>r</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_02.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.2:</a> Given (<i>p</i> &#8743; <i>q</i>), use the Fitch system to prove (<i>q</i> &#8744; <i>r</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_03.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.3:</a>  Given <i>p</i> &#8658; <i>q</i> and <i>q</i> &#8660; <i>r</i>, use the Fitch system to prove <i>p</i> &#8658; <i>r</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_04.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.4:</a> Given <i>p</i> &#8658; <i>q</i> and <i>m</i> &#8658; <i>p</i> &#8744; <i>q</i>, use the Fitch System to prove <i>m</i> &#8658; <i>q</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_05.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.5:</a> Given <i>p</i> &#8658; (<i>q</i> &#8658; <i>r</i>), use the Fitch System to prove (<i>p</i> &#8658; <i>q</i>) &#8658; (<i>p</i> &#8658; <i>r</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_06.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.6:</a> Use the Fitch System to prove <i>p</i> &#8658; (<i>q</i> &#8658; <i>p</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_07.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.7:</a>  Use the Fitch System to prove (<i>p</i> &#8658; (<i>q</i> &#8658; <i>r</i>)) &#8658; ((<i>p</i> &#8658; <i>q</i>) &#8658; (<i>p</i> &#8658; <i>r</i>)).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_08.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.8:</a>  Use the Fitch System to prove (¬<i>p</i> &#8658; <i>q</i>) &#8658; ((¬<i>p</i> &#8658; ¬<i>q</i>) &#8658; <i>p</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_09.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.9:</a> Given <i>p</i>, use the Fitch System to prove ¬¬<i>p</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_10.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.10:</a> Given <i>p</i> &#8658; <i>q</i>, use the Fitch System to prove ¬<i>q</i> &#8658; ¬<i>p</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_11.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.11:</a> Given <i>p</i> &#8658; <i>q</i>, use the Fitch System to prove ¬<i>p</i> &#8744; <i>q</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_12.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.12:</a> Use the Fitch System to prove ((<i>p</i> &#8658; <i>q</i>) &#8658; <i>p</i>) &#8658; <i>p</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_13.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.13:</a> Given ¬(<i>p</i> &#8744; <i>q</i>), use the Fitch system to prove (¬<i>p</i> &#8743; ¬<i>q</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_05_14.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 5.14:</a> Use the Fitch system to prove the tautology (<i>p</i> &#8744; ¬<i>p</i>).</p>
+
+<!--=======================================================================-->
+
+        </td>
+      </tr>
+    </tbody></table>
+  </center>
+
+
+
+</body></html>

@@ -20,7 +20,9 @@
       <span class="brand-text">Prep</span>
     </a>
     <nav class="nav-links">
+      <a href="{{ url_for('fitch') }}">Fitch</a>
       {% if current_user %}
+        <a href="{{ url_for('generate_page') }}">Generate</a>
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
         <span class="nav-user">{{ current_user['username'] }}</span>
         <a class="btn btn-ghost" id="logout-btn" href="{{ url_for('logout') }}">Log out</a>

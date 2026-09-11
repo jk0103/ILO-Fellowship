@@ -1,0 +1,689 @@
+
+<!-- saved from url=(0055)http://intrologic.stanford.edu/chapters/chapter_10.html -->
+<html><!--=======================================================================--><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Introduction to Logic - Chapter 10</title>
+  <style type="text/css">
+    @media print {table {page-break-inside:avoid}}
+  </style>
+</head>
+
+<!--=======================================================================-->
+
+<body style="background-color:#990000">
+  <center>
+    <table width="720" cellpadding="40" bgcolor="#ffffff">
+      <tbody><tr>
+        <td>
+
+<!--=======================================================================-->
+
+  <center>
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <tbody><tr><td><br></td></tr>
+      <tr>
+        <td height="40" align="center">
+          <span style="font-size:18pt; text-align:center">C H A P T E R&nbsp;&nbsp;10</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <table width="100%" height="60" cellspacing="1" cellpadding="0" bgcolor="#dddddd" border="1">
+      <tbody><tr>
+        <td height="30" align="center">
+          <span style="font-size:28pt;text-align:center">Fitch Proofs</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <br>
+  </center>
+
+<!--=======================================================================-->
+
+<h3>10.1 Introduction</h3>
+
+<p>As with Propositional Logic, we can demonstrate logical entailment in Relational Logic by writing proofs.  As with Propositional Logic, it is possible to show that a set of Relational Logic premises logically entails a Relational Logic conclusion if and only if there is a finite proof of the conclusion from the premises.  Moreover, it is possible to find such proofs in a finite time.</p> 
+
+<p>The Fitch system for Relational Logic is an extension of the Fitch system for Propositional Logic.  In addition to the logical rules of inference we have already seen, there are five new rules of inference - <i>Universal Elimination</i>, <i>Universal Introduction</i>, <i>Existential Introduction</i>, <i>Existential Elimination</i>, and a new type of rule called <i>Domain Closure</i>.</p>
+
+<p>Note that the Fitch system described here works only for premises and conclusions that are closed sentences.  This is not a significant limitation, since every open sentence is logically equivalent to a closed sentence in which the free variables have been universally quantified.</p>
+
+<!--=======================================================================-->
+
+<h3>10.2 Universal Elimination</h3>
+
+<p><i>Universal Elimination</i> (UE) allows us to reason from the general to the particular.  It states that, whenever we believe a universally quantified sentence, we can infer an instance of the target of that sentence in which the universally quantified variable is replaced by a ground term.  (In the following rule, the notation &#966;<sub>&#957;&#8656;&#964;</sub> means an instance of &#966; in which <i>all</i> occurrences of &#957; have been replaced by &#964;.)</p>
+
+<center>
+  <table>
+    <tbody><tr><th>Universal Elimination</th></tr>
+    <tr><td>&#8704;&#957;.&#966;</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#966;<sub>&#957;&#8656;&#964;</sub></td></tr>
+    <tr><td>where &#964; is ground</td></tr>
+  </tbody></table>
+</center>
+
+<p>For example, consider the sentence &#8704;<i>y</i>.<i>hates</i>(<i>jane</i>,<i>y</i>).  From this premise, we can infer that Jane hates Jill, i.e. <i>hates</i>(<i>jane</i>,<i>jill</i>).  We can even infer than Jane hates herself, i.e. <i>hates</i>(<i>jane</i>,<i>jane</i>).</p>
+
+<p>As an example of reasoning with Universal Elimination, consider the following problem.  Suppose we believe that everybody loves somebody.  And suppose we believe that everyone loves a lover.  Our job is to prove that Jack loves Jill.</p>
+
+<p>First, we need to formalize our premises.  Everybody loves somebody.  For all <i>y</i>, there exists a <i>z</i> such that <i>loves</i>(<i>y</i>,<i>z</i>).</p>
+
+<center>
+&#8704;<i>y</i>.&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>)
+</center>
+
+<p>Everybody loves a lover.  If a person is a lover, then everyone loves him.  If a person loves another person, then everyone loves him.  For all <i>x</i> and for all <i>y</i> and for all <i>z</i>, <i>loves</i>(<i>y</i>,<i>z</i>) implies <i>loves</i>(<i>x</i>,<i>y</i>).</p>
+
+<center>
+&#8704;<i>x</i>.&#8704;<i>y</i>.(&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &#8658; <i>loves</i>(<i>x</i>,<i>y</i>))
+</center>
+
+<p>Our goal is to show that Jack loves Jill.  In other words, starting with the preceding sentences, we want to derive the following sentence.</p>
+
+<center>
+<i>loves</i>(<i>jack</i>,<i>jill</i>)
+</center>
+
+<p>A proof of this result is shown below.  Our premises appear on lines 1 and 2.  The sentence on line 3 is the result of applying Universal Elimination to the sentence on line 1, substituting <i>jill</i> for <i>y</i>.  The sentence on line 4 is the result of applying Universal Elimination to the sentence on line 2, substituting <i>jack</i> for <i>x</i>.   The sentence on line 5 is the result of applying Universal Elimination to the sentence on line 4, substituting <i>jill</i> for <i>y</i>.  Finally, we apply Implication Elimination to produce our conclusion on line 6.</p>
+
+<center>
+<table>
+<tbody><tr height="24"><td width="20">1.</td><td>&#8704;<i>y</i>.&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>)</td><td>Premise</td></tr>
+<tr height="24"><td>2.</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &#8658; <i>loves</i>(<i>x</i>,<i>y</i>))</td><td>Premise</td></tr>
+<tr height="24"><td>3.</td><td>&#8707;<i>z</i>.<i>loves</i>(<i>jill</i>,<i>z</i>)</td><td>Universal Elimination: 1</td></tr>
+<tr height="24"><td>4.</td><td>&#8704;<i>y</i>.(&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &#8658; <i>loves</i>(<i>jack</i>,<i>y</i>))</td><td>Universal Elimination: 2</td></tr>
+<tr height="24"><td>5.</td><td>&#8707;<i>z</i>.<i>loves</i>(<i>jill</i>,<i>z</i>) &#8658; <i>loves</i>(<i>jack</i>,<i>jill</i>)</td><td>Universal Elimination: 4</td></tr>
+<tr height="24"><td>6.</td><td><i>loves</i>(<i>jack</i>,<i>jill</i>)</td><td>Implication Elimination: 5,3</td></tr>
+  </tbody></table>
+</center>
+
+<!--=======================================================================-->
+
+<h3>10.3 Universal Introduction</h3>
+
+<p><i>Universal Introduction</i> (UI) is the opposite of Universal Elimination - it allows us to reason from sentences about individuals to universally quantified versions of those sentences.</p>
+
+<p>Unfortunately, it is not as easy as Universal Elimination.  Just because we can prove that a sentence is true of one specific object does not mean that it is true of all objects.  Of course, we could try proving a sentence about every known object.  (See the Domain Closure rule described later in this section.)  However, that could require a lot of work if the universe contains many objects.</p>
+
+<p>Fortunately, there is a technique that allows us to derive universally quantified sentences without enumerating all individual objects.  The trick is the use of a new type of constant, called a <i>placeholder</i>.  A placeholder is effectively a stand-in for an actual object constant; we just do not know which constant it is.  In writing Fitch proofs, we differentiate placeholders from ordinary constants by choosing constants that (1) begin with a letter and (2) do not appear in the given premises.  For example, if the only object constants in our premises are <i>a</i> and <i>b</i>, we might choose <i>c</i> as a placeholder.</p>
+
+<p>The basic idea is to introduce a new placeholder in our proof.  Once we have this new placeholder, we can use it like any other placeholder to derive conclusions.  Since we have not made any assumptions about this object, whatever we derive must be true of all objects.  So we can derive any such conclusion by a universally quantified sentence in which we have replaced the placeholder with a variable, provided that the placeholder does not occur in any active assumptions.</p>
+
+<center>
+<table>
+          <tbody><tr><th>Universal Introduction</th></tr>
+<tr><td>&#966;</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#8704;&#957;.&#966;<sub>&#964;&#8656;&#957;</sub></td></tr>
+<tr><td>where &#964; is not used in any active assumptions</td></tr>
+</tbody></table>
+</center>
+
+<p>Suppose, for example, we have derived the conclusion <i>hates</i>(<i>c</i>,<i>jane</i>) &#8658; <i>hates</i>(<i>jane</i>,<i>c</i>) and suppose that the placeholder <i>c</i> does not occur in any active assumptions.  Then we can use Universal Introduction to conclude the universally quantified sentence &#8704;<i>x</i>.(<i>hates</i>(<i>x</i>,<i>jane</i>) &#8658; <i>hates</i>(<i>jane</i>,<i>x</i>)).</p>
+
+<p>As an example of reasoning with Universal Introduction, consider a slightly more interesting version of the problem from the preceding section.  We start with the same premises.  Everybody loves somebody.  Everybody loves a lover.  However, our goal now is to prove the somewhat stronger result that everyone loves everyone.  For all <i>x</i> and for all <i>y</i>, <i>x</i> loves <i>y</i>.</p>
+
+<center>
+&#8704;<i>x</i>.&#8704;<i>y</i>.<i>loves</i>(<i>x</i>,<i>y</i>)
+</center>
+
+<p>The proof shown below is analogous to the proof above.  The only difference is that we have free variables in place of object constants at various points in the proof.  Once again, our premises appear on lines 1 and 2.  Once again, we use Universal Elimination to produce the result on line 3; but this time the result contains a placeholder.  We get the results on lines 4 and 5 by successive application of Universal Elimination to the sentence on line 2.  We deduce the result on line 6 using Implication Elimination. Finally, we use two applications of Universal Introduction to generalize our result and produce the desired conclusion.</p> 
+
+<center>
+  <table>
+<tbody><tr height="30"><td width="20">1.</td><td>&#8704;<i>y</i>.&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>)</td><td>Premise</td></tr>
+
+<tr height="30"><td>2.</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &#8658; <i>loves</i>(<i>x</i>,<i>y</i>))</td><td>Premise</td></tr>
+
+<tr height="30"><td>3.</td><td>&#8707;<i>z</i>.<i>loves</i>(<i>d</i>,<i>z</i>)</td><td>Universal Elimination: 1</td></tr>
+
+<tr height="30"><td>4.</td><td>&#8704;<i>y</i>.(&#8707;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &#8658; <i>loves</i>(<i>c</i>,<i>y</i>))</td><td>Universal Elimination: 2</td></tr>
+
+<tr height="30"><td>5.</td><td>&#8707;<i>z</i>.<i>loves</i>(<i>d</i>,<i>z</i>) &#8658; <i>loves</i>(<i>c</i>,<i>d</i>)</td><td>Universal Elimination: 4</td></tr>
+
+<tr height="30"><td>6.</td><td><i>loves</i>(<i>c</i>,<i>d</i>)</td><td>Implication Elimination: 5,3</td></tr>
+
+<tr height="30"><td>7.</td><td>&#8704;<i>y</i>.<i>loves</i>(<i>c</i>,<i>y</i>)</td><td>Universal Introduction: 6</td></tr>
+
+<tr height="30"><td>8.</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.<i>loves</i>(<i>x</i>,<i>y</i>)</td><td>Universal Introduction: 7</td></tr>
+  </tbody></table>
+</center>
+
+<p>This example illustrates the use of placeholders.  We can manipulate them as though we are talking about specific individuals (though each one could be any object); and, when we are done, we can universalize them to derive universally quantified conclusions.</p>
+
+<!--=======================================================================-->
+
+<h3>10.4 Existential Introduction</h3>
+
+<p><i>Existential Introduction</i> (EI) is easy.  If we believe a sentence involving a ground term &#964;, then we can infer an existentially quantified sentence in which occurrences of &#964; have been replaced by the existentially quantified variable.  (In the following rule, the notation &#966;<sub>&#957;&#8592;&#964;</sub> means an instance of &#966; in which <i>zero or more</i> occurrences of &#957; have been replaced by &#964;.)</p>
+
+<center>
+  <table>
+    <tbody><tr><th>Existential Introduction</th></tr>
+    <tr><td>&#966;</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8707;&#957;.&#966;<sub>&#964;&#8592;&#957;</sub></td></tr>
+    <tr><td>where &#964; is ground</td></tr>
+  </tbody></table>
+</center>
+
+<p>For example, from the sentence <i>hates</i>(<i>jill</i>,<i>jill</i>), we can infer that there is someone who hates himself, i.e. &#8707;<i>x</i>.<i>hates</i>(<i>x</i>,<i>x</i>).  We can also infer that there is someone Jill hates, i.e. &#8707;<i>y</i>.<i>hates</i>(<i>jill</i>,<i>y</i>), and there is someone who hates Jill, i.e. &#8707;<i>x</i>.<i>hates</i>(<i>x</i>,<i>jill</i>).  And, by two applications of Existential Introduction, we can infer that someone hates someone, i.e. &#8707;<i>x</i>.&#8707;<i>y</i>.<i>hates</i>(<i>x</i>,<i>y</i>).</p>
+
+<p>Note that Existential Introduction applies only in cases where the term being replaced is ground.  This restriction is necessary to avoid incorrect conclusions.  Suppose, for example, we had the sentence &#8704;<i>x</i>.<i>hates</i>(<i>x</i>,<i>x</i>).  If we were to use EI to replace the second occurrence of <i>x</i>, we would get the conclusion &#8707;<i>y</i>.&#8704;<i>x</i>.<i>hates</i>(<i>x</i>,<i>y</i>), i.e. there is someone whom everyone hates.  The original sentence says that everyone hates himself whereas this incorrect conclusion states that there is a single person whom everyone hates.</p>
+
+<p>As an example of reasoning with Existential Introduction, consider the following problem.  Given &#8704;<i>x</i>.(&#8707;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>) &#8658; <i>q</i>(<i>x</i>)), we know that &#8704;<i>x</i>.&#8704;<i>y</i>.(<i>p</i>(<i>x</i>,<i>y</i>) &#8658; <i>q</i>(<i>x</i>)).  We can convert an existential quantifier in the antecedent of an implication into a universal quantifier outside the implication.</p>
+
+<p>Our proof is shown below.  Once again, we start with our premise.  We create a new placeholder and use Universal Elimination to strip away the quantifier in the premise to expose the implication.  We start a subproof by making an assumption.  We make an assumption using another new placeholder.  We turn the assumption into an existential sentence to match the antecedent of the premise in line 2.  Then, we apply Implication Elimination to derive <i>q</i>(<i>c</i>).  We use Implication Introduction to create an implication.  Finally, we generalize using two applications of Universal Introduction.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8704;<i>x</i>.(&#8707;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>) &#8658; <i>q</i>(<i>x</i>))</td>
+      <td>&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td>&#8707;<i>y</i>.<i>p</i>(<i>c</i>,<i>y</i>) &#8658; <i>q</i>(<i>c</i>)</td>
+      <td>&nbsp;Universal Elimination: 1</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:16px">&nbsp;<i>p</i>(<i>c</i>,<i>d</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:16px">&nbsp;&#8707;<i>y</i>.<i>p</i>(<i>c</i>,<i>y</i>)</div></td>
+      <td>&nbsp;Existential Introduction: 3</td>
+    </tr>
+
+    <tr height="28">
+      <td>5.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:16px">&nbsp;<i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Implication Elimination: 2, 4</td>
+    </tr>
+
+    <tr height="28">
+      <td>6.</td>
+      <td><i>p</i>(<i>c</i>,<i>d</i>) &#8658; <i>q</i>(<i>c</i>)</td>
+      <td>&nbsp;Implication Introduction: 3, 5</td>
+    </tr>
+
+    <tr height="28">
+      <td>7.</td>
+      <td>&#8704;<i>y</i>.(<i>p</i>(<i>c</i>,<i>y</i>) &#8658; <i>q</i>(<i>c</i>))</td>
+      <td>&nbsp;Universal Introduction: 6</td>
+    </tr>
+
+    <tr height="28">
+      <td>8.</td>
+      <td>&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>p</i>(<i>x</i>,<i>y</i>) &#8658; <i>q</i>(<i>x</i>))</td>
+      <td>&nbsp;Universal Introduction: 7</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<!--=======================================================================-->
+
+<h3>10.5 Existential Elimination</h3>
+
+<p><i>Existential Elimination</i> (EE) works in the opposite direction.Suppose we have an existentially quantified sentence with target &#966;; and suppose we have a universally quantified implication in which the antecedent is the same as the scope of our existentially quantified sentence and the conclusion does not contain any occurrences of the quantified variable.  Then, we can use Existential Elimination to infer the consequent.</p>
+
+<center>
+<table>
+          <tbody><tr><th>Existential Elimination</th></tr>
+<tr><td>&#8707;&#957;.&#966;</td></tr>
+<tr><td>&#8704;&#957;.(&#966; &#8658; &#968;)</td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+<tr><td>&#968;</td></tr>
+<tr><td>where &#957; does not occur free in &#968;</td></tr>
+</tbody></table>
+</center>
+
+<p>For example, if we have the sentence &#8707;<i>x</i>.<i>p</i>(<i>a</i>,<i>x</i>) and we have the sentence &#8704;<i>x</i>.(<i>p</i>(<i>a</i>,<i>x</i>) &#8658; <i>q</i>(<i>a</i>)), then we can apply existential elimination to conclude <i>q</i>(<i>a</i>)).</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+
+    <tbody><tr height="28">
+      <td>1.</td>
+      <td>&#8707;<i>x</i>.<i>p</i>(<i>a</i>,<i>x</i>)</td>
+      <td>&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td width="22">2.</td>
+      <td>&#8704;<i>x</i>.(<i>p</i>(<i>a</i>,<i>x</i>) &#8658; <i>q</i>(<i>a</i>))</td>
+      <td>&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><i>q</i>(<i>a</i>)</td>
+      <td>&nbsp;Existential Elimination: 1, 2</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>Note that the condition that &#957; does not occur free in &#968; is essential.  Consider the following <i>erroneous</i> line of reasoning to see what goes wrong without this condition.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+
+    <tbody><tr height="28">
+      <td>1.</td>
+      <td>&#8707;<i>x</i>.<i>p</i>(<i>x</i>)</td>
+      <td>&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td>&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>))</td>
+      <td>&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><i>q</i>(<i>x</i>)</td>
+      <td>&nbsp;Existential Elimination: 1, 2</td>
+    </tr>
+
+    <tr height="28">
+      <td>4.</td>
+      <td>&#8704;<i>x</i>.<i>q</i>(<i>x</i>)</td>
+      <td>&nbsp;Universal Introduction: 3</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>If <i>p</i> is true of an object, then <i>q</i> is also true of that object.  We know that <i>p</i> is true of at least one object.  And somehow we have shown that <i>q</i> is true of everything, which does not follow from the given premises.</p>
+
+<p>In order to understand why existential elimination works, assume we know &#8707;<i>x</i>.<i>p</i>(<i>x</i>) and we also know &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>c</i>)).  The distribution theorem for universal quantifiers tells us that the second sentence is logically equivalent to &#8707;<i>x</i>.<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>c</i>).  Given a sentence that matches the first premise of Existential Elimination, e.g. &#8707;<i>x</i>.<i>p</i>(<i>x</i>), we can use Implication Elimination to conclude <i>q</i>(<i>c</i>), which is exactly what Existential Elimination allows us to do.</p>
+
+<p>This intuition raises the question of why Existential Elimination needs to be so complicated.  Why not use the version with an existential in the antecedent?  The reason is not easy to explain.  Suffice it to say that there are things that are logically entailed that cannot be proved without the version of Existential Elimination with the universal quantifier wrapped around the entire implication.</p>
+
+<p>It is interesting to note that Existential Elimination is analogous to Or Elimination.  An existential sentence is effectively a disjunction.  To see this, consider a language with just two object constants <i>a</i> and <i>b</i> (or, equivalently, a world with just two objects).  Now suppose we learn that there is some object that satisfies the <i>p</i> relation, i.e. &#8707;<i>x</i>.<i>p</i>(<i>x</i>).  Then we know that <i>p</i> must be true of at least one of <i>a</i> or <i>b</i>, i.e. <i>p</i>(<i>a</i>) &#8744; <i>p</i>(<i>b</i>).</p>
+
+<p>Now, recall that, in Or Elimination, we start with a disjunction with <i>n</i> disjuncts and <i>n</i> implications, one for each of the disjuncts and produce as conclusion the consequent shared by all of the implications.  An existential sentence (like the first premise in any instance of Existential Elimination) is effectively a disjunction over the set of all ground terms; and a universal implication (like the second premise in any instance of Existential Elimination) is effectively a set of implications, one for each ground term in the language.  The conclusion of Existential Elimination is the common consequent of these implications, just as in Or Elimination.</p>
+
+<p>Reasoning with existential statements is difficult, and confusion about Existential Elimination only complicates matters.  However, such reasoning can be simplified by thinking about existential reasoning in the right way.  The basic idea is illustrated in the following examples.</p>
+
+<p>Suppose we are given the statement &#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>)) and we are asked to prove  the statement &#8707;<i>x</i>.<i>q</i>(<i>x</i>).  We begin our proof with the given premise.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>We know there is an object that satisfies both <i>p</i> and <i>q</i>.  In order to make progress, let's use a placeholder, e.g. <i>c</i>, to talk about this object, and let us assume that <i>c</i> satisfies the scope of the existential.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>At this point, we use and elimination to split the conjunction.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;And Elimination: 2</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>Now, we use existential introduction to derive the sentence we are trying to prove.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;And Elimination: 2</td>
+    </tr>
+
+    <tr height="28">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;&#8707;<i>x</i>.<i>q</i>(<i>x</i>)</div></td>
+      <td>&nbsp;Existential Introduction: 3</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>That looks good, but our conclusion is embedded in a subproof.  We have shown that &#8707;<i>x</i>.<i>q</i>(<i>x</i>) is true under the assumption that <i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>) is true.  To finish the proof, we need to get the conclusion out of the subproof.  Fortunately, this is easy to do, but it takes a few steps.</p>
+
+<p>First, we use Implication Introduction to exit the subproof.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;And Elimination: 2</td>
+    </tr>
+
+    <tr height="28">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;&#8707;<i>x</i>.<i>q</i>(<i>x</i>)</div></td>
+      <td>&nbsp;Existential Introduction: 3</td>
+    </tr>
+
+    <tr height="28">
+      <td>5.</td>
+      <td><i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>) &#8658; &#8707;<i>x</i>.<i>q</i>(<i>x</i>)</td>
+      <td>&nbsp;Implication Introduction: 2, 4</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>Next, we get rid of our placeholder using Universal Introduction.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;And Elimination: 2</td>
+    </tr>
+
+    <tr height="28">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;&#8707;<i>x</i>.<i>q</i>(<i>x</i>)</div></td>
+      <td>&nbsp;Existential Introduction: 3</td>
+    </tr>
+
+    <tr height="28">
+      <td>5.</td>
+      <td><i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>) &#8658; &#8707;<i>x</i>.<i>q</i>(<i>x</i>)</td>
+      <td>&nbsp;Implication Introduction: 2, 4</td>
+    </tr>
+
+    <tr height="28">
+      <td>6.</td>
+      <td>&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>) &#8658; &#8707;<i>x</i>.<i>q</i>(<i>x</i>))</td>
+      <td>&nbsp;Universal Introduction: 5</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>Finally, we use existential elimination to get our desired conclusion.</p>
+
+<center>
+  <table width="450" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="22">1.</td>
+      <td>&#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>))</td>
+      <td width="240">&nbsp;Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td>2.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td>3.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;And Elimination: 2</td>
+    </tr>
+
+    <tr height="28">
+      <td>4.</td>
+      <td><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;&#8707;<i>x</i>.<i>q</i>(<i>x</i>)</div></td>
+      <td>&nbsp;Existential Introduction: 3</td>
+    </tr>
+
+    <tr height="28">
+      <td>5.</td>
+      <td><i>p</i>(<i>c</i>) &#8743; <i>q</i>(<i>c</i>) &#8658; &#8707;<i>x</i>.<i>q</i>(<i>x</i>)</td>
+      <td>&nbsp;Implication Introduction: 2, 4</td>
+    </tr>
+
+    <tr height="28">
+      <td>6.</td>
+      <td>&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>) &#8658; &#8707;<i>x</i>.<i>q</i>(<i>x</i>))</td>
+      <td>&nbsp;Universal Introduction: 5</td>
+    </tr>
+
+    <tr height="28">
+      <td>7.</td>
+      <td>&#8707;<i>x</i>.<i>q</i>(<i>x</i>)</td>
+      <td>&nbsp;Existential Elimination: 1, 6</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>The key to this proof is the subproof.  Given an existential statement, we start by assuming the scope of true for some placeholder and we prove our result.  Having done this, we use Implication Introduction, Universal Introduction, and Existential Elimination to get the conclusion out of the subproof.</p>
+
+<!--=======================================================================-->
+
+<h3>10.6 Domain Closure</h3>
+
+<p><i>Domain Closure</i> (DC) offers an alternative way to derive universally quantified sentences.  For a language with object constants &#963;<sub>1</sub>, ... , &#963;<sub><i>n</i></sub>, the rule is written as shown below.  If we believe a schema is true for every instance, then we can infer a universally quantified version of that schema.</p>
+
+<center>
+  <table>
+    <tbody><tr><th>Domain Closure</th></tr>
+    <tr><td>&#966;[&#963;<sub>1</sub>]</td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;...</td></tr>
+    <tr><td>&#966;[&#963;<sub><i>n</i></sub>]</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+
+<p>For example, in a language with four object constants <i>a</i> and <i>b</i> and <i>c</i> and <i>d</i>, we can derive the conclusion &#8704;<i>x</i>.&#966;[<i>x</i>] whenever we have &#966;[<i>a</i>] and  &#966;[<i>b</i>] and  &#966;[<i>c</i>] and  &#966;[<i>d</i>].</p>
+
+<p>Note that in applying Domain Closure, we do <i>not</i> need to worry about placeholders.  Placeholders are just surrogates for constants in our language.  If we have managed to prove that a condition holds for all of our object constants, then it must be true of everything, including whatever objects our placeholders represent.</p> 
+
+<p>Why restrict Domain Closure to languages with finitely many ground terms?  Why not use domain closure rules for languages with infinitely many ground terms as well?  It would be good if we could, but this would require rules of infinite length, and we do not allow infinitely large sentences in our language.  We can get the effect of such sentences through the use of <i>induction</i>, which is discussed in a later chapter.</p>
+
+<!--=======================================================================-->
+
+<!--<h3>10.7 Examples</h3>
+
+<p>As an illustration of these concepts, consider the following problem.  Suppose we believe that everybody loves somebody.  And suppose we believe that everyone loves a lover.  Our job is to prove that Jack loves Jill.</p>
+
+<p>First, we need to formalize our premises.  Everybody loves somebody.  For all <i>y</i>, there exists a <i>z</i> such that <i>loves</i>(<i>y</i>,<i>z</i>).</p>
+
+<center>
+&forall;<i>y</i>.&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>)
+</center>
+
+<p>Everybody loves a lover.  If a person is a lover, then everyone loves him.  If a person loves another person, then everyone loves him.  For all <i>x</i> and for all <i>y</i> and for all <i>z</i>, <i>loves</i>(<i>y</i>,<i>z</i>) implies <i>loves</i>(<i>x</i>,<i>y</i>).</p>
+
+<center>
+&forall;<i>x</i>.&forall;<i>y</i>.(&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &rArr; <i>loves</i>(<i>x</i>,<i>y</i>))
+</center>
+
+<p>Our goal is to show that Jack loves Jill.  In other words, starting with the preceding sentences, we want to derive the following sentence.</p>
+
+<center>
+<i>loves</i>(<i>jack</i>,<i>jill</i>)
+</center>
+
+<p>A proof of this result is shown below.  Our premises appear on lines 1 and 2.  The sentence on line 3 is the result of applying Universal Elimination to the sentence on line 1, substituting <i>jill</i> for <i>y</i>.  The sentence on line 4 is the result of applying Universal Elimination to the sentence on line 2, substituting <i>jack</i> for <i>x</i>.   The sentence on line 5 is the result of applying Universal Elimination to the sentence on line 4, substituting <i>jill</i> for <i>y</i>.  Finally, we apply Implication Elimination to produce our conclusion on line 6.</p>
+
+<center>
+<table>
+<tr height='24'><td width='20'>1.</td><td>&forall;<i>y</i>.&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>)</td><td>Premise</td></tr>
+<tr height='24'><td>2.</td><td>&forall;<i>x</i>.&forall;<i>y</i>.(&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &rArr; <i>loves</i>(<i>x</i>,<i>y</i>))</td><td>Premise</td></tr>
+<tr height='24'><td>3.</td><td>&exist;<i>z</i>.<i>loves</i>(<i>jill</i>,<i>z</i>)</td><td>Universal Elimination: 1</td></tr>
+<tr height='24'><td>4.</td><td>&forall;<i>y</i>.(&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &rArr; <i>loves</i>(<i>jack</i>,<i>y</i>))</td><td>Universal Elimination: 2</td></tr>
+<tr height='24'><td>5.</td><td>&exist;<i>z</i>.<i>loves</i>(<i>jill</i>,<i>z</i>) &rArr; <i>loves</i>(<i>jack</i>,<i>jill</i>)</td><td>Universal Elimination: 4</td></tr>
+<tr height='24'><td>6.</td><td><i>loves</i>(<i>jack</i>,<i>jill</i>)</td><td>Implication Elimination: 5,3</td></tr>
+  </table>
+</center>
+
+<p>Now, let's consider a slightly more interesting version of this problem.  We start with the same premises.  However, our goal now is to prove the somewhat stronger result that everyone loves everyone.  For all <i>x</i> and for all <i>y</i>, <i>x</i> loves <i>y</i>.</p>
+
+<center>
+&forall;<i>x</i>.&forall;<i>y</i>.<i>loves</i>(<i>x</i>,<i>y</i>)
+</center>
+
+<p>The proof shown below is analogous to the proof above.  The only difference is that we have free variables in place of object constants at various points in the proof.  Once again, our premises appear on lines 1 and 2.  Once again, we use Universal Elimination to produce the result on line 3; but this time the result contains a placeholder.  We get the results on lines 4 and 5 by successive application of Universal Elimination to the sentence on line 2.  We deduce the result on line 6 using Implication Elimination. Finally, we use two applications of Universal Introduction to generalize our result and produce the desired conclusion.</p> 
+
+<center>
+  <table>
+<tr height='30'><td width='20'>1.</td><td>&forall;<i>y</i>.&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>)</td><td>Premise</td></tr>
+
+<tr height='30'><td>2.</td><td>&forall;<i>x</i>.&forall;<i>y</i>.(&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &rArr; <i>loves</i>(<i>x</i>,<i>y</i>))</td><td>Premise</td></tr>
+
+<tr height='30'><td>3.</td><td>&exist;<i>z</i>.<i>loves</i>(<i>d</i>,<i>z</i>)</td><td>Universal Elimination: 1</td></tr>
+
+<tr height='30'><td>4.</td><td>&forall;<i>y</i>.(&exist;<i>z</i>.<i>loves</i>(<i>y</i>,<i>z</i>) &rArr; <i>loves</i>(<i>c</i>,<i>y</i>))</td><td>Universal Elimination: 2</td></tr>
+
+<tr height='30'><td>5.</td><td>&exist;<i>z</i>.<i>loves</i>(<i>d</i>,<i>z</i>) &rArr; <i>loves</i>(<i>c</i>,<i>d</i>)</td><td>Universal Elimination: 4</td></tr>
+
+<tr height='30'><td>6.</td><td><i>loves</i>(<i>c</i>,<i>d</i>)</td><td>Implication Elimination: 5,3</td></tr>
+
+<tr height='30'><td>7.</td><td>&forall;<i>y</i>.<i>loves</i>(<i>c</i>,<i>y</i>)</td><td>Universal Introduction: 6</td></tr>
+
+<tr height='30'><td>8.</td><td>&forall;<i>x</i>.&forall;<i>y</i>.<i>loves</i>(<i>x</i>,<i>y</i>)</td><td>Universal Introduction: 7</td></tr>
+  </table>
+</center>
+
+<p>This second example illustrates the use of placeholders.  We can manipulate them as though we are talking about specific individuals (though each one could be any object); and, when we are done, we can universalize them to derive universally quantified conclusions.</p>-->
+
+<!--=======================================================================-->
+
+<h3>Recap</h3>
+
+<p>A Fitch system for Relational Logic can be obtained by extending the Fitch system for Propositional Logic with five additional rules to deal with quantifiers.  The <i>Universal Elimination</i> rule allows us to reason from a universally quantified sentence to a version of the target of that sentence in which the universally quantified variable is replaced by an appropriate term.  The <i>Universal Introduction</i> rule allows us to reason from arbitrary sentences to universally quantified versions of those sentences.  The <i>Existential Introduction</i> rule allows us to reason from a sentence involving a term &#964; to an existentially quantified sentence in which one, some, or all occurrences of &#964; have been replaced by the existentially quantified variable.  The <i>Existential Elimination</i> rule allows us to derive consequences of an existentially quantified sentence.  Finally, the Domain Closure rule allows us to reason from all instances of a sentence to a universally quantified version of that sentence.</p>
+
+<!--=======================================================================-->
+
+<h3>Exercises</h3>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_01.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.1:</a> Given &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>)), use the Fitch System to prove &#8704;<i>x</i>.<i>p</i>(<i>x</i>) &#8743; &#8704;<i>x</i>.<i>q</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_02.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.2:</a> Given &#8704;<i>x</i>.<i>p</i>(<i>x</i>) &#8743; &#8704;<i>x</i>.<i>q</i>(<i>x</i>), use the Fitch System to prove &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>)).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_03.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.3:</a> Given &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>)), use the Fitch System to prove &#8704;<i>x</i>.<i>p</i>(<i>x</i>) &#8658; &#8704;<i>x</i>.<i>q</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_04.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.4:</a> Given &#8704;<i>x</i>.<i>p</i>(<i>x</i>) &#8744; &#8704;<i>x</i>.<i>q</i>(<i>x</i>), use the Fitch System to prove &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8744; <i>q</i>(<i>x</i>)).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_05.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.5:</a> Given &#8704;<i>x</i>.&#8704;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>), use the Fitch System to prove &#8704;<i>y</i>.&#8704;<i>x</i>.<i>p</i>(<i>x</i>,<i>y</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_06.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.6:</a> Given &#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>q</i>(<i>x</i>)), use the Fitch System to prove &#8707;<i>x</i>.<i>p</i>(<i>x</i>) &#8743; &#8707;<i>x</i>.<i>q</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_07.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.7:</a> Given &#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8744; <i>q</i>(<i>x</i>)), use the Fitch System to prove &#8707;<i>x</i>.<i>p</i>(<i>x</i>) &#8744; &#8707;<i>x</i>.<i>q</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_08.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.8:</a> Given &#8707;<i>x</i>.<i>p</i>(<i>x</i>) &#8744; &#8707;<i>x</i>.<i>q</i>(<i>x</i>), use the Fitch System to prove &#8707;<i>x</i>.(<i>p</i>(<i>x</i>) &#8744; <i>q</i>(<i>x</i>)).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_09.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.9:</a> Given &#8707;<i>x</i>.&#8707;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>), use the Fitch System to prove &#8707;<i>y</i>.&#8707;<i>x</i>.<i>p</i>(<i>x</i>,<i>y</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_10.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.10:</a> Given &#8707;<i>y</i>.&#8704;<i>x</i>.<i>p</i>(<i>x</i>,<i>y</i>), use the Fitch system to prove &#8704;<i>x</i>.&#8707;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_11.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.11:</a> Given &#8707;<i>x</i>.¬<i>p</i>(<i>x</i>), use the Fitch System to prove ¬&#8704;<i>x</i>.<i>p</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_12.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.12:</a> Given &#8704;<i>x</i>.¬<i>p</i>(<i>x</i>), use the Fitch System to prove ¬&#8707;<i>x</i>.<i>p</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_13.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.13:</a> Given ¬&#8707;<i>x</i>.<i>p</i>(<i>x</i>), use the Fitch System to prove &#8704;<i>x</i>.¬<i>p</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_14.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.14:</a> Given ¬&#8704;<i>x</i>.<i>p</i>(<i>x</i>), use the Fitch System to prove &#8707;<i>x</i>.¬<i>p</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_15.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.15:</a> Consider a language with just three object constants - <i>a</i>, <i>b</i>, and <i>c</i>.  Given <i>p</i>(<i>a</i>,<i>b</i>) and <i>p</i>(<i>b</i>,<i>c</i>) and <i>p</i>(<i>c</i>,<i>a</i>), use the Fitch System to prove &#8704;<i>x</i>.&#8707;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_10_16.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 10.16:</a> Consider a language with just two object constants - <i>a</i> and <i>b</i>.  Given ¬<i>p</i>(<i>a</i>) and <i>q</i>(<i>b</i>), use the Fitch System to prove &#8704;<i>x</i>(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>)).</p>
+
+<!--<p><a href='../exercises/exercise_10_03.html' style='color:#6666ff;cursor:pointer;text-decoration:none'>Exercise 10.3:</a> Given the premises &forall;<i>x</i>.(<i>p</i>(<i>x</i>) &rArr; <i>q</i>(<i>x</i>)) and &forall;<i>x</i>.(<i>q</i>(<i>x</i>) &rArr; <i>r</i>(<i>x</i>)), use the Fitch system to prove the conclusion &forall;<i>x</i>.(<i>p</i>(<i>x</i>) &rArr; <i>r</i>(<i>x</i>)).</p>-->
+
+<!--<p><a href='../exercises/exercise_10_05.html' style='color:#6666ff;cursor:pointer;text-decoration:none'>Exercise 10.5:</a> Given &forall;<i>x</i>.&forall;<i>y</i>.<i>p</i>(<i>x</i>,<i>y</i>), use the Fitch System to prove &forall;<i>x</i>.&forall;<i>y</i>.<i>p</i>(<i>y</i>,<i>x</i>).</p>-->
+
+<!--
+<hr/>
+
+<!--=======================================================================-->
+
+        </td>
+      </tr>
+    </tbody></table>
+  </center>
+
+
+
+
+
+</body><!--=======================================================================--></html>

@@ -17,10 +17,26 @@ users/{uid}
 usernames/{username_lower}
     uid           (str)
 
+questions/{fingerprint}
+    statement     (str)  the exercise as prose
+    premises      (list[str])
+    goal          (str)
+    hint          (str)
+    proof         (list[map])  the worked answer, one map per line
+    line_count    (int)  len(proof)
+    difficulty    (str)  "easy" | "medium" | "hard", from line_count
+    source        (str)  "generated" or "seed"
+    created_by    (str or None)  uid of whoever generated it
+    created_at    (server timestamp)
+
+The document id is a fingerprint of the premises and goal, so generating the
+same exercise twice updates one document instead of accumulating duplicates.
+
 Firestore has no unique constraints, so the username is the document id in
 `usernames` and reserved in the same transaction that writes the profile.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -31,6 +47,7 @@ from firebase_admin import credentials, firestore
 
 USERS = "users"
 USERNAMES = "usernames"
+QUESTIONS = "questions"
 
 _client = None
 _lock = threading.Lock()
@@ -237,3 +254,101 @@ def delete_profile(uid):
     if username:
         db.collection(USERNAMES).document(username.lower()).delete()
     db.collection(USERS).document(uid).delete()
+
+
+# --- questions --------------------------------------------------------------
+
+def question_id(premises, goal):
+    """A stable id for an exercise, so the same problem never lands twice.
+
+    Formulas are normalised through the checker first, so "p&q" and "p ∧ q"
+    fingerprint alike.
+    """
+    import fitch_checker as fc
+
+    parts = sorted(fc.show(fc.parse(p)) for p in premises) + \
+        ["⊢ " + fc.show(fc.parse(goal))]
+    digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+    return digest[:20]
+
+
+def save_question(question, created_by=None, source="generated"):
+    """Write one verified question and return its document id.
+
+    `question` is what fitch_generator.generate() returns: premises, goal,
+    hint, proof, difficulty, line_count and statement. Nothing is validated
+    here — callers check the proof with fitch_checker before saving.
+    """
+    qid = question_id(question["premises"], question["goal"])
+    ref = get_client().collection(QUESTIONS).document(qid)
+    existing = ref.get()
+
+    payload = {
+        "statement": question["statement"],
+        "premises": question["premises"],
+        "goal": question["goal"],
+        "hint": question.get("hint", ""),
+        "proof": question["proof"],
+        "line_count": question["line_count"],
+        "difficulty": question["difficulty"],
+        "source": source,
+    }
+    if existing.exists:
+        # Keep the original authorship and timestamp; only the answer can change
+        # (a later run may find a shorter proof, which changes the difficulty).
+        ref.update(payload)
+    else:
+        payload["created_by"] = created_by
+        payload["created_at"] = firestore.SERVER_TIMESTAMP
+        ref.set(payload)
+    return qid
+
+
+def get_question(qid):
+    """One question by id, or None."""
+    if not qid:
+        return None
+    snapshot = get_client().collection(QUESTIONS).document(qid).get()
+    if not snapshot.exists:
+        return None
+    data = snapshot.to_dict() or {}
+    data["id"] = qid
+    return data
+
+
+def list_questions(difficulty=None, limit=100):
+    """Stored questions, newest first, optionally filtered by difficulty.
+
+    Ordering by created_at with an equality filter needs a composite index in
+    Firestore, so the difficulty filter is applied here instead. That is fine
+    at this size and keeps deployment to a single collection with no index
+    configuration.
+    """
+    query = get_client().collection(QUESTIONS) \
+        .order_by("created_at", direction=firestore.Query.DESCENDING) \
+        .limit(max(1, min(int(limit), 500)))
+
+    out = []
+    for snapshot in query.stream():
+        data = snapshot.to_dict() or {}
+        if difficulty and data.get("difficulty") != difficulty:
+            continue
+        data["id"] = snapshot.id
+        out.append(data)
+    return out
+
+
+def question_counts():
+    """How many questions are stored, per difficulty band."""
+    counts = {"easy": 0, "medium": 0, "hard": 0, "total": 0}
+    for snapshot in get_client().collection(QUESTIONS).stream():
+        band = (snapshot.to_dict() or {}).get("difficulty")
+        if band in counts:
+            counts[band] += 1
+        counts["total"] += 1
+    return counts
+
+
+def delete_question(qid):
+    """Remove one question. Used by tests and cleanup."""
+    get_client().collection(QUESTIONS).document(qid).delete()
