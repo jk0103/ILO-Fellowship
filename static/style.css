@@ -1,14 +1,50 @@
 :root {
-  --bg: #0e1117;
-  --bg-soft: #161b26;
-  --border: #262c3a;
-  --text: #e6e9ef;
-  --muted: #9aa3b5;
-  --accent: #6c8cff;
-  --accent-hover: #839eff;
-  --danger: #ff6b6b;
-  --success: #4ade80;
+  /* The ILO palette — a deep red, a coral orange and a steel blue — on white.
+   *
+   * Each colour has a job, so the page never has to guess which one to reach
+   * for: RED is identity and the primary action (the nav bar, the brand mark,
+   * primary buttons, page headings); ORANGE is highlight and secondary call to
+   * action; BLUE is the proof workspace and every interactive affordance
+   * (links, focus rings, scope bars, selection). */
+  --red: #a4161a;
+  --red-bright: #c8102e;
+  /* A true orange, near 26° — the earlier coral sat at 10°, close enough to
+     red that the two read as one colour. The bright tone fills shapes; the
+     deep one is for orange used AS TEXT, where the bright one is too light. */
+  --orange: #ed7a1b;
+  --orange-deep: #b45309;
+  --orange-hover: #8f4207;
+  --blue: #297197;
+  --blue-hover: #1f5572;
+
+  /* On the bar: a filled orange for the one action, and three light accents for
+     the link underlines — lightened, because the body's orange and blue are too
+     dark to register against the red. */
+  --nav-orange: #bd5a13;
+  --nav-underline-1: #ffab5e;
+  --nav-underline-2: #8ec6e0;
+  --nav-underline-3: #ffffff;
+
+  /* Tints, for the badges and alerts. */
+  --tint-red: #fdf0f1;
+  --tint-orange: #fdf2e4;
+  --tint-blue: #eaf3f8;
+
+  --bg: #ffffff;
+  --bg-soft: #f8f6f5;     /* a warm off-white, so cards sit under the red */
+  --bg-tint: #fcfbfa;
+  --border: #e4dedb;
+  --text: #1f1d1c;
+  --muted: #6b6663;
+
+  --accent: var(--blue);         /* the primary action and every affordance */
+  --accent-hover: var(--blue-hover);
+  --link: var(--blue);
+  --danger: var(--red-bright);
+  --success: #0e8a6f;            /* the teal of their Register button */
   --radius: 12px;
+
+  --shadow: 0 1px 2px rgba(31, 29, 28, .05), 0 2px 8px rgba(31, 29, 28, .04);
 }
 
 * { box-sizing: border-box; }
@@ -24,36 +60,74 @@ body {
   min-height: 100vh;
 }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-hover); }
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--blue-hover); }
 
-/* --- nav --- */
+/* --- nav ---
+ * A solid red bar, the way the ILO site wears it, so everything inside is
+ * light-on-red and the body's usual colours would be unreadable here. */
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2rem;
-  border-bottom: 1px solid var(--border);
-  background: rgba(14, 17, 23, 0.9);
+  background: var(--red);
   position: sticky;
   top: 0;
-  backdrop-filter: blur(8px);
   z-index: 10;
 }
-.brand { display: flex; align-items: center; gap: .55rem; color: var(--text); font-weight: 700; }
+.brand { display: flex; align-items: center; gap: .55rem; color: #fff; font-weight: 700; }
+.brand:hover { color: #fff; }
 .brand-mark {
-  background: var(--accent);
-  color: #0e1117;
+  background: #fff;
+  color: var(--red);
   padding: .15rem .5rem;
   border-radius: 8px;
   font-size: .95rem;
+  font-weight: 800;
   letter-spacing: .5px;
 }
-.brand-text { color: var(--muted); font-weight: 500; }
-.nav-links { display: flex; align-items: center; gap: 1.25rem; }
-.nav-links a { color: var(--muted); font-size: .95rem; }
-.nav-links a:hover { color: var(--text); }
-.nav-user { color: var(--text); font-size: .95rem; font-weight: 600; }
+.brand-text { color: rgba(255, 255, 255, .82); font-weight: 500; }
+
+/* Ordinary links on the bar. The colour shows up on hover, as an underline in
+   each link's own accent — enough to carry the palette without turning the bar
+   into a row of blocks. */
+.nav-links { display: flex; align-items: center; gap: 1.45rem; }
+
+/* Every item on the bar is the same height, so they centre on one line: the
+   hover underline is an absolutely-positioned ::after, not a border, because a
+   border plus its padding makes a link 5px taller than the username beside it
+   and centring then lifts its text off the shared baseline. The button is
+   excluded — it has its own box. */
+.nav-links a:not(.btn) {
+  position: relative;
+  color: rgba(255, 255, 255, .88);
+  font-size: .95rem;
+  line-height: 1.5;
+  transition: color .12s;
+}
+.nav-links a:not(.btn)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  background: transparent;
+  transition: background .12s;
+}
+.nav-links a:not(.btn):hover { color: #fff; }
+.nav-links a:not(.btn):nth-of-type(3n + 1):hover::after { background: var(--nav-underline-1); }
+.nav-links a:not(.btn):nth-of-type(3n + 2):hover::after { background: var(--nav-underline-2); }
+.nav-links a:not(.btn):nth-of-type(3n + 3):hover::after { background: var(--nav-underline-3); }
+.nav-user { color: #fff; font-size: .95rem; font-weight: 600; line-height: 1.5; }
+
+/* The one action on the bar is filled; the quieter one is an outline. */
+.nav .btn-primary { background: var(--nav-orange); color: #fff; border-color: transparent; }
+.nav .btn-primary:hover { background: var(--orange-hover); color: #fff; }
+.nav .btn-ghost { background: transparent; border-color: rgba(255, 255, 255, .5); color: #fff; }
+.nav .btn-ghost:hover { border-color: #fff; background: rgba(255, 255, 255, .12); color: #fff; }
+.nav .btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 /* --- buttons --- */
 .btn {
@@ -68,10 +142,10 @@ a:hover { color: var(--accent-hover); }
   transition: background .15s, border-color .15s, transform .05s;
 }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--accent); color: #0e1117; }
-.btn-primary:hover { background: var(--accent-hover); color: #0e1117; }
-.btn-ghost { border-color: var(--border); color: var(--text); background: transparent; }
-.btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); color: #fff; }
+.btn-ghost { border-color: var(--border); color: var(--text); background: var(--bg); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 .btn-lg { padding: .8rem 1.6rem; font-size: 1.02rem; }
 .btn-block { width: 100%; margin-top: 1.4rem; }
 
@@ -83,14 +157,21 @@ main { flex: 1; width: 100%; max-width: 1000px; margin: 0 auto; padding: 3rem 1.
 .hero { text-align: center; padding: 2.5rem 0 3.5rem; }
 .hero-compact { padding: 1rem 0 2rem; text-align: left; }
 .eyebrow {
-  color: var(--accent);
+  color: var(--orange-deep);
+  /* an orange eyebrow over a red heading, so the pair is never one colour */
   text-transform: uppercase;
   letter-spacing: .14em;
   font-size: .78rem;
   font-weight: 700;
   margin: 0 0 .8rem;
 }
-.hero h1 { font-size: clamp(2rem, 5vw, 3.1rem); line-height: 1.15; margin: 0 0 1.2rem; letter-spacing: -.02em; }
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.15;
+  margin: 0 0 1.2rem;
+  letter-spacing: -.02em;
+  color: var(--red);
+}
 .lede { color: var(--muted); font-size: 1.08rem; max-width: 620px; margin: 0 auto 2rem; }
 .hero-compact .lede { margin-left: 0; }
 .hero-actions { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; }
@@ -107,10 +188,24 @@ main { flex: 1; width: 100%; max-width: 1000px; margin: 0 auto; padding: 3rem 1.
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.4rem;
-  transition: border-color .15s;
+  box-shadow: var(--shadow);
+  transition: border-color .15s, box-shadow .15s;
 }
-.card:hover { border-color: var(--accent); }
-.card-icon { color: var(--accent); font-size: 1.4rem; margin-bottom: .4rem; }
+.card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 2px 4px rgba(41, 113, 151, .09), 0 6px 16px rgba(41, 113, 151, .07);
+}
+.card-icon { font-size: 1.4rem; margin-bottom: .4rem; }
+
+/* The feature row cycles blue → red → orange, echoing the three coloured
+   cards on the ILO home page. */
+.features .card { border-top-width: 3px; }
+.features .card:nth-child(3n + 1) { border-top-color: var(--blue); }
+.features .card:nth-child(3n + 1) .card-icon { color: var(--blue); }
+.features .card:nth-child(3n + 2) { border-top-color: var(--red); }
+.features .card:nth-child(3n + 2) .card-icon { color: var(--red); }
+.features .card:nth-child(3n + 3) { border-top-color: var(--orange); }
+.features .card:nth-child(3n + 3) .card-icon { color: var(--orange-deep); }
 .card h3 { margin: 0 0 .4rem; font-size: 1.03rem; }
 .card p { margin: 0; color: var(--muted); font-size: .93rem; }
 .stat { font-size: 1.9rem; font-weight: 700; color: var(--text) !important; }
@@ -133,7 +228,11 @@ main { flex: 1; width: 100%; max-width: 1000px; margin: 0 auto; padding: 3rem 1.
   color: var(--muted);
   font-size: .94rem;
 }
-.topic-list li::before { content: "→"; color: var(--accent); margin-right: .6rem; }
+/* The topic list runs the three colours down the page in turn. */
+.topic-list li::before { content: "→"; margin-right: .6rem; }
+.topic-list li:nth-child(3n + 1)::before { color: var(--blue); }
+.topic-list li:nth-child(3n + 2)::before { color: var(--red); }
+.topic-list li:nth-child(3n + 3)::before { color: var(--orange-deep); }
 
 /* --- auth --- */
 .auth-card {
@@ -141,8 +240,22 @@ main { flex: 1; width: 100%; max-width: 1000px; margin: 0 auto; padding: 3rem 1.
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2.2rem;
+  box-shadow: var(--shadow);
 }
-.auth-card h1 { margin: 0 0 .3rem; font-size: 1.6rem; }
+.auth-card h1 { margin: 0 0 .3rem; font-size: 1.6rem; color: var(--red); }
+/* The main block on a page is topped with all three colours, the way the nav
+   rule carries the two the red bar does not. */
+.auth-card, .fitch-board { position: relative; overflow: hidden; }
+.auth-card::before, .fitch-board::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(to right,
+      var(--red) 0%, var(--red) 33.33%,
+      var(--orange) 33.33%, var(--orange) 66.66%,
+      var(--blue) 66.66%, var(--blue) 100%);
+}
 .auth-sub { color: var(--muted); margin: 0 0 1.8rem; font-size: .95rem; }
 .auth-alt { text-align: center; color: var(--muted); font-size: .92rem; margin: 1.4rem 0 0; }
 
@@ -163,10 +276,10 @@ input[type="text"], input[type="email"], input[type="password"] {
   font-size: .97rem;
   font-family: inherit;
 }
-input:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(108, 140, 255, .18);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(46, 126, 168, .18);
 }
 .hint { display: block; color: var(--muted); font-size: .8rem; margin-top: .35rem; }
 .error-hint { color: var(--danger); }
@@ -179,7 +292,7 @@ input:focus {
   font-size: .9rem;
   margin-top: 1.1rem;
 }
-.checkbox input { accent-color: var(--accent); }
+.checkbox input { accent-color: var(--blue); }
 
 .password-wrap { position: relative; }
 .toggle-pw {
@@ -209,37 +322,49 @@ input:focus {
   margin-bottom: .5rem;
   border: 1px solid;
 }
-.flash-error { background: rgba(255, 107, 107, .1); border-color: rgba(255, 107, 107, .35); color: #ffb3b3; }
-.flash-success { background: rgba(74, 222, 128, .1); border-color: rgba(74, 222, 128, .35); color: #a6f0c2; }
+.flash-error { background: #fdf0f1; border-color: rgba(200, 16, 46, .3); color: #8d1220; }
+.flash-success { background: #edf8f5; border-color: rgba(14, 138, 111, .3); color: #0a6151; }
 
 /* --- footer --- */
 .footer {
   border-top: 1px solid var(--border);
+  background: var(--bg-soft);
   padding: 1.4rem 2rem;
   text-align: center;
 }
 .footer p { margin: 0; color: var(--muted); font-size: .84rem; }
 
-@media (max-width: 600px) {
-  .nav { padding: 1rem; }
+@media (max-width: 700px) {
+  /* The bar carries a brand, up to four links, a username and a button, which
+     is more than a phone is wide — so let it run onto a second row instead of
+     off the edge. */
+  .nav {
+    padding: .8rem 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: .5rem 1rem;
+  }
+  .nav-links { flex-wrap: wrap; gap: .5rem 1.1rem; width: 100%; }
+  .nav-links a { font-size: .9rem; }
+  .nav .btn { padding: .35rem .8rem; font-size: .88rem; }
   main { padding: 2rem 1.1rem; }
   .auth-card { padding: 1.6rem; }
 }
 
 /* --- config error --- */
 .config-error {
-  background: var(--bg);
-  border: 1px solid rgba(255, 107, 107, .35);
+  background: #fdf0f1;
+  border: 1px solid rgba(200, 16, 46, .3);
   border-radius: 10px;
   padding: .9rem 1rem;
-  color: #ffb3b3;
+  color: #8d1220;
   font-size: .84rem;
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 code {
-  background: var(--bg);
+  background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: 5px;
   padding: .1rem .35rem;
@@ -284,14 +409,14 @@ code {
   border: 1px solid;
 }
 .auth-error {
-  background: rgba(255, 107, 107, .1);
-  border-color: rgba(255, 107, 107, .35);
-  color: #ffb3b3;
+  background: #fdf0f1;
+  border-color: rgba(200, 16, 46, .3);
+  color: #8d1220;
 }
 .auth-note {
-  background: rgba(74, 222, 128, .1);
-  border-color: rgba(74, 222, 128, .35);
-  color: #a6f0c2;
+  background: #edf8f5;
+  border-color: rgba(14, 138, 111, .3);
+  color: #0a6151;
 }
 
 .ok-hint { color: var(--success); }
@@ -334,15 +459,16 @@ button:disabled { opacity: .6; cursor: default; }
   font-size: .93rem;
   margin: 0 0 1.2rem;
 }
-.verdict-done { background: rgba(74, 222, 128, .1); border-color: rgba(74, 222, 128, .35); color: #a6f0c2; }
+.verdict-done { background: #edf8f5; border-color: rgba(14, 138, 111, .3); color: #0a6151; }
 .verdict-working { background: var(--bg-soft); color: var(--muted); }
-.verdict-error { background: rgba(255, 107, 107, .08); border-color: rgba(255, 107, 107, .3); color: #ffb3b3; }
+.verdict-error { background: #fdf0f1; border-color: rgba(200, 16, 46, .28); color: #8d1220; }
 
 .fitch-board {
   background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.1rem;
+  box-shadow: var(--shadow);
 }
 
 .fitch-selectall {
@@ -355,7 +481,7 @@ button:disabled { opacity: .6; cursor: default; }
   font-size: .85rem;
 }
 .fitch-selectall label { margin: 0; font-size: .85rem; font-weight: 600; }
-.fitch-selectall input { accent-color: var(--accent); }
+.fitch-selectall input { accent-color: var(--blue); }
 .fitch-selected { margin-left: auto; color: var(--muted); font-size: .82rem; }
 
 .fitch-empty { color: var(--muted); font-size: .9rem; margin: .8rem 0; }
@@ -370,14 +496,14 @@ button:disabled { opacity: .6; cursor: default; }
   border-radius: 7px;
   min-height: 2rem;
 }
-.fitch-row.selected { background: rgba(108, 140, 255, .12); }
-.fitch-row.bad { background: rgba(255, 107, 107, .08); }
-.fitch-check { accent-color: var(--accent); margin: 0; }
+.fitch-row.selected { background: rgba(46, 126, 168, .11); }
+.fitch-row.bad { background: rgba(200, 16, 46, .07); }
+.fitch-check { accent-color: var(--blue); margin: 0; }
 .fitch-num { color: var(--muted); font-size: .85rem; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Stretches so the scope bars of a subproof join into one line. */
 .fitch-scope { display: flex; align-self: stretch; min-height: 1.9rem; }
-.fitch-bar { width: .95rem; border-left: 2px solid var(--accent); opacity: .55; }
+.fitch-bar { width: .95rem; border-left: 2px solid var(--blue); opacity: .6; }
 
 .fitch-formula {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -395,8 +521,8 @@ button:disabled { opacity: .6; cursor: default; }
 .fitch-entry {
   margin-top: .8rem;
   padding: .9rem;
-  background: var(--bg);
-  border: 1px solid var(--accent);
+  background: var(--bg-tint);
+  border: 1px solid var(--blue);
   border-radius: 10px;
 }
 .fitch-entry-label { margin: 0 0 .6rem; font-size: .88rem; }
@@ -412,7 +538,7 @@ button:disabled { opacity: .6; cursor: default; }
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: .95rem;
 }
-.fitch-entry-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108, 140, 255, .18); }
+.fitch-entry-row input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(46, 126, 168, .18); }
 
 .fitch-palette { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
 .fitch-palette .hint { display: inline; margin: 0; }
@@ -426,7 +552,7 @@ button:disabled { opacity: .6; cursor: default; }
   font-size: .95rem;
   cursor: pointer;
 }
-.fitch-sym:hover { border-color: var(--accent); color: var(--accent); }
+.fitch-sym:hover { border-color: var(--blue); color: var(--blue); }
 
 .fitch-buttons {
   display: grid;
@@ -448,7 +574,7 @@ button:disabled { opacity: .6; cursor: default; }
   cursor: pointer;
   transition: border-color .12s, color .12s;
 }
-.fitch-rule-btn:hover { border-color: var(--accent); color: var(--accent); }
+.fitch-rule-btn:hover { border-color: var(--blue); color: var(--blue); }
 .fitch-util { background: var(--bg-soft); border-style: dashed; }
 
 @media (max-width: 620px) {
@@ -482,6 +608,8 @@ button:disabled { opacity: .6; cursor: default; }
   font-size: .95rem;
 }
 .gen-controls .btn { padding: .55rem 1.2rem; }
+/* Both of these are sentences about the whole row, so break the line first. */
+.gen-controls #gen-blurb,
 .gen-controls #gen-status { flex-basis: 100%; margin: 0; }
 
 .gen-saved-head {
@@ -496,7 +624,7 @@ button:disabled { opacity: .6; cursor: default; }
 .gen-results h2 { font-size: 1.15rem; }
 .gen-filters { display: flex; gap: .4rem; }
 .gen-filters .btn { padding: .3rem .7rem; font-size: .82rem; }
-.gen-filters .is-on { border-color: var(--accent); color: var(--text); }
+.gen-filters .is-on { border-color: var(--blue); color: var(--blue); background: var(--tint-blue); }
 
 .gen-card { margin-bottom: 1rem; }
 .gen-card-head {
@@ -520,19 +648,22 @@ button:disabled { opacity: .6; cursor: default; }
   overflow-x: auto;
 }
 
+/* The three bands map onto the three brand colours, as filled tints rather
+   than outlines — a pill of colour separates them far better at this size than
+   a hairline border and a word do. */
 .badge {
   display: inline-block;
-  padding: .1rem .55rem;
+  padding: .12rem .6rem;
   border-radius: 999px;
-  border: 1px solid currentColor;
+  border: 1px solid;
   font-size: .72rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.badge-easy { color: var(--success); }
-.badge-medium { color: var(--accent); }
-.badge-hard { color: var(--danger); }
+.badge-easy   { color: var(--blue-hover);  background: var(--tint-blue);   border-color: #bcd9e8; }
+.badge-medium { color: var(--orange-deep); background: var(--tint-orange); border-color: #f0cf9e; }
+.badge-hard   { color: #8d1220;            background: var(--tint-red);    border-color: #f0c2c6; }
 
 /* The proof table: a bar per subproof level, so nesting is visible at a glance. */
 .proof {
@@ -548,7 +679,8 @@ button:disabled { opacity: .6; cursor: default; }
   width: 1.1rem;
   height: 1.2em;
   margin-right: .2rem;
-  border-left: 1px solid var(--border);
+  border-left: 2px solid var(--blue);
+  opacity: .5;
   vertical-align: text-bottom;
 }
 .proof-assume { border-bottom: 1px solid var(--border); padding-bottom: 1px; }
@@ -556,10 +688,13 @@ button:disabled { opacity: .6; cursor: default; }
 
 .fitch-loaded {
   background: var(--bg-soft);
+  /* An orange edge, so the loaded question reads as the thing to work on. */
   border: 1px solid var(--border);
+  border-left: 3px solid var(--orange);
   border-radius: var(--radius);
   padding: 1rem 1.2rem;
   margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
 }
 .fitch-loaded .gen-statement { margin: .5rem 0 !important; }
 .hint.danger { color: var(--danger); }

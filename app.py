@@ -10,9 +10,61 @@ from firebase_admin import auth as fb_auth
 
 import fitch_checker as checker
 import fitch_generator as generator
+import ch10_checker
+import ch10_generator
 import firestore_db as store
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
+# --- chapters ---------------------------------------------------------------
+
+# The chapters the site can generate for. Their rule sets, formula syntax and
+# even their generators' call signatures differ, so everything chapter-specific
+# is looked up here rather than branched on at each use.
+CHAPTERS = {
+    5: {
+        "label": "Chapter 5 — propositional",
+        "blurb": "Fitch proofs over the propositional connectives.",
+        "checker": checker,
+        "verify": lambda q: checker.check_proof(
+            q["premises"], q["goal"], q["proof"]),
+        # `saved` is a thunk: Chapter 5 dedupes within a single call and never
+        # needs it, so asking for it would only cost a Firestore read.
+        "make": lambda count, difficulty, saved: generator.generate(
+            count=count, difficulty=difficulty),
+    },
+    10: {
+        "label": "Chapter 10 — relational",
+        "blurb": "The same eleven rules plus the quantifier rules: "
+                 "Universal and Existential Introduction and Elimination, "
+                 "and Domain Closure.",
+        "checker": ch10_checker,
+        "verify": lambda q: ch10_checker.check_proof(
+            q["premises"], q["goal"], q["proof"], q.get("constants") or []),
+        # Chapter 10 draws on a small stock of arguments, so it repeats itself
+        # unless it is told what is already on file.
+        "make": lambda count, difficulty, saved: ch10_generator.generate(
+            count=count, difficulty=difficulty, existing=saved()),
+    },
+}
+
+DEFAULT_CHAPTER = store.DEFAULT_CHAPTER
+
+# The two generators raise their own error type for the same kinds of failure.
+GENERATOR_ERRORS = (generator.GeneratorError, ch10_generator.GeneratorError)
+
+
+def chapter_arg(value, default=DEFAULT_CHAPTER):
+    """The chapter a request names, or None if it names one we do not have."""
+    if value is None or value == "":
+        return default
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number in CHAPTERS else None
+
 
 app = Flask(__name__)
 # For production, set ILO_SECRET_KEY in the environment.
@@ -139,9 +191,16 @@ def fitch():
 @login_required
 def generate_page():
     """Generate new exercises with the model, and browse the ones already saved."""
+    chapter = chapter_arg(request.args.get("chapter"))
+    if chapter is None:
+        chapter = DEFAULT_CHAPTER
     return render_template(
         "generate.html",
-        difficulties=checker.DIFFICULTIES,
+        chapters=[dict(number=n, label=CHAPTERS[n]["label"],
+                       blurb=CHAPTERS[n]["blurb"])
+                  for n in sorted(CHAPTERS)],
+        chapter=chapter,
+        difficulties=CHAPTERS[chapter]["checker"].DIFFICULTIES,
         generator_ready=bool(os.environ.get("OPENAI_API_KEY")),
     )
 
@@ -255,20 +314,30 @@ def api_generate_questions():
     checker the browser editor runs.
     """
     payload = request.get_json(silent=True) or {}
+    chapter = chapter_arg(payload.get("chapter"))
+    if chapter is None:
+        return jsonify(error="Unknown chapter."), 400
+    spec = CHAPTERS[chapter]
+
     difficulty = (payload.get("difficulty") or "").strip() or None
     try:
         count = int(payload.get("count") or 1)
     except (TypeError, ValueError):
         return jsonify(error="count must be a number."), 400
 
-    if difficulty and difficulty not in checker.DIFFICULTIES:
+    if difficulty and difficulty not in spec["checker"].DIFFICULTIES:
         return jsonify(error="Unknown difficulty."), 400
     count = max(1, min(count, MAX_PER_REQUEST))
 
+    # What is on file for this chapter, so the model can be asked not to write
+    # the same exercise again. Read only if the chapter's generator wants it.
+    def on_file():
+        return store.list_questions(chapter=chapter, limit=200)
+
     try:
-        questions = generator.generate(count=count, difficulty=difficulty)
-    except generator.GeneratorError as exc:
-        app.logger.warning("Generation failed: %s", exc)
+        questions = spec["make"](count, difficulty, on_file)
+    except GENERATOR_ERRORS as exc:
+        app.logger.warning("Chapter %s generation failed: %s", chapter, exc)
         return jsonify(error=str(exc)), 502
 
     if not questions:
@@ -279,9 +348,16 @@ def api_generate_questions():
     uid = (current_user() or {}).get("uid")
     saved = []
     for question in questions:
+        question["chapter"] = chapter
+        # Chapter 10 names its prose "prompt" and leaves the length implicit.
+        question["statement"] = (question.get("statement")
+                                 or question.get("prompt") or "")
+        question["line_count"] = len(question.get("proof") or [])
         # Belt and braces: never store an answer this server has not checked.
-        problems = checker.check_proof(question["premises"], question["goal"],
-                                       question["proof"])
+        try:
+            problems = spec["verify"](question)
+        except Exception as exc:               # a malformed candidate
+            problems = [str(exc)]
         if problems:
             app.logger.error("Unverified proof reached the route: %s", problems)
             continue
@@ -296,16 +372,22 @@ def api_generate_questions():
 @app.get("/api/questions")
 @login_required
 def api_list_questions():
-    """Stored questions, newest first, optionally filtered by difficulty."""
+    """Stored questions for one chapter, newest first, optionally filtered by
+    difficulty."""
+    chapter = chapter_arg(request.args.get("chapter"))
+    if chapter is None:
+        return jsonify(error="Unknown chapter."), 400
     difficulty = (request.args.get("difficulty") or "").strip() or None
-    if difficulty and difficulty not in checker.DIFFICULTIES:
+    if difficulty and difficulty not in CHAPTERS[chapter]["checker"].DIFFICULTIES:
         return jsonify(error="Unknown difficulty."), 400
-    questions = store.list_questions(difficulty=difficulty, limit=100)
+    questions = store.list_questions(difficulty=difficulty, chapter=chapter,
+                                     limit=200)
     for question in questions:
         # created_at is a Firestore timestamp; the page only needs a date.
         stamp = question.pop("created_at", None)
         question["created"] = stamp.isoformat() if hasattr(stamp, "isoformat") else None
-    return jsonify(questions=questions, counts=store.question_counts())
+    return jsonify(questions=questions, chapter=chapter,
+                   counts=store.question_counts(chapter=chapter))
 
 
 @app.get("/api/username-available")

@@ -433,7 +433,14 @@ def _repair_prompt(question, complaints):
 
 def generate(count=1, difficulty=None, api_key=None, model=MODEL,
              vector_store_id=None, verbose=False, existing=()):
-    """Return a list of questions that pass the structural check."""
+    """Return a list of questions that pass the structural check.
+
+    `existing` is the exercises already on file — either this module's own
+    questions or the rows `/generate` reads back from Firestore. Their shapes
+    are compared against each candidate and their prose goes into the prompt's
+    do-not-repeat list, which matters here because Chapter 10 has a small stock
+    of arguments and will otherwise write the same one again.
+    """
     api_key = api_key or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise GeneratorError("OPENAI_API_KEY is not set.")
@@ -451,7 +458,11 @@ def generate(count=1, difficulty=None, api_key=None, model=MODEL,
     for question in existing:                 # do not repeat what is on file
         seen.add(shape(question.get("premises") or [],
                        question.get("goal") or ""))
-        avoid.append(question.get("prompt", ""))
+        # Straight from this module the prose is "prompt"; read back out of
+        # Firestore it is "statement". Either names the same exercise.
+        prose = question.get("prompt") or question.get("statement") or ""
+        if prose:
+            avoid.append(prose)
     # Ask for a few extra, since some candidates are dropped.
     batch = _call(api_key, model, vector_store_id,
                   _ask_prompt(count + 2, difficulty, avoid))

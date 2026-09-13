@@ -184,6 +184,35 @@ rejects("a proof that ends on something other than the goal",
             line("p(a)", "ue", 0, [1]),
         ], because="not the goal")
 
+# --- the editor's notation ---------------------------------------------------
+
+for src, expect in [("AX: p(X)", "∀X.p(X)"),
+                    ("EX:p(X)", "∃X.p(X)"),
+                    ("AX: (p(X) & q(X))", "∀X.(p(X) ∧ q(X))"),
+                    ("AX: p(X) & AX: q(X)", "∀X.p(X) ∧ ∀X.q(X)"),
+                    ("AX: AY: p(X,Y)", "∀X.∀Y.p(X,Y)"),
+                    ("~EX: p(X)", "¬∃X.p(X)")]:
+    check("the editor's notation parses: " + src, cc.show(cc.parse(src)) == expect)
+
+accepts("a proof built in the browser editor verifies here",
+        ["AX: (p(X) => q(X))", "EX: p(X)"], "EX: q(X)", [
+            line("AX: (p(X) => q(X))", "premise", 0),
+            line("EX: p(X)", "premise", 0),
+            line("p(c)", "assume", 1),
+            line("p(c) => q(c)", "ue", 1, [1]),
+            line("q(c)", "ie", 1, [4, 3]),
+            line("EX: q(X)", "ei", 1, [5]),
+            line("p(c) => EX: q(X)", "ii", 0, None, [3, 6]),
+            line("AX: (p(X) => EX: q(X))", "ui", 0, [7]),
+            line("EX: q(X)", "ee", 0, [2, 8]),
+        ])
+
+rejects("an uppercase variable left free in the goal",
+        ["AX: p(X)"], "p(X)", [
+            line("AX: p(X)", "premise", 0),
+            line("p(X)", "ue", 0, [1]),
+        ], because="not a closed sentence")
+
 check("difficulty bands on proof length",
       (cc.difficulty([0] * 4), cc.difficulty([0] * 15), cc.difficulty([0] * 30))
       == ("easy", "medium", "hard"))

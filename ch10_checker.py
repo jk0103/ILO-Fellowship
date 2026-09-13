@@ -28,6 +28,8 @@ A step is a dict, as in fitch_checker:
      "subref": [4, 6]}        # 1-based [assumption, conclusion], for "ii" only
 """
 
+import re
+
 RULES = {
     "premise": "Premise",
     "assume": "Assumption",
@@ -53,6 +55,11 @@ QUANTIFIER_RULES = ("ue", "ui", "ei", "ee", "dc")
 
 NOT, AND, OR, IMP, IFF = "¬", "∧", "∨", "⇒", "⇔"
 ALL, EXISTS = "∀", "∃"
+
+# The browser editor writes quantifiers the way the Stanford tool does — AX: p(X)
+# for every X, EX: p(X) for some X, variables uppercase. Accepting that spelling
+# here is what lets a proof built in the editor be checked by this module.
+_QUANT = re.compile(r"(?:([AE])([A-Z][A-Za-z0-9_]*)|([∀∃])\s*([A-Za-z][A-Za-z0-9_]*))\s*[:.]")
 
 # The chapter's variables are the tail of the alphabet; everything else that
 # appears without a quantifier over it is an object constant or a placeholder.
@@ -93,6 +100,15 @@ def _tokenize(src):
     while i < len(src):
         if src[i].isspace():
             i += 1
+            continue
+        quant = _QUANT.match(src, i)
+        if quant:
+            sign = quant.group(1) or quant.group(3)
+            var = quant.group(2) or quant.group(4)
+            tokens.append(ALL if sign in ("A", ALL) else EXISTS)
+            tokens.append(("name", var))
+            tokens.append(".")
+            i = quant.end()
             continue
         for text, op in _MULTI:  # longest match first
             if src.startswith(text, i):
@@ -297,10 +313,15 @@ def free_names(node, bound=frozenset(), out=None):
     return out
 
 
+def _looks_like_variable(name):
+    """Both conventions at once: the chapter's lowercase x, y, z and the
+    editor's uppercase X, Y, Z."""
+    return name[:1].isupper() or (len(name) == 1 and name in VARIABLE_LETTERS)
+
+
 def open_variables(node):
     """Free names that look like variables — the mark of an open sentence."""
-    return {n for n in free_names(node)
-            if len(n) == 1 and n in VARIABLE_LETTERS}
+    return {n for n in free_names(node) if _looks_like_variable(n)}
 
 
 class CaptureError(ValueError):

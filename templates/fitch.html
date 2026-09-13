@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Fitch practice &middot; ILO Prep{% endblock %}
+{% block title %}Fitch practice &middot; ILO Bank{% endblock %}
 {% block main_class %}fitch-main{% endblock %}
 
 {% block content %}
@@ -7,15 +7,25 @@
   <h1>Fitch practice</h1>
   <p class="lede">Check the lines you want to work from, then press a rule.
      The rule is applied for you and the new lines are added to the proof.</p>
+  <p class="hint">Quantifiers are written <code>AX: p(X)</code> for &forall;x.p(x) and
+     <code>EX: p(X)</code> for &exist;x.p(x). Variables are uppercase; a lowercase
+     name is an object constant or a placeholder.</p>
 </section>
 
 {% if question %}
 <section class="fitch-loaded">
   <span class="badge badge-{{ question['difficulty'] }}">{{ question['difficulty'] }}</span>
+  <span class="hint">Chapter {{ question.get('chapter', 5) }}</span>
   <p class="gen-statement">{{ question['statement'] }}</p>
+  {% if question.get('constants') %}
+    <p class="hint">The language has just these object constants:
+       {{ question['constants'] | join(', ') }}.</p>
+  {% endif %}
   {% if question.get('hint') %}<p class="hint">Hint: {{ question['hint'] }}</p>{% endif %}
   <p class="hint">Its worked answer is {{ question['line_count'] }} lines &mdash;
-     see it on the <a href="{{ url_for('generate_page') }}">Generate</a> page.</p>
+     see it on the
+     <a href="{{ url_for('generate_page', chapter=question.get('chapter', 5)) }}">Generate</a>
+     page.</p>
 </section>
 <script>
   window.__ILO_QUESTION = {
@@ -77,7 +87,11 @@
       <button type="button" class="fitch-sym" data-symbol="∨">∨</button>
       <button type="button" class="fitch-sym" data-symbol="⇒">⇒</button>
       <button type="button" class="fitch-sym" data-symbol="⇔">⇔</button>
-      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code></span>
+      <button type="button" class="fitch-sym" data-symbol="AX: ">AX:</button>
+      <button type="button" class="fitch-sym" data-symbol="EX: ">EX:</button>
+      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code>.
+        Quantifiers: <code>AX: p(X)</code> for every X, <code>EX: p(X)</code> for some X
+        &mdash; variables uppercase, constants lowercase.</span>
     </div>
   </div>
 

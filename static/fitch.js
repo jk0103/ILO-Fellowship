@@ -1,9 +1,16 @@
 /* Fitch proof editor.
  *
- * Propositional fragment of the Stanford intro-logic Fitch system. You select
- * lines with the checkboxes and press a rule button; the rule is applied for
- * you and the new lines are appended. Nothing is typed except premises,
- * assumptions, and the target of Or Introduction.
+ * The Stanford intro-logic Fitch system: the propositional rules of Chapter 5
+ * and the quantifier rules of Chapter 10. You select lines with the checkboxes
+ * and press a rule button; the rule is applied for you and the new lines are
+ * appended. Nothing is typed except premises, assumptions, the target of Or
+ * Introduction, and the term or sentence a quantifier rule needs.
+ *
+ * Quantifiers are written the way the Stanford tool writes them: AX: p(X) for
+ * every X, EX: p(X) for some X. Variables are uppercase, so a lowercase name is
+ * an object constant or a placeholder, and "ground" just means "no uppercase
+ * name in it". The Unicode forms ∀x.p(x) and ∃x.p(x) are accepted too, and are
+ * normalized to uppercase variables on the way in.
  *
  * Everything runs in the browser; nothing is sent to the server.
  */
@@ -14,6 +21,11 @@
 
   const SYM = { not: "¬", and: "∧", or: "∨", imp: "⇒", iff: "⇔" };
 
+  // A quantifier: AX: φ / EX: φ, or the Unicode ∀x.φ / ∃x.φ. Because variables
+  // are uppercase, "AX:" cannot be misread as a relation named A — a relation
+  // would not be followed by an uppercase name and a colon.
+  const QUANT = /^(?:([AE])([A-Z][A-Za-z0-9_]*)|([∀∃])\s*([A-Za-z][A-Za-z0-9_]*))\s*[:.]/;
+
   // Longest match first, so "<=>" never reads as "<" then "=>".
   const OPERATORS = [
     ["<=>", "iff"], ["<->", "iff"], ["⇔", "iff"], ["↔", "iff"], ["≡", "iff"],
@@ -21,7 +33,7 @@
     ["/\\", "and"], ["&&", "and"], ["&", "and"], ["∧", "and"], ["^", "and"],
     ["\\/", "or"], ["||", "or"], ["|", "or"], ["∨", "or"], ["+", "or"],
     ["~", "not"], ["!", "not"], ["¬", "not"], ["-", "not"],
-    ["(", "("], [")", ")"],
+    ["(", "("], [")", ")"], [",", ","],
   ];
 
   function tokenize(src) {
@@ -35,6 +47,17 @@
         if (src.startsWith(text, i)) { matched = { kind, text }; break; }
       }
       if (matched) { tokens.push(matched); i += matched.text.length; continue; }
+      const quant = QUANT.exec(src.slice(i));
+      if (quant) {
+        const sign = quant[1] || quant[3];
+        const raw = quant[2] || quant[4];
+        tokens.push({
+          kind: sign === "A" || sign === "∀" ? "all" : "exists",
+          text: quant[0], raw: raw, v: raw.toUpperCase(),
+        });
+        i += quant[0].length;
+        continue;
+      }
       const name = /^[A-Za-z][A-Za-z0-9_]*/.exec(src.slice(i));
       if (name) { tokens.push({ kind: "atom", text: name[0] }); i += name[0].length; continue; }
       throw new Error('Unexpected character "' + ch + '".');
@@ -47,19 +70,47 @@
   //   imp  ::= or ( => imp )?            -- right associative
   //   or   ::= and ( | and )*            -- flattened into one n-ary node
   //   and  ::= unary ( & unary )*        -- flattened into one n-ary node
-  //   unary::= ~ unary | atom | ( iff )
+  //   unary::= ~ unary | AX: unary | EX: unary | relation | ( iff )
+  //   relation ::= name ( "(" term ("," term)* ")" )?
+  //   term ::= name ( "(" term ("," term)* ")" )?
   // Flattening only happens at the same parenthesis level, so (p&q)&r stays nested.
+  // A quantifier binds as tightly as ~, so AX: p(X) & AX: q(X) is a conjunction
+  // of two quantified sentences and a wider scope is written AX: (p(X) & q(X)).
   function parse(src) {
     const tokens = tokenize(src);
     let pos = 0;
     const peek = () => tokens[pos];
     const eat = (kind) => (peek() && peek().kind === kind ? tokens[pos++] : null);
 
+    // The arguments of a relation or a function, or null when there are none.
+    function argList() {
+      if (!(peek() && peek().kind === "(")) return null;
+      pos++;
+      const args = [term()];
+      while (peek() && peek().kind === ",") { pos++; args.push(term()); }
+      if (!eat(")")) throw new Error("Missing a closing parenthesis.");
+      return args;
+    }
+
+    function term() {
+      const tok = peek();
+      if (!tok || tok.kind !== "atom") throw new Error("Expected a term.");
+      pos++;
+      return { n: tok.text, args: argList() || [] };
+    }
+
     function unary() {
       const tok = peek();
       if (!tok) throw new Error("The formula ends too early.");
       if (tok.kind === "not") { pos++; return { t: "not", a: unary() }; }
-      if (tok.kind === "atom") { pos++; return { t: "atom", name: tok.text }; }
+      if (tok.kind === "all" || tok.kind === "exists") {
+        pos++;
+        const body = unary();
+        // ∀x.p(x) comes in with a lowercase variable; the tool's variables are
+        // uppercase, so rename as it is read and everything downstream is uniform.
+        return { t: tok.kind, v: tok.v, a: toVariable(body, tok.raw, tok.v) };
+      }
+      if (tok.kind === "atom") { pos++; return { t: "atom", name: tok.text, args: argList() || [] }; }
       if (tok.kind === "(") {
         pos++;
         const inner = iff();
@@ -100,15 +151,23 @@
     return result;
   }
 
-  const PREC = { atom: 5, not: 4, and: 3, or: 2, imp: 1, iff: 0 };
+  const PREC = { atom: 5, not: 4, all: 4, exists: 4, and: 3, or: 2, imp: 1, iff: 0 };
+
+  function showTerm(t) {
+    return t.args.length ? t.n + "(" + t.args.map(showTerm).join(",") + ")" : t.n;
+  }
 
   function show(f, parentPrec) {
     parentPrec = parentPrec === undefined ? -1 : parentPrec;
     const prec = PREC[f.t];
     let out;
     switch (f.t) {
-      case "atom": return f.name;
+      case "atom": return showTerm({ n: f.name, args: f.args || [] });
       case "not": return SYM.not + show(f.a, PREC.not);
+      case "all":
+      case "exists":
+        out = (f.t === "all" ? "A" : "E") + f.v + ": " + show(f.a, prec);
+        break;
       case "and":
       case "or":
         out = f.args.map((a) => show(a, prec)).join(" " + SYM[f.t] + " ");
@@ -128,8 +187,10 @@
   // fully-parenthesized, so a canonical string doubles as an equality test.
   function key(f) {
     switch (f.t) {
-      case "atom": return f.name;
+      case "atom": return showTerm({ n: f.name, args: f.args || [] });
       case "not": return "~(" + key(f.a) + ")";
+      case "all":
+      case "exists": return f.t + " " + f.v + ".(" + key(f.a) + ")";
       case "and":
       case "or": return f.t + "(" + f.args.map(key).join(",") + ")";
       default: return f.t + "(" + key(f.a) + "," + key(f.b) + ")";
@@ -138,6 +199,155 @@
   const same = (x, y) => !!x && !!y && key(x) === key(y);
   const not = (f) => ({ t: "not", a: f });
   const imp = (a, b) => ({ t: "imp", a: a, b: b });
+
+  /* --------------------------------------------------------------- quantifiers
+   *
+   * Variables are uppercase and everything else is an object constant, so a
+   * term is ground exactly when no name in it is uppercase. That one convention
+   * is what the four quantifier rules check against.
+   */
+
+  const isVariable = (name) => /^[A-Z]/.test(name);
+
+  function termNames(t, out) {
+    out = out || new Set();
+    out.add(t.n);
+    t.args.forEach((a) => termNames(a, out));
+    return out;
+  }
+
+  const isGround = (t) => ![...termNames(t)].some(isVariable);
+
+  // Names in relation arguments that no enclosing quantifier binds.
+  function freeNames(f, bound, out) {
+    bound = bound || new Set();
+    out = out || new Set();
+    switch (f.t) {
+      case "atom":
+        (f.args || []).forEach((a) => {
+          termNames(a).forEach((n) => { if (!bound.has(n)) out.add(n); });
+        });
+        break;
+      case "all":
+      case "exists": {
+        const inner = new Set(bound);
+        inner.add(f.v);
+        freeNames(f.a, inner, out);
+        break;
+      }
+      case "not": freeNames(f.a, bound, out); break;
+      case "and":
+      case "or": f.args.forEach((a) => freeNames(a, bound, out)); break;
+      default: freeNames(f.a, bound, out); freeNames(f.b, bound, out);
+    }
+    return out;
+  }
+
+  function substituteTerm(t, name, value) {
+    if (t.n === name && !t.args.length) return value;
+    return { n: t.n, args: t.args.map((a) => substituteTerm(a, name, value)) };
+  }
+
+  /* Replace free occurrences of the 0-ary term `name` by the term `value`.
+   * Throws when a quantifier on the way down binds a name that `value` carries,
+   * since the result would say something else entirely. */
+  function substitute(f, name, value) {
+    switch (f.t) {
+      case "atom":
+        return { t: "atom", name: f.name,
+                 args: (f.args || []).map((a) => substituteTerm(a, name, value)) };
+      case "all":
+      case "exists":
+        if (f.v === name) return f;                       // shadowed
+        if (termNames(value).has(f.v) && freeNames(f.a, new Set([f.v])).has(name)) {
+          throw new Error(showTerm(value) + " would be captured by " + f.v + ".");
+        }
+        return { t: f.t, v: f.v, a: substitute(f.a, name, value) };
+      case "not": return { t: "not", a: substitute(f.a, name, value) };
+      case "and":
+      case "or": return { t: f.t, args: f.args.map((a) => substitute(a, name, value)) };
+      default: return { t: f.t, a: substitute(f.a, name, value),
+                        b: substitute(f.b, name, value) };
+    }
+  }
+
+  // Used by the parser to normalize ∀x.p(x) into AX: p(X).
+  function toVariable(body, raw, upper) {
+    if (raw === upper) return body;
+    try { return substitute(body, raw, { n: upper, args: [] }); }
+    catch (e) { throw new Error("Mixing " + raw + " and " + upper + " as variables is ambiguous."); }
+  }
+
+  /* The term that `v` stands for, turning `pattern` into `target`: null when `v`
+   * does not occur and the two are already identical, and an exception when no
+   * single term works. This is the whole of instance checking — every one of the
+   * four rules is "these two formulas differ by one substitution". */
+  function instanceOf(pattern, v, target) {
+    const found = [];
+
+    function walkTerm(p, t, bound) {
+      if (p.n === v && !p.args.length && !bound.has(v)) { found.push(t); return; }
+      if (p.n !== t.n || p.args.length !== t.args.length) {
+        throw new Error(showTerm(p) + " does not line up with " + showTerm(t));
+      }
+      p.args.forEach((a, i) => walkTerm(a, t.args[i], bound));
+    }
+
+    function walk(p, t, bound) {
+      if (p.t !== t.t) throw new Error(show(p) + " does not line up with " + show(t));
+      switch (p.t) {
+        case "atom":
+          if (p.name !== t.name || (p.args || []).length !== (t.args || []).length) {
+            throw new Error(show(p) + " does not line up with " + show(t));
+          }
+          (p.args || []).forEach((a, i) => walkTerm(a, t.args[i], bound));
+          break;
+        case "all":
+        case "exists": {
+          if (p.v !== t.v) throw new Error(show(p) + " binds " + p.v + ", " + show(t) + " binds " + t.v);
+          const inner = new Set(bound);
+          inner.add(p.v);
+          walk(p.a, t.a, inner);
+          break;
+        }
+        case "not": walk(p.a, t.a, bound); break;
+        case "and":
+        case "or":
+          if (p.args.length !== t.args.length) {
+            throw new Error(show(p) + " does not line up with " + show(t));
+          }
+          p.args.forEach((a, i) => walk(a, t.args[i], bound));
+          break;
+        default: walk(p.a, t.a, bound); walk(p.b, t.b, bound);
+      }
+    }
+
+    walk(pattern, target, new Set());
+    if (!found.length) {
+      if (!same(pattern, target)) throw new Error(show(pattern) + " is not " + show(target));
+      return null;
+    }
+    const first = found[0];
+    if (found.some((t) => showTerm(t) !== showTerm(first))) {
+      throw new Error(v + " would have to stand for two different terms.");
+    }
+    if (!same(substitute(pattern, v, first), target)) {
+      throw new Error("Putting " + showTerm(first) + " in for " + v + " does not give " + show(target) + ".");
+    }
+    return first;
+  }
+
+  /* Names Universal Introduction may not generalize: the ones the premises and
+   * the open assumptions have already pinned down. A placeholder is arbitrary
+   * only if nothing in force says anything about it. */
+  function fixedNames(block, lines, premises) {
+    const out = new Set();
+    premises.forEach((p) => freeNames(p, new Set(), out));
+    for (let b = block; b; b = b.parent) {
+      if (b.id !== 0 && lines[b.start]) freeNames(lines[b.start].formula, new Set(), out);
+    }
+    return out;
+  }
 
   /* ------------------------------------------------------------------ rules */
 
@@ -155,6 +365,10 @@
     { id: "ie", label: "Implication Elimination", short: "IE" },
     { id: "bi", label: "Biconditional Introduction", short: "BI" },
     { id: "be", label: "Biconditional Elimination", short: "BE" },
+    { id: "ue", label: "Universal Elimination", short: "UE" },
+    { id: "ui", label: "Universal Introduction", short: "UI" },
+    { id: "ei", label: "Existential Introduction", short: "EI" },
+    { id: "ee", label: "Existential Elimination", short: "EE" },
   ];
   const RULE_BY_ID = {};
   RULES.forEach((r) => { RULE_BY_ID[r.id] = r; });
@@ -231,7 +445,22 @@
     return pool.length === 0;
   }
 
+  /* Existential Elimination needs EX: φ and AX: (φ ⇒ ψ) — the same φ, with the
+   * variable renamed to match, and ψ free of that variable. Returns the ψ it
+   * would conclude, or null when the two lines do not fit together. */
+  function existentialPair(existential, universal) {
+    if (!existential || !universal) return null;
+    if (existential.t !== "exists" || universal.t !== "all") return null;
+    if (universal.a.t !== "imp") return null;
+    let antecedent;
+    try { antecedent = substitute(universal.a.a, universal.v, { n: existential.v, args: [] }); }
+    catch (e) { return null; }
+    if (!same(antecedent, existential.a)) return null;
+    return { conclusion: universal.a.b, v: universal.v };
+  }
+
   function checkLine(line, lines, premises) {
+    premises = premises || [];
     if (line.error) return { ok: false, msg: line.error };
 
     const cited = [];
@@ -348,6 +577,64 @@
           return { ok: false, msg: "Biconditional Elimination needs a biconditional." };
         }
         return { ok: true };
+
+      case "ue": {
+        if (cited.length !== 1 || cited[0].t !== "all") {
+          return { ok: false, msg: "Universal Elimination cites one universally quantified line." };
+        }
+        let t;
+        try { t = instanceOf(cited[0].a, cited[0].v, f); }
+        catch (e) { return { ok: false, msg: "This is not an instance of " + show(cited[0]) + ": " + e.message }; }
+        if (t && !isGround(t)) {
+          return { ok: false, msg: showTerm(t) + " is not ground, so Universal Elimination cannot put it in." };
+        }
+        return { ok: true };
+      }
+
+      case "ui": {
+        if (f.t !== "all") return { ok: false, msg: "Universal Introduction concludes a universally quantified line." };
+        if (cited.length !== 1) return { ok: false, msg: "Universal Introduction cites one line." };
+        let t;
+        try { t = instanceOf(f.a, f.v, cited[0]); }
+        catch (e) { return { ok: false, msg: show(cited[0]) + " is not an instance of " + show(f) + ": " + e.message }; }
+        if (!t) return { ok: true };                      // vacuous generalization
+        if (t.args.length) {
+          return { ok: false, msg: "Universal Introduction generalizes a placeholder, not " + showTerm(t) + "." };
+        }
+        if (fixedNames(line.block, lines, premises).has(t.n)) {
+          return { ok: false, msg: t.n + " is no longer arbitrary here — it occurs in a premise or in an assumption that is still open." };
+        }
+        return { ok: true };
+      }
+
+      case "ei": {
+        if (f.t !== "exists") return { ok: false, msg: "Existential Introduction concludes an existentially quantified line." };
+        if (cited.length !== 1) return { ok: false, msg: "Existential Introduction cites one line." };
+        let t;
+        try { t = instanceOf(f.a, f.v, cited[0]); }
+        catch (e) { return { ok: false, msg: show(cited[0]) + " is not an instance of " + show(f) + ": " + e.message }; }
+        if (t && !isGround(t)) {
+          return { ok: false, msg: showTerm(t) + " is not ground, so Existential Introduction cannot generalize it." };
+        }
+        return { ok: true };
+      }
+
+      case "ee": {
+        if (cited.length !== 2) {
+          return { ok: false, msg: "Existential Elimination cites an existential and a universally quantified implication." };
+        }
+        const pair = existentialPair(cited[0], cited[1]) || existentialPair(cited[1], cited[0]);
+        if (!pair) {
+          return { ok: false, msg: "The cited lines are no longer EX: φ together with AX: (φ ⇒ ψ) for the same φ." };
+        }
+        if (!same(pair.conclusion, f)) {
+          return { ok: false, msg: "That implication concludes " + show(pair.conclusion) + ", not " + show(f) + "." };
+        }
+        if (freeNames(pair.conclusion).has(pair.v)) {
+          return { ok: false, msg: pair.v + " occurs free in the conclusion, which Existential Elimination does not allow." };
+        }
+        return { ok: true };
+      }
     }
     return { ok: false, msg: "Unknown rule." };
   }
@@ -456,6 +743,84 @@
       if (sel.length !== 1) return { error: "Check exactly one line to repeat." };
       return { lines: [{ formula: sel[0].formula, rule: "reit", refIds: citeIds(sel) }] };
     },
+
+    /* Universal Elimination is determined by the term you put in, so that is
+     * what it asks for — not the whole instance. */
+    ue: function (sel, typed) {
+      if (sel.length !== 1) return { error: "Check exactly one universally quantified line." };
+      const f = sel[0].formula;
+      if (f.t !== "all") return { error: "Line " + (sel[0].index + 1) + " is not universally quantified." };
+      if (!typed) {
+        return { prompt: "Universal Elimination — type the ground term to put in for " + f.v +
+                         ", e.g. a or jack. " + show(f) + " then gives you that instance." };
+      }
+      if (typed.t !== "atom") return { error: "That is a formula, not a term. A term is a name like a, or f(a)." };
+      const t = { n: typed.name, args: typed.args || [] };
+      if (!isGround(t)) {
+        return { error: showTerm(t) + " contains a variable, and Universal Elimination only puts in ground terms." };
+      }
+      let out;
+      try { out = substitute(f.a, f.v, t); }
+      catch (e) { return { error: e.message }; }
+      return { lines: [{ formula: out, rule: "ue", refIds: citeIds(sel) }] };
+    },
+
+    /* Universal and Existential Introduction both ask for the sentence to
+     * introduce, because you choose the variable, and for EI also which
+     * occurrences of the term to generalize. */
+    ui: function (sel, typed, block) {
+      if (sel.length !== 1) return { error: "Check exactly one line to generalize." };
+      if (!typed) {
+        return { prompt: "Universal Introduction — type the universally quantified sentence to introduce, e.g. AX: p(X).",
+                 seed: "AX: " };
+      }
+      if (typed.t !== "all") return { error: "That is not a universally quantified sentence; it should start AX: or EX: — here, AX:." };
+      let t;
+      try { t = instanceOf(typed.a, typed.v, sel[0].formula); }
+      catch (e) { return { error: show(sel[0].formula) + " is not an instance of " + show(typed) + ": " + e.message }; }
+      if (t) {
+        if (t.args.length) return { error: "Universal Introduction generalizes a placeholder, not " + showTerm(t) + "." };
+        const fixed = fixedNames(block, state.lines, state.premises);
+        if (fixed.has(t.n)) {
+          return { error: t.n + " is not arbitrary: it occurs in a premise or in an assumption that is still open, so it cannot be generalized." };
+        }
+      }
+      return { lines: [{ formula: typed, rule: "ui", refIds: citeIds(sel) }] };
+    },
+
+    ei: function (sel, typed) {
+      if (sel.length !== 1) return { error: "Check exactly one line to generalize." };
+      if (!typed) {
+        return { prompt: "Existential Introduction — type the existential sentence to introduce, e.g. EX: p(X). " +
+                         "One, some, or all occurrences of a ground term may be replaced.",
+                 seed: "EX: " };
+      }
+      if (typed.t !== "exists") return { error: "That is not an existentially quantified sentence; it should start EX:." };
+      let t;
+      try { t = instanceOf(typed.a, typed.v, sel[0].formula); }
+      catch (e) { return { error: show(sel[0].formula) + " is not an instance of " + show(typed) + ": " + e.message }; }
+      if (t && !isGround(t)) {
+        return { error: showTerm(t) + " contains a variable, and Existential Introduction only generalizes ground terms." };
+      }
+      return { lines: [{ formula: typed, rule: "ei", refIds: citeIds(sel) }] };
+    },
+
+    /* Existential Elimination is fully determined by the two lines, so it asks
+     * for nothing. */
+    ee: function (sel) {
+      if (sel.length !== 2) return { error: "Check the existential and the universally quantified implication." };
+      const [x, y] = sel;
+      const forward = existentialPair(x.formula, y.formula);
+      const pair = forward || existentialPair(y.formula, x.formula);
+      if (!pair) {
+        return { error: "Existential Elimination needs EX: φ together with AX: (φ ⇒ ψ) — the same φ, and a ψ that does not mention X." };
+      }
+      if (freeNames(pair.conclusion).has(pair.v)) {
+        return { error: pair.v + " occurs free in " + show(pair.conclusion) + ", which Existential Elimination does not allow." };
+      }
+      const order = forward ? [x, y] : [y, x];
+      return { lines: [{ formula: pair.conclusion, rule: "ee", refIds: citeIds(order) }] };
+    },
   };
 
   /* ---------------------------------------------------------------- problems */
@@ -477,6 +842,20 @@
     { id: "demorgan", title: "De Morgan, one direction", premises: ["~p & ~q"], goal: "~(p | q)", tags: "NI, II, OE" },
     { id: "excluded", title: "Excluded middle", premises: [], goal: "p | ~p", tags: "NI, NE, II, OI" },
     { id: "peirce", title: "Peirce's law", premises: ["(p => q) => p"], goal: "p", tags: "NI, NE, II, IE" },
+
+    // Chapter 10: the quantifier rules. AX: p(X) is "every X is p", EX: p(X) is
+    // "some X is p".
+    { id: "all-some", title: "Every implies some", premises: ["AX: p(X)"], goal: "EX: p(X)", tags: "UE, EI" },
+    { id: "all-mp", title: "Universal modus ponens", premises: ["AX: (p(X) => q(X))", "p(a)"], goal: "q(a)", tags: "UE, IE" },
+    { id: "all-and-out", title: "Splitting a universal", premises: ["AX: (p(X) & q(X))"], goal: "AX: p(X) & AX: q(X)", tags: "UE, AE, UI, AI" },
+    { id: "all-and-in", title: "Joining two universals", premises: ["AX: p(X) & AX: q(X)"], goal: "AX: (p(X) & q(X))", tags: "AE, UE, AI, UI" },
+    { id: "all-swap", title: "Swapping two universals", premises: ["AX: AY: p(X,Y)"], goal: "AY: AX: p(X,Y)", tags: "UE, UI" },
+    { id: "all-chain", title: "Universal hypothetical syllogism", premises: ["AX: (p(X) => q(X))", "AX: (q(X) => r(X))"], goal: "AX: (p(X) => r(X))", tags: "UE, IE, II, UI" },
+    { id: "some-mp", title: "Some, through an implication", premises: ["AX: (p(X) => q(X))", "EX: p(X)"], goal: "EX: q(X)", tags: "UE, IE, EI, II, UI, EE" },
+    { id: "some-and", title: "Splitting an existential", premises: ["EX: (p(X) & q(X))"], goal: "EX: q(X)", tags: "AE, EI, II, UI, EE" },
+    { id: "some-swap", title: "Swapping two existentials", premises: ["EX: EY: p(X,Y)"], goal: "EY: EX: p(X,Y)", tags: "EI, II, UI, EE" },
+    { id: "some-all", title: "One for all, all have one", premises: ["EY: AX: p(X,Y)"], goal: "AX: EY: p(X,Y)", tags: "UE, EI, UI, II, EE" },
+    { id: "no-p", title: "No p at all", premises: ["AX: ~p(X)"], goal: "~EX: p(X)", tags: "UE, NI, II, EE, R" },
   ];
 
   /* --------------------------------------------------------------------- UI */
@@ -558,7 +937,7 @@
       return say("Line " + (stranded.index + 1) + " is inside a subproof that has already closed, so it cannot be used here.");
     }
 
-    const result = apply(sel, typed);
+    const result = apply(sel, typed, block);
     if (result.error) return say(result.error);
     if (result.prompt) return openPrompt(ruleId, result.prompt, result.seed);
 
@@ -814,6 +1193,7 @@
       ["ai", "ae", "oi", "oe"],
       ["ii", "ie", "bi", "be"],
       ["ni", "ne"],
+      ["ue", "ui", "ei", "ee"],
     ];
     const grid = $("#fitch-buttons");
     columns.forEach((ids) => {
@@ -890,6 +1270,8 @@
   window.Fitch = {
     parse: parse, show: show, same: same, analyze: analyze, checkLine: checkLine,
     runRule: runRule, state: state, PROBLEMS: PROBLEMS, RULES: RULES,
+    APPLY: APPLY, substitute: substitute, instanceOf: instanceOf,
+    freeNames: freeNames, isGround: isGround, showTerm: showTerm,
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

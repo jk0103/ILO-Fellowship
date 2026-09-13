@@ -62,13 +62,15 @@ if (registerForm) {
     return s;
   }
 
+  // Weak runs red through the ILO orange to the teal that reads as "good",
+  // so the meter stays inside the site palette.
   var LEVELS = [
-    { width: "0%", color: "#ff6b6b", label: "At least 8 characters." },
-    { width: "20%", color: "#ff6b6b", label: "Weak password." },
-    { width: "40%", color: "#ffa94d", label: "Fair password." },
-    { width: "60%", color: "#ffd43b", label: "Good password." },
-    { width: "80%", color: "#4ade80", label: "Strong password." },
-    { width: "100%", color: "#4ade80", label: "Very strong password." }
+    { width: "0%", color: "#c8102e", label: "At least 8 characters." },
+    { width: "20%", color: "#c8102e", label: "Weak password." },
+    { width: "40%", color: "#e2573f", label: "Fair password." },
+    { width: "60%", color: "#e2a13f", label: "Good password." },
+    { width: "80%", color: "#0e8a6f", label: "Strong password." },
+    { width: "100%", color: "#0e8a6f", label: "Very strong password." }
   ];
 
   pw.addEventListener("input", function () {

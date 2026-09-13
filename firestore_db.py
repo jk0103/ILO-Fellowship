@@ -1,4 +1,4 @@
-"""Firestore data layer for ILO Prep.
+"""Firestore data layer for ILO Bank.
 
 Identity lives in Firebase Authentication; this module stores everything else.
 
@@ -19,8 +19,11 @@ usernames/{username_lower}
 
 questions/{fingerprint}
     statement     (str)  the exercise as prose
+    chapter       (int)  5 (propositional) or 10 (relational)
     premises      (list[str])
     goal          (str)
+    constants     (list[str])  object constants the language is limited to,
+                               empty unless the exercise declares them
     hint          (str)
     proof         (list[map])  the worked answer, one map per line
     line_count    (int)  len(proof)
@@ -31,6 +34,8 @@ questions/{fingerprint}
 
 The document id is a fingerprint of the premises and goal, so generating the
 same exercise twice updates one document instead of accumulating duplicates.
+Documents written before chapters existed carry no `chapter` field; they are
+all Chapter 5, which is why reads default it rather than requiring it.
 
 Firestore has no unique constraints, so the username is the document id in
 `usernames` and reserved in the same transaction that writes the profile.
@@ -48,6 +53,10 @@ from firebase_admin import credentials, firestore
 USERS = "users"
 USERNAMES = "usernames"
 QUESTIONS = "questions"
+
+# Chapter 5 came first and its documents predate the field, so a question with
+# no chapter recorded is one of its.
+DEFAULT_CHAPTER = 5
 
 _client = None
 _lock = threading.Lock()
@@ -258,16 +267,31 @@ def delete_profile(uid):
 
 # --- questions --------------------------------------------------------------
 
-def question_id(premises, goal):
+def _parser_for(chapter):
+    """The module that parses and prints the formulas of `chapter`."""
+    if int(chapter) == 10:
+        import ch10_checker
+        return ch10_checker
+    import fitch_checker
+    return fitch_checker
+
+
+def question_id(premises, goal, chapter=DEFAULT_CHAPTER):
     """A stable id for an exercise, so the same problem never lands twice.
 
-    Formulas are normalised through the checker first, so "p&q" and "p ∧ q"
-    fingerprint alike.
+    Formulas are normalised through the chapter's own checker first, so "p&q"
+    and "p ∧ q" fingerprint alike. Chapter 5 fingerprints stay the bare digest
+    they have always been, so existing documents and the links into them keep
+    working; later chapters mix the number in, which is what keeps a relational
+    exercise from ever colliding with a propositional one.
     """
-    import fitch_checker as fc
+    chapter = int(chapter)
+    fc = _parser_for(chapter)
 
     parts = sorted(fc.show(fc.parse(p)) for p in premises) + \
         ["⊢ " + fc.show(fc.parse(goal))]
+    if chapter != DEFAULT_CHAPTER:
+        parts.insert(0, "chapter %d" % chapter)
     digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
     return digest[:20]
 
@@ -275,21 +299,26 @@ def question_id(premises, goal):
 def save_question(question, created_by=None, source="generated"):
     """Write one verified question and return its document id.
 
-    `question` is what fitch_generator.generate() returns: premises, goal,
-    hint, proof, difficulty, line_count and statement. Nothing is validated
-    here — callers check the proof with fitch_checker before saving.
+    `question` is what a chapter's generator returns: premises, goal, hint,
+    proof and difficulty, plus `statement` from Chapter 5 or `prompt` from
+    Chapter 10. Nothing is validated here — callers check the proof with that
+    chapter's checker before saving.
     """
-    qid = question_id(question["premises"], question["goal"])
+    chapter = int(question.get("chapter") or DEFAULT_CHAPTER)
+    qid = question_id(question["premises"], question["goal"], chapter)
     ref = get_client().collection(QUESTIONS).document(qid)
     existing = ref.get()
 
     payload = {
-        "statement": question["statement"],
+        # Chapter 5 calls the prose "statement", Chapter 10 calls it "prompt".
+        "statement": question.get("statement") or question.get("prompt") or "",
+        "chapter": chapter,
         "premises": question["premises"],
         "goal": question["goal"],
+        "constants": list(question.get("constants") or []),
         "hint": question.get("hint", ""),
         "proof": question["proof"],
-        "line_count": question["line_count"],
+        "line_count": question.get("line_count") or len(question["proof"]),
         "difficulty": question["difficulty"],
         "source": source,
     }
@@ -313,16 +342,21 @@ def get_question(qid):
         return None
     data = snapshot.to_dict() or {}
     data["id"] = qid
+    data["chapter"] = int(data.get("chapter") or DEFAULT_CHAPTER)
     return data
 
 
-def list_questions(difficulty=None, limit=100):
-    """Stored questions, newest first, optionally filtered by difficulty.
+def list_questions(difficulty=None, chapter=None, limit=100):
+    """Stored questions, newest first, optionally narrowed to one chapter
+    and one difficulty band.
 
     Ordering by created_at with an equality filter needs a composite index in
-    Firestore, so the difficulty filter is applied here instead. That is fine
-    at this size and keeps deployment to a single collection with no index
+    Firestore, so both filters are applied here instead. That is fine at this
+    size and keeps deployment to a single collection with no index
     configuration.
+
+    The `limit` is the number of documents read, not the number returned, so a
+    narrow filter over a large collection can come back short.
     """
     query = get_client().collection(QUESTIONS) \
         .order_by("created_at", direction=firestore.Query.DESCENDING) \
@@ -331,6 +365,9 @@ def list_questions(difficulty=None, limit=100):
     out = []
     for snapshot in query.stream():
         data = snapshot.to_dict() or {}
+        data["chapter"] = int(data.get("chapter") or DEFAULT_CHAPTER)
+        if chapter is not None and data["chapter"] != int(chapter):
+            continue
         if difficulty and data.get("difficulty") != difficulty:
             continue
         data["id"] = snapshot.id
@@ -338,11 +375,18 @@ def list_questions(difficulty=None, limit=100):
     return out
 
 
-def question_counts():
-    """How many questions are stored, per difficulty band."""
+def question_counts(chapter=None):
+    """How many questions are stored, per difficulty band.
+
+    Counts every chapter unless one is named.
+    """
     counts = {"easy": 0, "medium": 0, "hard": 0, "total": 0}
     for snapshot in get_client().collection(QUESTIONS).stream():
-        band = (snapshot.to_dict() or {}).get("difficulty")
+        data = snapshot.to_dict() or {}
+        if chapter is not None and \
+                int(data.get("chapter") or DEFAULT_CHAPTER) != int(chapter):
+            continue
+        band = data.get("difficulty")
         if band in counts:
             counts[band] += 1
         counts["total"] += 1

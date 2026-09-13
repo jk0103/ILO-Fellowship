@@ -1,0 +1,383 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>fitch.js tests</title>
+<!-- Tests for static/fitch.js: the notation, the four quantifier rules, and the
+     editor driven the way the buttons drive it. Serve the app and open
+     /static/fitch_tests.html — the script below is the real one, loaded
+     relatively, so this page cannot drift from the code it tests. -->
+<style>
+  body { font: 13px/1.5 ui-monospace, monospace; margin: 1.5rem; }
+  pre { white-space: pre-wrap; }
+  .fitch-board, .fitch-setup, .hero { display: none; }   /* the editor is only here to be driven */
+  b.bad { color: #b00; }
+</style>
+<body>
+<h1 style="font-size:1.1rem">fitch.js tests</h1>
+<pre id="unit-out">running…</pre>
+<pre id="driver-out">running…</pre>
+
+<div id="editor-dom">
+
+<section class="hero hero-compact">
+  <h1>Fitch practice</h1>
+  <p class="lede">Check the lines you want to work from, then press a rule.
+     The rule is applied for you and the new lines are added to the proof.</p>
+  <p class="hint">Quantifiers are written <code>AX: p(X)</code> for &forall;x.p(x) and
+     <code>EX: p(X)</code> for &exist;x.p(x). Variables are uppercase; a lowercase
+     name is an object constant or a placeholder.</p>
+</section>
+
+
+  <p class="hint">Its worked answer is # lines &mdash;
+     see it on the <a href="#">Generate</a> page.</p>
+</section>
+<script>
+  window.__ILO_QUESTION = {
+    title: "Generated question",
+    premises: #,
+    goal: #
+  };
+</script>
+{% endif %}
+
+<section class="fitch-setup">
+  <label class="field">
+    <span>Problem</span>
+    <select id="fitch-problem"></select>
+  </label>
+
+  <div id="fitch-custom" hidden>
+    <label class="field">
+      <span>Premises (one per line, or comma separated)</span>
+      <textarea id="fitch-custom-premises" rows="3" spellcheck="false"></textarea>
+    </label>
+    <label class="field">
+      <span>Goal</span>
+      <input id="fitch-custom-goal" spellcheck="false">
+    </label>
+    <button class="btn btn-primary" id="fitch-custom-apply" type="button">Start this proof</button>
+    <p class="hint danger" id="fitch-custom-error"></p>
+  </div>
+
+  <dl class="fitch-summary">
+    <dt>Premises</dt><dd id="fitch-premises">&mdash;</dd>
+    <dt>Goal</dt><dd id="fitch-goal-display">&mdash;</dd>
+  </dl>
+</section>
+
+<p id="fitch-verdict" class="fitch-verdict"></p>
+
+<section class="fitch-board">
+  <div class="fitch-selectall">
+    <input type="checkbox" id="fitch-select-all">
+    <label for="fitch-select-all">Select all</label>
+    <span class="fitch-selected" id="fitch-selected"></span>
+  </div>
+
+  <div id="fitch-lines"></div>
+
+  <p class="fitch-message" id="fitch-message"></p>
+
+  <div class="fitch-entry" id="fitch-entry" hidden>
+    <p class="fitch-entry-label" id="fitch-entry-label"></p>
+    <div class="fitch-entry-row">
+      <input id="fitch-entry-input" spellcheck="false" placeholder="formula">
+      <button type="button" class="btn btn-primary" id="fitch-entry-ok">Add</button>
+      <button type="button" class="btn btn-ghost" id="fitch-entry-cancel">Cancel</button>
+    </div>
+    <div class="fitch-palette">
+      <button type="button" class="fitch-sym" data-symbol="¬">¬</button>
+      <button type="button" class="fitch-sym" data-symbol="∧">∧</button>
+      <button type="button" class="fitch-sym" data-symbol="∨">∨</button>
+      <button type="button" class="fitch-sym" data-symbol="⇒">⇒</button>
+      <button type="button" class="fitch-sym" data-symbol="⇔">⇔</button>
+      <button type="button" class="fitch-sym" data-symbol="AX: ">AX:</button>
+      <button type="button" class="fitch-sym" data-symbol="EX: ">EX:</button>
+      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code>.
+        Quantifiers: <code>AX: p(X)</code> for every X, <code>EX: p(X)</code> for some X
+        &mdash; variables uppercase, constants lowercase.</span>
+    </div>
+  </div>
+
+  <div class="fitch-buttons" id="fitch-buttons"></div>
+</section>
+
+
+
+</div>
+
+<script src="fitch.js"></script>
+<script>
+/* The unit suite: notation and the rules in isolation. */
+try {
+
+
+  const F = window.Fitch;
+  const out = [];
+  let pass = 0, fail = 0;
+  function check(label, cond, extra) {
+    if (cond) { pass++; out.push("PASS  " + label); }
+    else { fail++; out.push("FAIL  " + label + (extra ? "   [" + extra + "]" : "")); }
+  }
+  function roundTrip(src, expected) {
+    let got;
+    try { got = F.show(F.parse(src)); } catch (e) { got = "ERROR: " + e.message; }
+    check("parse/show " + JSON.stringify(src) + " -> " + expected, got === expected, got);
+  }
+
+  /* ---- notation ---- */
+  roundTrip("AX: p(X)", "AX: p(X)");
+  roundTrip("EX:p(X)", "EX: p(X)");
+  roundTrip("AX: (p(X) & q(X))", "AX: (p(X) ∧ q(X))");
+  roundTrip("AX: p(X) & AX: q(X)", "AX: p(X) ∧ AX: q(X)");
+  roundTrip("AX: AY: p(X,Y)", "AX: AY: p(X,Y)");
+  roundTrip("~EX: p(X)", "¬EX: p(X)");
+  roundTrip("EX: (p(X) => q(a))", "EX: (p(X) ⇒ q(a))");
+  roundTrip("p & q", "p ∧ q");                 // the propositional fragment is untouched
+  roundTrip("(p => q) => p", "(p ⇒ q) ⇒ p");
+  roundTrip("∀x.p(x)", "AX: p(X)");            // Unicode in, tool notation out
+  roundTrip("∃y.loves(jack,y)", "EY: loves(jack,Y)");
+  roundTrip("AX: EY: r(X,Y)", "AX: EY: r(X,Y)");
+
+  check("a quantified sentence is not the same as its instance",
+        !F.same(F.parse("AX: p(X)"), F.parse("p(a)")));
+  check("bound variable names matter", !F.same(F.parse("AX: p(X)"), F.parse("AY: p(X)")));
+  check("alpha-equivalent spellings unify", F.same(F.parse("AX: p(X)"), F.parse("∀x.p(x)")));
+  check("ground terms", F.isGround({n:"a",args:[]}) && !F.isGround({n:"X",args:[]}));
+
+  /* ---- the rules, driven the way the buttons drive them ---- */
+  function line(src, rule, depth, id) {
+    return { id: id, index: 0, depth: depth || 0, rule: rule, refIds: [], subRef: null,
+             formula: F.parse(src) };
+  }
+  function apply(rule, sel, typedSrc, block) {
+    return F.APPLY[rule](sel, typedSrc ? F.parse(typedSrc) : undefined,
+                         block || { id: 0, parent: null, depth: 0, start: 0 });
+  }
+  function shows(result) {
+    if (result.error) return "error: " + result.error;
+    if (result.prompt) return "prompt";
+    return result.lines.map((l) => F.show(l.formula)).join("; ");
+  }
+
+  F.state.lines = [];
+  F.state.premises = [];
+
+  // Universal Elimination
+  check("UE asks for a term first", apply("ue", [line("AX: p(X)", "premise")]).prompt !== undefined);
+  check("UE puts a constant in", shows(apply("ue", [line("AX: p(X)", "premise")], "a")) === "p(a)");
+  check("UE replaces every occurrence",
+        shows(apply("ue", [line("AX: p(X,X)", "premise")], "c")) === "p(c,c)");
+  check("UE into a nested quantifier",
+        shows(apply("ue", [line("AX: EY: r(X,Y)", "premise")], "a")) === "EY: r(a,Y)");
+  check("UE refuses a variable as the term",
+        shows(apply("ue", [line("AX: p(X)", "premise")], "Y")).indexOf("error") === 0);
+  check("UE refuses a non-universal line",
+        shows(apply("ue", [line("EX: p(X)", "premise")], "a")).indexOf("error") === 0);
+
+  // Existential Introduction
+  check("EI generalizes a constant",
+        shows(apply("ei", [line("p(a)", "premise")], "EX: p(X)")) === "EX: p(X)");
+  check("EI may generalize some occurrences only",
+        shows(apply("ei", [line("r(a,a)", "premise")], "EX: r(a,X)")) === "EX: r(a,X)");
+  check("EI refuses a sentence that is not an instance",
+        shows(apply("ei", [line("p(a)", "premise")], "EX: q(X)")).indexOf("error") === 0);
+  check("EI refuses generalizing a bound variable (the chapter's warning)",
+        shows(apply("ei", [line("AX: hates(X,X)", "premise")], "EY: AX: hates(X,Y)")).indexOf("error") === 0);
+
+  // Universal Introduction
+  F.state.premises = [];
+  check("UI generalizes an arbitrary placeholder",
+        shows(apply("ui", [line("p(c)", "ue")], "AX: p(X)")) === "AX: p(X)");
+  F.state.premises = [F.parse("p(a)")];
+  check("UI refuses a name a premise pins down",
+        shows(apply("ui", [line("p(a)", "premise")], "AX: p(X)")).indexOf("error") === 0);
+  F.state.premises = [];
+  check("UI refuses a mismatched sentence",
+        shows(apply("ui", [line("p(c)", "ue")], "AX: q(X)")).indexOf("error") === 0);
+
+  // UI inside an open assumption that mentions the placeholder
+  F.state.lines = [line("p(c)", "assume", 1, 1)];
+  F.state.lines[0].index = 0;
+  const openBlock = { id: 1, parent: { id: 0, parent: null, depth: 0, start: 0 }, depth: 1, start: 0 };
+  check("UI refuses a placeholder held by an open assumption",
+        shows(apply("ui", [line("p(c)", "assume", 1)], "AX: p(X)", openBlock)).indexOf("error") === 0);
+  F.state.lines = [];
+
+  // Existential Elimination
+  check("EE discharges the existential",
+        shows(apply("ee", [line("EX: p(X)", "premise"), line("AX: (p(X) => q(a))", "premise")])) === "q(a)");
+  check("EE works in either selection order",
+        shows(apply("ee", [line("AX: (p(X) => q(a))", "premise"), line("EX: p(X)", "premise")])) === "q(a)");
+  check("EE refuses a conclusion mentioning the variable (the chapter's warning)",
+        shows(apply("ee", [line("EX: p(X)", "premise"), line("AX: (p(X) => q(X))", "premise")])).indexOf("error") === 0);
+  check("EE refuses a mismatched antecedent",
+        shows(apply("ee", [line("EX: p(X)", "premise"), line("AX: (r(X) => q(a))", "premise")])).indexOf("error") === 0);
+
+  /* ---- checkLine agrees with the rules that produced the lines ---- */
+  function proof(premiseSrcs, steps) {
+    const lines = steps.map((st, i) => ({
+      id: i + 1, depth: st[2] || 0, rule: st[1], formula: F.parse(st[0]),
+      refIds: (st[3] || []).slice(), subRef: st[4] ? { fromId: st[4][0], toId: st[4][1] } : null,
+    }));
+    F.analyze(lines);
+    const premises = premiseSrcs.map(F.parse);
+    return lines.map((l, i) => {
+      const r = F.checkLine(l, lines, premises);
+      return r.ok ? null : (i + 1) + ": " + r.msg;
+    }).filter(Boolean);
+  }
+
+  // The chapter's own EE proof: EX: (p(X) & q(X)) therefore EX: q(X)
+  let bad = proof(["EX: (p(X) & q(X))"], [
+    ["EX: (p(X) & q(X))", "premise", 0],
+    ["p(c) & q(c)", "assume", 1],
+    ["q(c)", "ae", 1, [2]],
+    ["EX: q(X)", "ei", 1, [3]],
+    ["p(c) & q(c) => EX: q(X)", "ii", 0, [], [2, 4]],
+    ["AX: (p(X) & q(X) => EX: q(X))", "ui", 0, [5]],
+    ["EX: q(X)", "ee", 0, [1, 6]],
+  ]);
+  check("the chapter's existential pattern verifies", bad.length === 0, bad.join(" | "));
+
+  // Universal modus ponens, with the placeholder generalized at the end
+  bad = proof(["AX: (p(X) => q(X))"], [
+    ["AX: (p(X) => q(X))", "premise", 0],
+    ["p(c) => q(c)", "ue", 0, [1]],
+    ["p(c)", "assume", 1],
+    ["q(c)", "ie", 1, [2, 3]],
+    ["p(c) => q(c)", "ii", 0, [], [3, 4]],
+    ["AX: (p(X) => q(X))", "ui", 0, [5]],
+  ]);
+  check("a UE/II/UI proof verifies", bad.length === 0, bad.join(" | "));
+
+  // and the unsound version is caught: generalizing a premise's own constant
+  bad = proof(["p(a)"], [["p(a)", "premise", 0], ["AX: p(X)", "ui", 0, [1]]]);
+  check("checkLine catches UI over a premise constant", bad.length === 1, bad.join(" | "));
+
+  bad = proof(["AX: p(X)"], [["AX: p(X)", "premise", 0], ["p(Y)", "ue", 0, [1]]]);
+  check("checkLine catches UE to a non-ground instance", bad.length === 1, bad.join(" | "));
+
+  /* ---- every bundled problem parses ---- */
+  F.PROBLEMS.forEach((p) => {
+    let ok = true, why = "";
+    try { p.premises.forEach(F.parse); F.parse(p.goal); }
+    catch (e) { ok = false; why = e.message; }
+    check("problem parses: " + p.title, ok, why);
+  });
+
+  document.getElementById("unit-out").textContent =
+    out.join("\n") + "\n\n" + pass + "/" + (pass + fail) + " passed" +
+    (fail ? "\nFAILURES: " + fail : "");
+
+
+} catch (e) {
+  document.getElementById("unit-out").textContent = "THREW: " + e.message + "\n" + (e.stack || "").slice(0, 400);
+}
+</script>
+<script>
+/* The driver: the editor itself, after its own init has run. */
+window.addEventListener("DOMContentLoaded", function () {
+try {
+
+
+  const F = window.Fitch;
+  const out = [];
+  let pass = 0, fail = 0;
+  const check = (label, cond, extra) => {
+    if (cond) { pass++; out.push("PASS  " + label); }
+    else { fail++; out.push("FAIL  " + label + (extra ? "   [" + extra + "]" : "")); }
+  };
+
+  const picker = document.getElementById("fitch-problem");
+  const byTitle = (t) => [...picker.options].find((o) => o.textContent.indexOf(t) >= 0);
+  const verdict = () => document.getElementById("fitch-verdict").textContent;
+  const message = () => document.getElementById("fitch-message").textContent;
+  const proofText = () => F.state.lines.map((l, i) =>
+      (i + 1) + ". " + "| ".repeat(l.depth) + F.show(l.formula) + "   [" + l.rule +
+      (l.refIds.length ? " " + l.refIds.map((id) => F.state.lines.findIndex((x) => x.id === id) + 1).join(",") : "") + "]").join("\n");
+
+  function load(title) {
+    const opt = byTitle(title);
+    picker.value = opt.value;
+    picker.dispatchEvent(new Event("change"));
+  }
+  function pick() {
+    F.state.selected.clear();
+    [...arguments].forEach((n) => F.state.selected.add(F.state.lines[n - 1].id));
+  }
+  function run(rule, typed) { F.runRule(rule, typed ? F.parse(typed) : undefined); }
+
+  /* ---- Some, through an implication: the full existential pattern ---- */
+  load("Some, through an implication");
+  check("problem loads with its two premises", F.state.lines.length === 2, proofText());
+
+  run("assume", "p(c)");
+  pick(1); run("ue", "c");
+  pick(4, 3); run("ie");
+  pick(5); run("ei", "EX: q(X)");
+  pick(3, 6); run("ii");
+  pick(7); run("ui", "AX: (p(X) => EX: q(X))");
+  pick(2, 8); run("ee");
+
+  check("the proof reaches the goal and every line holds",
+        verdict().indexOf("✓ Proved") === 0, verdict() + "\n" + proofText() + "\n" + message());
+  check("it took nine lines", F.state.lines.length === 9, proofText());
+  check("the last line is EX: q(X) at depth 0",
+        F.show(F.state.lines[8].formula) === "EX: q(X)" && F.state.lines[8].depth === 0, proofText());
+  out.push("--- proof built by the buttons ---");
+  out.push(proofText());
+
+  /* ---- Every implies some ---- */
+  load("Every implies some");
+  pick(1); run("ue", "a");
+  pick(2); run("ei", "EX: p(X)");
+  check("AX: p(X) therefore EX: p(X)", verdict().indexOf("✓ Proved") === 0, verdict() + "\n" + proofText());
+
+  /* ---- Swapping two universals ---- */
+  load("Swapping two universals");
+  pick(1); run("ue", "c");
+  pick(2); run("ue", "d");
+  pick(3); run("ui", "AX: p(X,d)");
+  pick(4); run("ui", "AY: AX: p(X,Y)");
+  check("AX: AY: p(X,Y) therefore AY: AX: p(X,Y)", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText());
+
+  /* ---- the UI restriction bites in the editor, not just in theory ---- */
+  load("Universal modus ponens");     // premises: AX: (p(X) => q(X)), p(a)
+  pick(2); run("ui", "AX: p(X)");
+  check("the editor refuses to generalize the premise's own constant",
+        message().indexOf("not arbitrary") > 0 && F.state.lines.length === 2, message());
+
+  /* ---- and a real proof of that problem still goes through ---- */
+  pick(1); run("ue", "a");
+  pick(3, 2); run("ie");
+  check("universal modus ponens proves q(a)", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText());
+
+  /* ---- EE refuses the unsound pairing in the editor ---- */
+  load("Some, through an implication");
+  run("assume", "p(c)");
+  pick(1); run("ue", "c");
+  pick(4, 3); run("ie");
+  pick(5); run("ii");             // p(c) => q(c), discharging the subproof
+  pick(6); run("ui", "AX: (p(X) => q(X))");
+  pick(2, 7); run("ee");
+  check("EE refuses AX: (p(X) => q(X)) because X is free in the conclusion",
+        message().indexOf("occurs free") > 0, message() + "\n" + proofText());
+
+  /* ---- the propositional rules still work, unchanged ---- */
+  load("Peirce's law");
+  check("a propositional problem still loads", F.state.lines.length === 1, proofText());
+  pick(1); run("ae");
+  check("AE still complains about a non-conjunction", message().indexOf("not a conjunction") > 0, message());
+
+  document.getElementById("driver-out").textContent =
+    out.join("\n") + "\n\n" + pass + "/" + (pass + fail) + " passed" + (fail ? "\nFAILURES: " + fail : "");
+
+
+} catch (e) {
+  document.getElementById("driver-out").textContent = "THREW: " + e.message + "\n" + (e.stack || "").slice(0, 400);
+}
+});
+</script>
