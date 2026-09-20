@@ -166,12 +166,33 @@
     }
   }
 
+  // The overlay lives in base.html, outside <main>, because it blurs the rest
+  // of the page rather than covering it.
+  function loading(on, title, note) {
+    const panel = $("#loading");
+    if (!panel) return;
+    if (on) {
+      $("#loading-title").textContent = title || "Working…";
+      $("#loading-note").textContent = note || "";
+    }
+    panel.hidden = !on;
+    document.body.classList.toggle("is-loading", !!on);
+    // A fresh fact to wait with, rather than the tail of the current one —
+    // after the panel is up, so the fade actually plays.
+    if (on && window.ILOFacts) window.ILOFacts.next();
+  }
+
   async function run() {
     const button = $("#gen-run");
     const status = $("#gen-status");
+    const wantedNow = Number($("#gen-count").value);
     button.disabled = true;
     status.className = "hint";
     status.textContent = "Writing and checking proofs… this takes a moment.";
+    loading(true,
+      wantedNow === 1 ? "Writing a question…" : "Writing " + wantedNow + " questions…",
+      "Every proof is checked line by line before it is saved, and anything "
+      + "that does not pass is written again. This takes a moment.");
 
     try {
       const res = await fetch("/api/questions/generate", {
@@ -192,16 +213,34 @@
       const wanted = Number($("#gen-count").value);
       const got = data.questions.length;
       const offBand = asked && data.questions.some((q) => q.difficulty !== asked);
-      status.textContent = "Saved " + got + " question" +
-        (got === 1 ? "" : "s") + "." +
-        (got < wanted ? " The rest did not pass the checker and were dropped." : "") +
-        (offBand ? " Some proofs came out a different length than asked for, so"
-                 + " they are filed under the band they actually landed in." : "");
+      // The server keeps spare verified exercises in a waiting area and hands
+      // those out before asking the model, so say where these came from.
+      const fromPool = data.from_pool || 0;
+      const parts = ["Saved " + got + " question" + (got === 1 ? "" : "s") + "."];
+      if (fromPool) {
+        parts.push(fromPool === got
+          ? (got === 1 ? "It was" : "They were") + " already written and checked,"
+            + " so nothing new had to be generated."
+          : fromPool + " of them were already written and checked.");
+      }
+      if (got < wanted) {
+        parts.push("The rest did not pass the checker and were dropped.");
+      }
+      if (offBand) {
+        parts.push("Some proofs came out a different length than asked for, so"
+          + " they are filed under the band they actually landed in.");
+      }
+      if (data.banked) {
+        parts.push("Kept " + data.banked + " spare" + (data.banked === 1 ? "" : "s")
+          + " for next time (" + (data.waiting || 0) + " waiting).");
+      }
+      status.textContent = parts.join(" ");
       loadSaved();
     } catch (err) {
       status.className = "hint danger";
       status.textContent = err.message;
     } finally {
+      loading(false);
       button.disabled = false;
     }
   }
@@ -210,8 +249,8 @@
     const spec = CHAPTERS.filter((c) => Number(c.number) === chapter)[0];
     let text = spec ? spec.blurb : "";
     if (chapter === 10) {
-      text += " Long relational proofs are where the model struggles, so a"
-        + " medium or hard run may come back with fewer than you asked for.";
+      text += " Long relational proofs are the hardest to write, so a medium"
+        + " or hard run may come back with fewer than you asked for.";
     }
     $("#gen-blurb").textContent = text;
   }

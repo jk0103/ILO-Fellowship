@@ -26,7 +26,9 @@ import requests
 import fitch_checker as fc
 
 API_URL = "https://api.openai.com/v1/responses"
-MODEL = os.environ.get("FITCH_MODEL", "gpt-4.1")
+# gpt-4.1 could not hold a twenty-line relational proof together —
+# a hard run would spend a dozen repair calls and keep nothing.
+MODEL = os.environ.get("FITCH_MODEL", "gpt-6-astra")
 
 # Vector store holding "Introduction to Logic - Chapter 5.html".
 VECTOR_STORE_ID = os.environ.get(
@@ -294,16 +296,120 @@ def _repair_prompt(question, problems):
     )
 
 
+# What actually makes a Chapter 5 proof long. Asking for a line count alone
+# gets a short proof with extra premises bolted on, because a premise is a free
+# line: it lengthens the proof without making the exercise any harder. Length
+# comes from subproofs, so that is what the recipe describes.
+LENGTH_RECIPE = {
+    "easy": "A couple of connectives and two or three rules is the whole of it.",
+    "medium": "Every implication proved costs a subproof — assume the "
+              "antecedent, reach the consequent, discharge it with Implication "
+              "Introduction — and a goal that has to be built up through nested "
+              "conditional proofs costs several. A biconditional costs two.",
+    "hard": "Reductio is the expensive pattern: there is no ex falso, so a "
+            "negation is only ever reached by Negation Introduction on two "
+            "implications that share an antecedent, and each of those "
+            "implications is a subproof of its own. Or Elimination costs a "
+            "subproof per disjunct as well.",
+}
+
+# Said whatever band is asked for: the two ways of reaching a line count that
+# are not worth reaching.
+NO_PADDING = (
+    "An exercise may have no premises at all — proving a tautology outright, "
+    "the way the example below does — and those are entirely subproof work, so "
+    "they are often the longest kind. Never add a premise to reach a line "
+    "count: every premise must be cited somewhere in the proof, and an exercise "
+    "that carries a premise it never uses is a worse exercise, not a longer one."
+)
+
+
+def _starter_bank():
+    """The seed exercises that ship next to this module, if still readable.
+
+    Read only to have a worked example of every band on hand, so a missing or
+    unreadable file is no more than a missed improvement.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "seed_questions.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            bank = json.load(fh)
+    except (OSError, ValueError):
+        return []
+    return bank if isinstance(bank, list) else []
+
+
+STARTER = _starter_bank()
+
+
+def _example_for(difficulty):
+    """A worked exercise to show as the shape, in the band being asked for.
+
+    The built-in example is an eight-line one, so a prompt for a hard exercise
+    otherwise shows nothing but an easy one and gets an easy one back.
+    """
+    if not difficulty:
+        return EXAMPLE
+    best = None
+    for question in STARTER:
+        candidate = _clean(dict(question))
+        if candidate is None or fc.difficulty(candidate["proof"]) != difficulty:
+            continue
+        if best is not None and len(candidate["proof"]) <= len(best["proof"]):
+            continue
+        if _faults(candidate):            # never show the model a broken proof
+            continue
+        best = candidate
+    if best is None:
+        return EXAMPLE
+    return {"premises": best["premises"], "goal": best["goal"],
+            "hint": best.get("hint", ""), "proof": best["proof"]}
+
+
+def _padding(question):
+    """Complaints about an exercise that is longer than it is hard.
+
+    Difficulty is measured by proof length, and a premise costs a line without
+    costing any work, so bolting premises on is the cheapest way to answer a
+    request for a long proof. A premise no line ever cites is the tell: the
+    argument is valid without it, so it is weight rather than difficulty. Such
+    a proof is perfectly sound, which is why the checker has nothing to say
+    about it and this is asked separately.
+    """
+    proof = question.get("proof") or []
+    cited = set()
+    for step in proof:
+        cited.update(step.get("refs") or [])
+        first, last = (step.get("subref") or [None, None])[:2]
+        if isinstance(first, int) and isinstance(last, int):
+            cited.update(range(first, last + 1))
+    return [f"premise {i} ({step.get('formula')}) is never used, so it "
+            f"lengthens the proof without being part of it"
+            for i, step in enumerate(proof, 1)
+            if step.get("rule") == "premise" and i not in cited]
+
+
 def _ask_prompt(count, difficulty, avoid):
     prompt = [f"Write {count} new Fitch exercises, each with a complete proof."]
+    example = _example_for(difficulty)
     if difficulty:
         prompt.append(
-            f"Aim for {difficulty} difficulty: a proof of "
+            f"This is a {difficulty} exercise, so the proof must come to "
             f"{fc.TARGET_LINES[difficulty]}. Difficulty here is measured purely "
-            f"by how many lines the proof takes."
+            f'by how many lines the proof takes — the whole "proof" array, '
+            f"premise lines and assumption lines included, not just the "
+            f"inferred ones. Choose an argument that genuinely needs a proof "
+            f"that long; never pad a short one with reiterations or detours."
         )
-    prompt.append("Here is the exact shape expected, for one question:\n"
-                  + json.dumps(EXAMPLE, ensure_ascii=False, indent=1))
+        prompt.append("What makes a proof that long — length here comes from "
+                      "subproofs, not from premises. "
+                      + LENGTH_RECIPE[difficulty])
+        prompt.append(NO_PADDING)
+    prompt.append(f"Here is the exact shape expected, for one question — a "
+                  f"worked {fc.difficulty(example['proof'])} exercise of "
+                  f"{len(example['proof'])} lines:\n"
+                  + json.dumps(example, ensure_ascii=False, indent=1))
     prompt.append("The chapter already ends with these. Do not repeat them:\n"
                   + "\n".join(f"- {e}" for e in CHAPTER_EXERCISES))
     if avoid:
@@ -326,12 +432,18 @@ def render_question(question):
 
 def generate(count=1, difficulty=None, api_key=None, model=MODEL,
              vector_store_id=VECTOR_STORE_ID, attempts=3, on_reject=None):
-    """Return up to `count` verified questions, each with a checked proof.
+    """Return the verified questions, each with a checked proof.
+
+    The first `count` of them are what was asked for; anything after that is
+    surplus — a batch that over-delivers, or a question that landed outside the
+    band asked for. It is verified all the same, so it is handed back rather
+    than thrown away and `/api/questions/generate` banks it for the next
+    request.
 
     `difficulty`, if given, is a target band; a question whose verified proof
     lands in a different band is kept anyway but labelled by its real length,
-    and the shortfall is re-requested. Every returned question carries
-    "difficulty", "line_count" and "statement".
+    sorted behind the in-band ones, and the shortfall is re-requested. Every
+    returned question carries "difficulty", "line_count" and "statement".
     """
     api_key = api_key or os.environ.get("OPENAI_API_KEY")
     if not api_key:
@@ -386,6 +498,11 @@ def generate(count=1, difficulty=None, api_key=None, model=MODEL,
                 reject(question, problems)
                 continue
 
+            weight = _padding(question)
+            if weight:
+                reject(question, weight)
+                continue
+
             question = accept(question)
             if question["statement"] in seen:
                 continue
@@ -395,11 +512,12 @@ def generate(count=1, difficulty=None, api_key=None, model=MODEL,
                 off_band.append(question)   # correct, just not the band asked for
                 continue
             kept.append(question)
-            if len(kept) == count:
-                return kept
+            # Do not stop mid-batch: the rest of this batch is already paid for
+            # and verifying it is free, so let the spares through too.
 
-    # Better to hand back a verified question in the wrong band than nothing.
-    return (kept + off_band)[:count] if kept or off_band else []
+    # In-band first, so a caller taking the first `count` gets what it asked
+    # for; the tail is off-band or surplus, and better banked than binned.
+    return kept + off_band
 
 
 # --- CLI --------------------------------------------------------------------
@@ -427,6 +545,10 @@ def main(argv=None):
                              attempts=args.attempts, on_reject=report)
     except GeneratorError as exc:
         parser.error(str(exc))
+
+    # generate() may hand back spares; the CLI was asked for -n and the server
+    # is what banks the rest.
+    questions = questions[:args.count]
 
     for i, question in enumerate(questions, 1):
         print(f"Exercise 5.{i}: {question['statement']}"

@@ -32,10 +32,22 @@ questions/{fingerprint}
     created_by    (str or None)  uid of whoever generated it
     created_at    (server timestamp)
 
+question_pool/{fingerprint}
+    The waiting area. Same fields as `questions`, minus `source`. A generator
+    is always asked for more exercises than were wanted, since some candidates
+    fail the checker; on a good run the spares pass too. Those spares land here
+    instead of being thrown away, and the next request for that chapter is
+    served out of here before the model is called at all. Claiming one is a
+    transaction, so two requests arriving together cannot be handed the same
+    exercise. Nothing is ever shown to anyone from this collection — a claim
+    moves the document into `questions` first.
+
 The document id is a fingerprint of the premises and goal, so generating the
 same exercise twice updates one document instead of accumulating duplicates.
-Documents written before chapters existed carry no `chapter` field; they are
-all Chapter 5, which is why reads default it rather than requiring it.
+The pool uses the same fingerprint, which is what stops it from banking an
+exercise that is already public or already waiting. Documents written before
+chapters existed carry no `chapter` field; they are all Chapter 5, which is why
+reads default it rather than requiring it.
 
 Firestore has no unique constraints, so the username is the document id in
 `usernames` and reserved in the same transaction that writes the profile.
@@ -53,6 +65,12 @@ from firebase_admin import credentials, firestore
 USERS = "users"
 USERNAMES = "usernames"
 QUESTIONS = "questions"
+POOL = "question_pool"
+
+# How many spare exercises to hold per chapter. The pool is drained by ordinary
+# use, so this only matters for a band nobody asks for: without a cap those
+# would accumulate forever.
+POOL_LIMIT = 50
 
 # Chapter 5 came first and its documents predate the field, so a question with
 # no chapter recorded is one of its.
@@ -296,23 +314,18 @@ def question_id(premises, goal, chapter=DEFAULT_CHAPTER):
     return digest[:20]
 
 
-def save_question(question, created_by=None, source="generated"):
-    """Write one verified question and return its document id.
+def _payload(question):
+    """The stored shape of one question, shared by the bank and the pool.
 
     `question` is what a chapter's generator returns: premises, goal, hint,
     proof and difficulty, plus `statement` from Chapter 5 or `prompt` from
     Chapter 10. Nothing is validated here — callers check the proof with that
     chapter's checker before saving.
     """
-    chapter = int(question.get("chapter") or DEFAULT_CHAPTER)
-    qid = question_id(question["premises"], question["goal"], chapter)
-    ref = get_client().collection(QUESTIONS).document(qid)
-    existing = ref.get()
-
-    payload = {
+    return {
         # Chapter 5 calls the prose "statement", Chapter 10 calls it "prompt".
         "statement": question.get("statement") or question.get("prompt") or "",
-        "chapter": chapter,
+        "chapter": int(question.get("chapter") or DEFAULT_CHAPTER),
         "premises": question["premises"],
         "goal": question["goal"],
         "constants": list(question.get("constants") or []),
@@ -320,8 +333,18 @@ def save_question(question, created_by=None, source="generated"):
         "proof": question["proof"],
         "line_count": question.get("line_count") or len(question["proof"]),
         "difficulty": question["difficulty"],
-        "source": source,
     }
+
+
+def save_question(question, created_by=None, source="generated"):
+    """Write one verified question and return its document id."""
+    payload = _payload(question)
+    chapter = payload["chapter"]
+    qid = question_id(question["premises"], question["goal"], chapter)
+    ref = get_client().collection(QUESTIONS).document(qid)
+    existing = ref.get()
+
+    payload["source"] = source
     if existing.exists:
         # Keep the original authorship and timestamp; only the answer can change
         # (a later run may find a shorter proof, which changes the difficulty).
@@ -396,3 +419,133 @@ def question_counts(chapter=None):
 def delete_question(qid):
     """Remove one question. Used by tests and cleanup."""
     get_client().collection(QUESTIONS).document(qid).delete()
+
+
+# --- the waiting area -------------------------------------------------------
+#
+# A generator is asked for more exercises than were wanted, because candidates
+# get dropped. When the spares survive the checker too, they are verified work
+# that has already been paid for, so they wait here for the next request
+# instead of being discarded. Nothing here is visible to anyone: a question is
+# moved into `questions` at the moment it is claimed.
+
+def pool_add(questions, created_by=None):
+    """Bank verified spares. Returns the ids that were actually banked.
+
+    A spare is skipped when the exercise is already public, when an identical
+    one is already waiting, or when its chapter's pool is full — so handing
+    this everything left over is safe. Takes the whole batch at once so the
+    chapter's pool is counted once rather than once per spare.
+    """
+    db = get_client()
+    banked, room = [], {}
+
+    for question in questions:
+        payload = _payload(question)
+        chapter = payload["chapter"]
+        if chapter not in room:
+            room[chapter] = POOL_LIMIT - pool_counts(chapter=chapter)["total"]
+        if room[chapter] <= 0:
+            continue
+
+        qid = question_id(question["premises"], question["goal"], chapter)
+        if db.collection(QUESTIONS).document(qid).get().exists:
+            continue                   # already on file; not new to anyone
+        ref = db.collection(POOL).document(qid)
+        if ref.get().exists:
+            continue                   # already waiting
+
+        payload["created_by"] = created_by
+        payload["created_at"] = firestore.SERVER_TIMESTAMP
+        ref.set(payload)
+        room[chapter] -= 1
+        banked.append(qid)
+
+    return banked
+
+
+def pool_take(chapter, difficulty=None, limit=1):
+    """Claim up to `limit` waiting questions, oldest first, and return them.
+
+    A claimed question is removed from the pool and handed back for the caller
+    to check and save; the claim is transactional, so two requests arriving
+    together never receive the same exercise. If the caller dies before saving,
+    the question is lost — this is a cache of spare work, not a record of it.
+
+    Like `list_questions`, the chapter and difficulty are filtered here rather
+    than in the query, to keep Firestore free of composite indexes.
+    """
+    limit = max(0, int(limit))
+    if not limit:
+        return []
+
+    db = get_client()
+    query = db.collection(POOL) \
+        .order_by("created_at", direction=firestore.Query.ASCENDING) \
+        .limit(2 * POOL_LIMIT)
+
+    taken = []
+    for snapshot in query.stream():
+        if len(taken) >= limit:
+            break
+        data = snapshot.to_dict() or {}
+        if int(data.get("chapter") or DEFAULT_CHAPTER) != int(chapter):
+            continue
+        if difficulty and data.get("difficulty") != difficulty:
+            continue
+        claimed = _claim_pooled(db, snapshot.id)
+        if claimed is not None:
+            claimed["id"] = snapshot.id
+            claimed["chapter"] = int(claimed.get("chapter") or DEFAULT_CHAPTER)
+            taken.append(claimed)
+    return taken
+
+
+def _claim_pooled(db, qid):
+    """Remove one pooled question and return it, or None if it is already gone."""
+    ref = db.collection(POOL).document(qid)
+
+    @firestore.transactional
+    def _txn(transaction):
+        snapshot = ref.get(transaction=transaction)
+        if not snapshot.exists:
+            return None                # another request got there first
+        transaction.delete(ref)
+        return snapshot.to_dict() or {}
+
+    return _txn(db.transaction())
+
+
+def list_pool(chapter=None, difficulty=None):
+    """Everything waiting, so a generator can be told not to write it again."""
+    out = []
+    for snapshot in get_client().collection(POOL).stream():
+        data = snapshot.to_dict() or {}
+        data["chapter"] = int(data.get("chapter") or DEFAULT_CHAPTER)
+        if chapter is not None and data["chapter"] != int(chapter):
+            continue
+        if difficulty and data.get("difficulty") != difficulty:
+            continue
+        data["id"] = snapshot.id
+        out.append(data)
+    return out
+
+
+def pool_counts(chapter=None):
+    """How many spares are waiting, per difficulty band."""
+    counts = {"easy": 0, "medium": 0, "hard": 0, "total": 0}
+    for snapshot in get_client().collection(POOL).stream():
+        data = snapshot.to_dict() or {}
+        if chapter is not None and \
+                int(data.get("chapter") or DEFAULT_CHAPTER) != int(chapter):
+            continue
+        band = data.get("difficulty")
+        if band in counts:
+            counts[band] += 1
+        counts["total"] += 1
+    return counts
+
+
+def delete_pooled(qid):
+    """Remove one waiting question. Used by tests and cleanup."""
+    get_client().collection(POOL).document(qid).delete()

@@ -151,14 +151,90 @@ has to clear two hurdles before it is stored:
 2. the proof must pass the checker, line by line.
 
 A proof that fails is handed back to the model with the checker's complaints for
-one repair attempt. What still fails is dropped. The route re-checks each proof
-a second time immediately before writing it, so an unverified answer cannot
-reach Firestore even if the generator changes.
+a repair attempt. **A repair may only mend the proof it was given** — the
+premises and the goal that come back must be the same argument, compared through
+the checker's own parser so that reprinting `p ∧ q` as `p&q` still counts as the
+same. Without that guard the easiest way for a model to satisfy the checker is
+to answer an easier question instead, which is exactly how a request for a hard
+exercise comes back easy. Longer bands get more repair rounds than short ones,
+because a twenty-line proof has twenty chances to slip and mending one costs far
+less than writing another.
 
-**Difficulty is measured, not claimed.** It comes from the length of the
-verified proof: under 10 lines is easy, under 20 is medium, 20 or more is hard.
-Asking for a band steers the prompt, but a question whose proof lands elsewhere
-is filed under the band it actually reached.
+What still fails is dropped. A batch that comes up short is asked again — up to
+three batches per request, for the shortfall only — rather than failing on one
+bad sample. The route re-checks each proof a second time immediately before
+writing it, so an unverified answer cannot reach Firestore even if the generator
+changes.
+
+## The waiting area
+
+Sometimes a run produces more than was asked for: a batch that over-delivers,
+or a sound exercise that landed outside the band requested. Throwing away
+verified work that has already been paid for would be a waste, so it is banked
+in `question_pool`, and the next request for that chapter is served out of there
+**before the model is called at all** — a request the pool can cover returns at
+once and costs nothing.
+
+Chapter 10 used to fill the pool deliberately, asking for two more exercises
+than were wanted because so few survived the checker. That is no longer worth
+the wait: a batch of three takes about 120 seconds against 32 for a batch of
+one, and over-asking never saved any work, it only moved it — three written at
+once and two banked costs the same as three written one at a time, with the
+whole wait paid by whoever pressed the button first. `ASK_EXTRA` is 0; raise it
+again if the model starts missing.
+
+Claiming a spare is a Firestore transaction, so two people pressing *Generate*
+at the same moment can never be handed the same exercise. A claimed question is
+moved into `questions` on the way out, after passing the checker one more time;
+nothing is ever shown to anyone straight from the pool. A spare is only banked
+if it is genuinely new — not already public, not already waiting — and each
+chapter's pool is capped, so a band nobody asks for cannot accumulate forever.
+
+Two consequences worth knowing. The pool is a cache of spare work, not a record
+of it: if the server dies between claiming and saving, that exercise is simply
+lost. And when the OpenAI API is down but the pool is not empty, `/generate`
+still works — it just serves what is waiting.
+
+**Difficulty is measured, not claimed.** It comes from the length of the whole
+verified proof, premise and assumption lines included: under 10 lines is easy,
+under 20 is medium, 20 or more is hard. The model is told that plainly, because
+left to itself it counts only the lines it inferred and so writes short.
+
+Asking for a band is a requirement, not a hint. A question that lands in another
+band does not count towards the number asked for, and the batch is asked again —
+told how far off the last one was, and in which direction. What comes back in
+the wrong band is still sound, so it is used only to fill a shortfall once the
+retries are spent, and otherwise banked under the band it actually reached. An
+easy exercise written while chasing a medium one is not wasted: it waits in the
+pool for the next person who asks for easy.
+
+**The prompt has to be shown the length, not just told it.** Every exercise the
+chapter ends with is short, and so was the worked example the prompt carried, so
+a request for a hard exercise used to show the model nothing but easy ones. The
+example is now picked to match the band asked for — the longest verified one on
+file, falling back to the starter bank.
+
+**Length comes from subproofs, not from premises.** A premise costs a line
+without costing any work, so bolting premises on is the cheapest way to answer a
+request for a long proof — and the cheapest way is not the right one: it makes
+the exercise longer without making it harder. The prompt says so, and the
+generator enforces it. A premise that no line ever cites means the argument is
+valid without it, so the candidate is dropped however well its proof checks out.
+The checker has nothing to say about such a proof — it is perfectly sound —
+which is why this is asked separately.
+
+What the prompt describes instead is where the work actually is. Chapter 10's
+own sixteen exercises are almost all single-premise, and the long ones are long
+because of what they prove: Exercises 10.11 to 10.14, where ¬∀ and ¬∃ trade
+places, need Negation Introduction on two implications that share an antecedent,
+each of them a subproof of its own, and nesting that inside a Universal
+Introduction is what a hard exercise looks like. Chapter 5 is the same story
+with reductio — its hard seed questions run to 20–26 lines on a single premise.
+
+**An exercise may have no premises at all.** Proving a law outright — `⊢
+∀x.(p(x) ⇒ p(x))`, `⊢ ∀x.p(x) ⇒ ∃x.p(x)`, or Chapter 5's `⊢ ((p ⇒ q) ∧ (q ⇒ r))
+⇒ (p ⇒ r)` — is entirely subproof work, and is often the longest kind. Both
+prompts say so, and nothing in the pipeline requires a premise.
 
 Reductio proofs are long in this system — there is no `false` rule, so every
 contradiction routes through Negation Introduction on two implications — which
@@ -216,11 +292,18 @@ python3 ch10_generator.py -n 3 --difficulty medium -o ch10_questions.json -a
 ```
 
 `--append` adds to an existing file without repeating what is already in it.
-Long relational proofs are where the model struggles: `gpt-4.1` reliably clears
-the easy band and rarely survives the checker at medium or harder, most often by
-citing into a subproof that has closed. Pass `--model` to try a stronger one.
-That is why a medium or hard run from the web page can come back with fewer
-questions than were asked for; the page says so when it does.
+
+**Which model matters more than anything else here.** Long relational proofs
+were where `gpt-4.1` fell down: asked for one hard exercise it wrote three
+candidates, failed all three, spent twelve repair calls and kept nothing —
+fifteen API calls for no question. `gpt-6-astra`, on the same prompt, verified
+all three on the first try in a single call, and the one it was asked for came
+out at 28 lines and depth 3 on two premises: long because of the subproof work,
+not because it had been padded. It is the default for both chapters. `--model`,
+or the `FITCH_MODEL` environment variable, overrides it.
+
+A medium or hard run can still come back with fewer questions than were asked
+for; the page says so when it does.
 
 Chapter 10 is reached from the same `/generate` page by picking it in the
 chapter selector. Two things differ from Chapter 5 once a question is on screen:
@@ -234,9 +317,10 @@ chapter selector. Two things differ from Chapter 5 once a question is on screen:
 
 Where Chapter 5 repeats itself, `fitch_generator` catches it inside a single
 call. Chapter 10 draws on a much smaller stock of arguments, so the route hands
-its generator everything already saved for that chapter and the prompt asks for
-something else — which is why `/generate` reads the stored questions before
-calling the model, but only for Chapter 10.
+its generator everything already on file for that chapter — what is public,
+what is waiting in the pool, and what this request has just claimed out of it —
+and the prompt asks for something else. That is why `/generate` reads the stored
+questions before calling the model, but only for Chapter 10.
 
 ## Data model
 
@@ -268,6 +352,8 @@ questions/{fingerprint}            id is sha256(premises + goal), truncated
     source        string           "generated" or "seed"
     created_by    string or null   uid of whoever generated it
     created_at    timestamp
+
+question_pool/{fingerprint}        the waiting area; same fields, no `source`
 ```
 
 A proof line is `{formula, rule, depth, refs, subref}`: `rule` is a rule id —
@@ -334,7 +420,7 @@ Before deploying, add your production domain to the authorized domains list.
 | `ILO_SECRET_KEY` | Flask session signing key |
 | `OPENAI_API_KEY` | Required by `/generate`; without it the page still lists saved questions. May live in a gitignored `.env`, which `load_env.py` reads |
 | `FITCH_VECTOR_STORE_ID` | Vector store holding the chapter (has a default) |
-| `FITCH_MODEL` | Defaults to `gpt-4.1`; `ch10_generator.py` reads it too |
+| `FITCH_MODEL` | Defaults to `gpt-6-astra`; both generators read it |
 | `CH10_VECTOR_STORE_ID` | Vector store holding Chapter 10 (has a default) |
 | `PORT` | Defaults to 5001 (macOS uses 5000 for AirPlay) |
 
@@ -420,6 +506,7 @@ links inside cards included.
 | `static/fitch_tests.html` | Browser tests for the editor; open `/static/fitch_tests.html` |
 | `static/style.css` | The whole stylesheet; the palette is the `:root` block at the top |
 | `static/generate.js` | The Generate page |
+| `static/facts.js` | The rotating facts about logic, drawn from both chapters |
 | `static/auth.js` | Firebase Auth in the browser (ES module) |
 | `static/main.js` | Password strength, username availability, show/hide |
 | `templates/` | Jinja templates |

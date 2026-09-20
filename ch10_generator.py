@@ -12,6 +12,10 @@ proof that fails is handed back to the model with the checker's complaints and
 one repair attempt. Only what survives is returned, and its difficulty comes
 from the length of the verified proof, not from the model's opinion.
 
+More candidates are asked for than are wanted, and a batch that comes up short
+is asked again. Whatever survives beyond the count is returned too rather than
+thrown away: verifying it cost nothing, and the caller can bank it.
+
 CLI:
     export OPENAI_API_KEY=...
     python ch10_generator.py -n 5 --difficulty medium -o ch10_questions.json
@@ -32,7 +36,9 @@ import load_env
 load_env.load()
 
 API_URL = "https://api.openai.com/v1/responses"
-MODEL = os.environ.get("FITCH_MODEL", "gpt-4.1")
+# gpt-4.1 could not hold a twenty-line relational proof together —
+# a hard run would spend a dozen repair calls and keep nothing.
+MODEL = os.environ.get("FITCH_MODEL", "gpt-6-astra")
 
 # Vector store holding "Introduction to Logic - Chapter 10.html".
 VECTOR_STORE_ID = os.environ.get(
@@ -40,6 +46,66 @@ VECTOR_STORE_ID = os.environ.get(
 )
 
 REPAIR_ATTEMPTS = 2
+
+# Extra repair rounds for the longer bands. A twenty-line proof has twenty
+# chances to slip, so nearly every hard candidate needs repairing at least
+# once; and regenerating one from scratch costs far more than mending it.
+EXTRA_REPAIRS = {"medium": 1, "hard": 2}
+
+# What actually makes a Chapter 10 proof long. Asking for a line count alone
+# gets a short proof with extra premises bolted on, because a premise is a free
+# line: it lengthens the proof without making the exercise any harder. Length
+# in this system comes from subproofs, so that is what the recipe describes.
+# The chapter's own exercises bear this out — almost every one of the sixteen
+# has a single premise, and the long ones are long because of what they prove.
+LENGTH_RECIPE = {
+    "easy": "One premise and two or three rule applications, the way Exercises "
+            "10.1 to 10.9 go.",
+    "medium": "Proving an implication costs a subproof — assume the "
+              "antecedent, reach the consequent, discharge it with Implication "
+              "Introduction — and proving a universally quantified implication "
+              "costs that subproof inside a Universal Introduction over an "
+              "arbitrary name. Existential Elimination takes a universally "
+              "quantified implication as its second input, which usually has to "
+              "be built the same way. Or Elimination costs a subproof per "
+              "disjunct.",
+    "hard": "The expensive results are the negative ones — the pattern of "
+            "Exercises 10.11 to 10.14, where ¬∀ and ¬∃ trade places. There is "
+            "no ex falso here, so a negation is only ever reached by Negation "
+            "Introduction on two implications that share an antecedent, and "
+            "each of those implications is a subproof of its own. Nest that "
+            "inside a Universal Introduction, or inside the implication an "
+            "Existential Elimination needs, and the proof is long because the "
+            "result is hard, not because it has been padded.",
+}
+
+# Said whatever band is asked for: the two ways of reaching a line count that
+# are not worth reaching.
+NO_PADDING = (
+    "An exercise may have no premises at all — proving a law of quantifier "
+    "logic outright, such as ⊢ ∀x.(p(x) ⇒ p(x)) or ⊢ ∀x.p(x) ⇒ ∃x.p(x) — and "
+    "those are entirely subproof work, so they are often the longest kind. "
+    "Never add a premise to reach a line count: every premise must be cited "
+    "somewhere in the proof, and an exercise that needs a premise it never uses "
+    "is a worse exercise, not a longer one."
+)
+
+# Candidates asked for beyond what is wanted. Zero: the batch is exactly what
+# was asked for.
+#
+# This used to be 2, from when a batch of three was the only way to end up with
+# one usable exercise. A model that verifies first try makes that a bad trade —
+# the extras are most of the wait, because the whole batch is written in one
+# completion and it is the output that takes the time. Over-asking did not save
+# work either, only moved it: three written at once and two banked is the same
+# total as three written one at a time, with the entire cost paid up front by
+# whoever pressed the button first. Raise it again if the model starts missing.
+ASK_EXTRA = 0
+
+# Batches asked for before giving up. A batch that comes up short is asked
+# again for the shortfall only; the model samples afresh each time, so a second
+# ask is worth making rather than failing the request.
+ATTEMPTS = 3
 
 # Rule descriptions for the prompt; the ids themselves come from the checker.
 RULE_NOTES = {
@@ -347,6 +413,32 @@ def problems(question):
         return [f"the question is malformed: {exc}"]
 
 
+def padding(question):
+    """Complaints about an exercise that is longer than it is hard.
+
+    Difficulty is measured by proof length, and a premise costs a line without
+    costing any work, so bolting premises on is the cheapest way to answer a
+    request for a long proof. A premise no line ever cites is the tell: the
+    argument is valid without it, so it is weight rather than difficulty. The
+    checker has nothing to say about this — such a proof is perfectly sound —
+    which is why it is asked separately.
+    """
+    proof = question.get("proof") or []
+    cited = set()
+    for step in proof:
+        cited.update(step.get("refs") or [])
+        first, last = (step.get("subref") or [None, None])[:2]
+        if isinstance(first, int) and isinstance(last, int):
+            cited.update(range(first, last + 1))
+
+    out = []
+    for i, step in enumerate(proof, 1):
+        if step.get("rule") == "premise" and i not in cited:
+            out.append(f"premise {i} ({step.get('formula')}) is never used, so "
+                       f"it lengthens the proof without being part of it")
+    return out
+
+
 def shape(premises, goal, loose=False):
     """A canonical form of an argument, blind to the names it happens to use.
 
@@ -399,30 +491,136 @@ CHAPTER_SHAPES_LOOSE = {shape(p, g, loose=True)
 
 # --- the generation loop ----------------------------------------------------
 
-def _ask_prompt(count, difficulty, avoid):
-    want = f"Write {count} new exercise{'s' if count != 1 else ''}"
+def _starter_bank():
+    """The exercises that ship next to this module, if they are still there.
+
+    `main()` writes this file and `seed_questions.py` loads it into Firestore.
+    It is read here only to have a worked example of every band on hand before
+    anything has been generated, so a missing or unreadable file is no more
+    than a missed improvement.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "ch10_questions.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            bank = json.load(fh)
+    except (OSError, ValueError):
+        return []
+    return bank if isinstance(bank, list) else []
+
+
+STARTER = _starter_bank()
+
+
+def _example_for(difficulty, existing):
+    """A worked exercise to show as the JSON shape, in the band being asked for.
+
+    The built-in example is a seven-line one, and the chapter's own exercises
+    are shorter still, so a prompt for a hard exercise otherwise shows nothing
+    but easy ones and gets an easy one back. When something in the band asked
+    for is on hand — already generated, or in the starter bank — that is shown
+    instead: it is verified, it is the right length, and it demonstrates what
+    makes a proof that long here. The longest in band shows the most.
+    """
+    if not difficulty:
+        return EXAMPLE
+
+    best = None
+    for question in list(existing) + STARTER:
+        proof = question.get("proof") or []
+        if not proof or cc.difficulty(proof) != difficulty:
+            continue
+        if best is not None and len(proof) <= len(best["proof"]):
+            continue
+        if problems(question):            # never show the model a broken proof
+            continue
+        best = question
+    if best is None:
+        return EXAMPLE
+
+    proof = best["proof"]
+    return {
+        "prompt": best.get("prompt") or best.get("statement") or "",
+        "premises": list(best.get("premises") or []),
+        "goal": best.get("goal") or "",
+        "constants": list(best.get("constants") or []),
+        "hint": best.get("hint") or "",
+        "rules_used": sorted({step["rule"] for step in proof}),
+        "proof": proof,
+    }
+
+
+def _ask_prompt(count, difficulty, avoid, note=None, example=EXAMPLE):
+    # A batch of one is now the usual case, so the sentence has to read for it.
+    lines = [f"Write {count} new exercises, each with a complete worked proof."
+             if count != 1 else
+             "Write 1 new exercise, with a complete worked proof."]
     if difficulty:
-        want += (f", aimed at {difficulty} difficulty — a proof of "
-                 f"{cc.TARGET_LINES[difficulty]}")
-    lines = [
-        want + ", each with a complete worked proof.",
-        "",
-        "The chapter's own exercises, for style — do not reproduce them:",
-        *(f"  - {ex}" for ex in CHAPTER_EXERCISES),
-    ]
+        lines += [
+            "",
+            f"LENGTH. This is a {difficulty} exercise, so each proof must come "
+            f"to {cc.TARGET_LINES[difficulty]}. That is the length of the whole "
+            f'"proof" array — the premise lines and every assumption line count '
+            f"towards it, not just the inferred ones. Choose an argument that "
+            f"genuinely needs a proof that long; never pad a short one with "
+            f"reiterations or detours.",
+            "",
+            f"WHAT MAKES A PROOF THAT LONG. Length here comes from subproofs, "
+            f"not from premises. {LENGTH_RECIPE[difficulty]}",
+            "",
+            NO_PADDING,
+        ]
+    if note:
+        lines += ["", note]
+    lines += ["",
+              "The chapter's own exercises, for style — do not reproduce them. "
+              "Most are short; the length asked for above is what governs, not "
+              "these:",
+              *(f"  - {ex}" for ex in CHAPTER_EXERCISES)]
     if avoid:
         lines += ["", "Also avoid these, already generated:",
                   *(f"  - {ex}" for ex in avoid)]
-    lines += ["", "The JSON shape, shown with a proof from the chapter:",
-              json.dumps(EXAMPLE, ensure_ascii=False, indent=2)]
+    shown = len(example["proof"])
+    lines += ["",
+              f"The JSON shape, shown with a worked {cc.difficulty(example['proof'])}"
+              f" exercise of {shown} lines:",
+              json.dumps(example, ensure_ascii=False, indent=2)]
     return "\n".join(lines)
+
+
+def _length_note(difficulty, off_band):
+    """A nudge for the next batch, when the last one missed the band asked for.
+
+    The difficulty of an exercise is the length of its verified proof, so a
+    batch that came out in the wrong band is a batch of arguments that were too
+    much or too little work. Saying so — with the lengths it actually returned
+    — is more use to the model than asking again in the same words.
+    """
+    if not (difficulty and off_band):
+        return None
+    lengths = sorted(len(q["proof"]) for q in off_band)
+    wanted = cc.DIFFICULTIES.index(difficulty)
+    short = sum(1 for q in off_band
+                if cc.DIFFICULTIES.index(q["difficulty"]) < wanted)
+    if short * 2 >= len(off_band):
+        miss, fix = "too short", (
+            "Reach for arguments that genuinely need more work: more premises, "
+            "a nested subproof, or a chain of several quantifier steps.")
+    else:
+        miss, fix = "too long", (
+            "Reach for simpler arguments, settled in fewer steps.")
+    return (f"The last attempt came back at {', '.join(str(n) for n in lengths)}"
+            f" lines — {miss} for {difficulty}, which needs "
+            f"{cc.TARGET_LINES[difficulty]}. {fix}")
 
 
 def _repair_prompt(question, complaints):
     return "\n".join([
-        "This exercise did not pass the structural check. Fix the proof, or "
-        "replace the exercise with a correct one of the same shape. Return it "
-        "in the same JSON format, as a single question.",
+        "This exercise is fine but its proof does not check out. Return exactly "
+        "one question: the SAME premises and the SAME goal, with the proof "
+        "corrected. Do not substitute a different argument, and do not retreat "
+        "to an easier one — a long proof with a broken line is worth more than "
+        "a short proof of something else. Return it in the same JSON format.",
         "",
         json.dumps(question, ensure_ascii=False, indent=2),
         "",
@@ -431,15 +629,52 @@ def _repair_prompt(question, complaints):
     ])
 
 
+def _same_argument(one, other):
+    """Whether two candidates state the same exercise.
+
+    Compared through the checker's own parser, so a repair that reprints
+    "p ∧ q" as "p&q" still counts as the same argument while one that quietly
+    swaps in a different — usually easier — exercise does not. A candidate
+    whose formulas will not parse is not the same as anything; it is broken,
+    and the checker drops it a moment later anyway.
+    """
+    def key(question):
+        return (sorted(cc.show(cc.parse(p)) for p in question.get("premises") or []),
+                cc.show(cc.parse(question.get("goal") or "")))
+    try:
+        return key(one) == key(other)
+    except (cc.FormulaError, KeyError, TypeError, IndexError, ValueError):
+        return False
+
+
 def generate(count=1, difficulty=None, api_key=None, model=MODEL,
-             vector_store_id=None, verbose=False, existing=()):
-    """Return a list of questions that pass the structural check.
+             vector_store_id=None, verbose=False, existing=(),
+             attempts=ATTEMPTS):
+    """Return the questions that passed the structural check.
+
+    The first `count` of them are what was asked for. Anything after that is
+    surplus — a batch that over-delivers, or a sound exercise that landed
+    outside the band asked for. Verifying it cost nothing, so it is handed back
+    rather than thrown away and `/api/questions/generate` banks it for the next
+    request.
+
+    `difficulty`, if given, is the band the caller asked for, and it is
+    enforced: difficulty is the length of the verified proof, so a question
+    that comes out in another band does not count towards `count` and the batch
+    is asked again, told how far off the last one was. Such a question is still
+    sound, so it is returned behind the in-band ones rather than dropped — a
+    caller that ends up short gets a verified exercise instead of nothing, and
+    the rest are banked under the band they really landed in.
+
+    A batch that comes up short is asked again, up to `attempts` times, for the
+    shortfall only.
 
     `existing` is the exercises already on file — either this module's own
-    questions or the rows `/generate` reads back from Firestore. Their shapes
-    are compared against each candidate and their prose goes into the prompt's
-    do-not-repeat list, which matters here because Chapter 10 has a small stock
-    of arguments and will otherwise write the same one again.
+    questions, or the rows `/generate` reads back from Firestore and its
+    waiting area. Their shapes are compared against each candidate and their
+    prose goes into the prompt's do-not-repeat list, which matters here because
+    Chapter 10 has a small stock of arguments and will otherwise write the same
+    one again.
     """
     api_key = api_key or os.environ.get("OPENAI_API_KEY")
     if not api_key:
@@ -454,7 +689,7 @@ def generate(count=1, difficulty=None, api_key=None, model=MODEL,
         if verbose:
             print(msg, file=sys.stderr)
 
-    kept, avoid, seen = [], [], set()
+    kept, off_band, avoid, seen = [], [], [], set()
     for question in existing:                 # do not repeat what is on file
         seen.add(shape(question.get("premises") or [],
                        question.get("goal") or ""))
@@ -463,41 +698,96 @@ def generate(count=1, difficulty=None, api_key=None, model=MODEL,
         prose = question.get("prompt") or question.get("statement") or ""
         if prose:
             avoid.append(prose)
-    # Ask for a few extra, since some candidates are dropped.
-    batch = _call(api_key, model, vector_store_id,
-                  _ask_prompt(count + 2, difficulty, avoid))
-    for question in batch.get("questions", []):
+
+    repairs = REPAIR_ATTEMPTS + EXTRA_REPAIRS.get(difficulty, 0)
+    # Show the model something of the right length, if anything on file is.
+    example = _example_for(difficulty, existing)
+
+    for attempt in range(max(1, int(attempts))):
         if len(kept) >= count:
             break
-        complaints = problems(question)
-        for _ in range(REPAIR_ATTEMPTS if complaints else 0):
-            log(f"repairing {question.get('prompt')!r}: {complaints[0]}")
-            fixed = _call(api_key, model, vector_store_id,
-                          _repair_prompt(question, complaints))
-            candidates = fixed.get("questions") or []
-            if not candidates:
-                break
-            question = candidates[0]
+        # Only what is still missing: a batch that came up short is asked
+        # again rather than padded out in advance.
+        batch = _call(api_key, model, vector_store_id,
+                      _ask_prompt(count - len(kept) + ASK_EXTRA, difficulty,
+                                  avoid, _length_note(difficulty, off_band),
+                                  example))
+        candidates = batch.get("questions") or []
+        if not candidates:
+            log(f"batch {attempt + 1}: the model returned no questions")
+            continue
+
+        for question in candidates:
             complaints = problems(question)
-            if not complaints:
-                break
-        if complaints:
-            log(f"dropped {question.get('prompt')!r}: {complaints[0]}")
-            continue
-        premises = question.get("premises") or []
-        goal = question.get("goal") or ""
-        signature = shape(premises, goal)
-        if (signature in seen or signature in CHAPTER_SHAPES
-                or shape(premises, goal, loose=True) in CHAPTER_SHAPES_LOOSE):
-            log(f"dropped {question.get('prompt')!r}: it is a renaming of an "
-                f"exercise already in the set")
-            continue
-        seen.add(signature)
-        question["difficulty"] = cc.difficulty(question["proof"])
-        question["chapter"] = 10
-        kept.append(question)
-        avoid.append(question["prompt"])
-    return kept
+            # A repair is another API call, so it is only worth paying for
+            # while we are still short of the count. Spares are taken as they
+            # come or not at all.
+            if complaints and len(kept) < count:
+                for _ in range(repairs):
+                    log(f"repairing {question.get('prompt')!r}: {complaints[0]}")
+                    fixed = _call(api_key, model, vector_store_id,
+                                  _repair_prompt(question, complaints))
+                    repaired = fixed.get("questions") or []
+                    if not repaired:
+                        break
+                    # A repair must not quietly swap in a different exercise.
+                    # Long proofs are the ones that need repairing, and the
+                    # easiest way to satisfy the checker is to answer an easier
+                    # question instead — which is how a request for a hard
+                    # exercise comes back easy.
+                    if not _same_argument(repaired[0], question):
+                        log(f"dropped a repair of {question.get('prompt')!r}: "
+                            f"it changed the exercise")
+                        break
+                    question = repaired[0]
+                    complaints = problems(question)
+                    if not complaints:
+                        break
+            if complaints:
+                log(f"dropped {question.get('prompt')!r}: {complaints[0]}")
+                continue
+
+            weight = padding(question)
+            if weight:
+                log(f"dropped {question.get('prompt')!r}: {weight[0]}")
+                continue
+
+            premises = question.get("premises") or []
+            goal = question.get("goal") or ""
+            signature = shape(premises, goal)
+            if (signature in seen or signature in CHAPTER_SHAPES
+                    or shape(premises, goal, loose=True) in CHAPTER_SHAPES_LOOSE):
+                log(f"dropped {question.get('prompt')!r}: it is a renaming of an "
+                    f"exercise already in the set")
+                continue
+            seen.add(signature)
+            # Difficulty is measured, never claimed: it is the length of the
+            # proof that just passed the checker.
+            question["difficulty"] = cc.difficulty(question["proof"])
+            question["chapter"] = 10
+            prose = question.get("prompt") or ""
+            if prose:
+                avoid.append(prose)
+
+            if difficulty and question["difficulty"] != difficulty:
+                # Sound, just not the band that was asked for. It does not
+                # count towards `count`, so the loop asks again — but it is
+                # verified work, so it is handed back at the end rather than
+                # dropped, behind everything in band.
+                log(f"off band: {prose!r} came out "
+                    f"{question['difficulty']} ({len(question['proof'])} lines), "
+                    f"not {difficulty}")
+                off_band.append(question)
+                continue
+            kept.append(question)
+
+        log(f"batch {attempt + 1}: {len(kept)} of {count} in band, "
+            f"{len(off_band)} off band")
+
+    # In band first, so a caller taking the first `count` gets what it asked
+    # for. Better to hand back a verified question in the wrong band than
+    # nothing, and the spares are banked under the band they really landed in.
+    return kept + off_band
 
 
 def main(argv=None):
@@ -505,6 +795,8 @@ def main(argv=None):
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-n", "--count", type=int, default=1)
     ap.add_argument("--difficulty", choices=cc.DIFFICULTIES)
+    ap.add_argument("--attempts", type=int, default=ATTEMPTS,
+                    help="batches to ask for before giving up")
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--store", default=None, help="vector store id")
     ap.add_argument("-o", "--out", help="write the questions to this JSON file")
@@ -520,11 +812,19 @@ def main(argv=None):
 
     try:
         questions = generate(args.count, args.difficulty, model=args.model,
-                             vector_store_id=args.store,
+                             vector_store_id=args.store, attempts=args.attempts,
                              verbose=not args.quiet, existing=existing)
     except GeneratorError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+
+    # generate() may hand back spares; the CLI was asked for -n and the server
+    # is what banks the rest.
+    if len(questions) > args.count:
+        if not args.quiet:
+            print(f"note: {len(questions) - args.count} spare question(s) "
+                  f"verified and discarded", file=sys.stderr)
+        questions = questions[:args.count]
 
     text = json.dumps(existing + questions, ensure_ascii=False, indent=2)
     if args.out:

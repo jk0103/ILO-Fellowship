@@ -47,11 +47,36 @@
     {% block content %}{% endblock %}
   </main>
 
+  {# Facts about logic, from the two chapters the questions are built on. One
+     rotation drives every [data-fact] on the page; facts.js owns the clock. #}
+  <section class="fact-strip" aria-label="About logic">
+    <figure class="fact" data-fact>
+      <blockquote data-fact-text></blockquote>
+      <figcaption>&mdash; <span data-fact-source></span></figcaption>
+    </figure>
+  </section>
+
   <footer class="footer">
     <p>ILO Bank &middot; an unofficial question bank for the International Logic Olympiad.</p>
   </footer>
 
+  {# Raised while the server is working. It has to be a direct child of <body>,
+     outside <main>, because what it blurs is everything beside it. The fact is
+     repeated here: the strip above the footer is behind the blur. #}
+  <div class="loading" id="loading" hidden>
+    <div class="loading-card" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="loading-title" id="loading-title">Working&hellip;</p>
+      <p class="loading-note" id="loading-note"></p>
+    </div>
+    <figure class="fact" data-fact>
+      <blockquote data-fact-text></blockquote>
+      <figcaption>&mdash; <span data-fact-source></span></figcaption>
+    </figure>
+  </div>
+
   <script type="module" src="{{ url_for('static', filename='auth.js') }}"></script>
   <script src="{{ url_for('static', filename='main.js') }}"></script>
+  <script src="{{ url_for('static', filename='facts.js') }}"></script>
 </body>
 </html>

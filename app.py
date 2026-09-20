@@ -312,6 +312,12 @@ def api_generate_questions():
     Generation is slow and costs money per call, so it is behind a login and
     capped. Nothing reaches Firestore until its proof has passed the same
     checker the browser editor runs.
+
+    The generators are asked for more exercises than were wanted, because some
+    candidates fail that checker. When the spares pass too they are banked in
+    the waiting area, and the next request is served out of there before the
+    model is called at all — so a request the pool can cover returns at once
+    and costs nothing.
     """
     payload = request.get_json(silent=True) or {}
     chapter = chapter_arg(payload.get("chapter"))
@@ -328,45 +334,86 @@ def api_generate_questions():
     if difficulty and difficulty not in spec["checker"].DIFFICULTIES:
         return jsonify(error="Unknown difficulty."), 400
     count = max(1, min(count, MAX_PER_REQUEST))
+    uid = (current_user() or {}).get("uid")
 
-    # What is on file for this chapter, so the model can be asked not to write
-    # the same exercise again. Read only if the chapter's generator wants it.
-    def on_file():
-        return store.list_questions(chapter=chapter, limit=200)
+    def verify(question):
+        """Every complaint this server has about a candidate."""
+        try:
+            return spec["verify"](question)
+        except Exception as exc:               # a malformed candidate
+            return [str(exc)]
 
-    try:
-        questions = spec["make"](count, difficulty, on_file)
-    except GENERATOR_ERRORS as exc:
-        app.logger.warning("Chapter %s generation failed: %s", chapter, exc)
-        return jsonify(error=str(exc)), 502
+    # Spend the spares first. These were checked before they were banked; they
+    # are checked again below, on the way out, like everything else.
+    wanted = store.pool_take(chapter=chapter, difficulty=difficulty,
+                             limit=count)
+    from_pool = len(wanted)
+    spare = []
 
-    if not questions:
+    if len(wanted) < count:
+        # What is on file for this chapter, so the model can be asked not to
+        # write the same exercise again: what is public, what is still waiting,
+        # and what this request has just claimed out of the pool and not yet
+        # saved anywhere. Read only if the chapter's generator wants it.
+        def on_file():
+            return (store.list_questions(chapter=chapter, limit=200)
+                    + store.list_pool(chapter=chapter)
+                    + wanted)
+
+        shortfall = count - len(wanted)
+        try:
+            fresh = spec["make"](shortfall, difficulty, on_file)
+        except GENERATOR_ERRORS as exc:
+            app.logger.warning("Chapter %s generation failed: %s", chapter, exc)
+            if not wanted:
+                return jsonify(error=str(exc)), 502
+            fresh = []                 # the pool already covers part of this
+        # The generators hand back everything that passed; the tail is surplus.
+        wanted += fresh[:shortfall]
+        spare = fresh[shortfall:]
+
+    if not wanted:
         return jsonify(
             error="Nothing the model produced passed verification. Try again."
         ), 502
 
-    uid = (current_user() or {}).get("uid")
-    saved = []
-    for question in questions:
+    def normalise(question):
         question["chapter"] = chapter
         # Chapter 10 names its prose "prompt" and leaves the length implicit.
         question["statement"] = (question.get("statement")
                                  or question.get("prompt") or "")
         question["line_count"] = len(question.get("proof") or [])
+        return question
+
+    saved, served_from_pool = [], 0
+    for index, question in enumerate(wanted):
         # Belt and braces: never store an answer this server has not checked.
-        try:
-            problems = spec["verify"](question)
-        except Exception as exc:               # a malformed candidate
-            problems = [str(exc)]
+        problems = verify(normalise(question))
         if problems:
             app.logger.error("Unverified proof reached the route: %s", problems)
             continue
         question["id"] = store.save_question(question, created_by=uid)
         saved.append(question)
+        if index < from_pool:
+            served_from_pool += 1
 
     if not saved:
         return jsonify(error="The generated proofs did not verify."), 502
-    return jsonify(questions=saved)
+
+    # Bank whatever is left over, on the same terms: checked first, and only if
+    # it is something nobody has been given yet. A spare is never worth failing
+    # the request over.
+    banked, waiting = [], 0
+    try:
+        banked = store.pool_add(
+            (q for q in (normalise(s) for s in spare) if not verify(q)),
+            created_by=uid)
+        waiting = store.pool_counts(chapter=chapter)["total"]
+    except Exception as exc:
+        app.logger.warning("Could not bank the spare questions: %s", exc)
+
+    return jsonify(questions=saved, from_pool=served_from_pool,
+                   banked=len(banked), waiting=waiting)
 
 
 @app.get("/api/questions")
