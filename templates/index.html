@@ -13,11 +13,11 @@
   <div class="hero-actions">
     {% if current_user %}
       <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}">Go to dashboard</a>
-      <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Fitch practice</a>
+      <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Fitch tool</a>
     {% else %}
       <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}">Start practicing</a>
       <a class="btn btn-ghost btn-lg" href="{{ url_for('login') }}">I already have an account</a>
-      <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Try Fitch proofs &mdash; no account needed</a>
+      <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Fitch tool &mdash; no account needed</a>
     {% endif %}
   </div>
 </section>

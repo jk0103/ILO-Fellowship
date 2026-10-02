@@ -116,10 +116,13 @@ a:hover { color: var(--blue-hover); }
   background: transparent;
   transition: background .12s;
 }
-.nav-links a:not(.btn):hover { color: #fff; }
-.nav-links a:not(.btn):nth-of-type(3n + 1):hover::after { background: var(--nav-underline-1); }
-.nav-links a:not(.btn):nth-of-type(3n + 2):hover::after { background: var(--nav-underline-2); }
-.nav-links a:not(.btn):nth-of-type(3n + 3):hover::after { background: var(--nav-underline-3); }
+/* The link for the current page wears its underline all the time, so the bar
+   says where you are. */
+.nav-links a:not(.btn):hover,
+.nav-links a:not(.btn)[aria-current="page"] { color: #fff; }
+.nav-links a:not(.btn):nth-of-type(3n + 1):is(:hover, [aria-current="page"])::after { background: var(--nav-underline-1); }
+.nav-links a:not(.btn):nth-of-type(3n + 2):is(:hover, [aria-current="page"])::after { background: var(--nav-underline-2); }
+.nav-links a:not(.btn):nth-of-type(3n + 3):is(:hover, [aria-current="page"])::after { background: var(--nav-underline-3); }
 .nav-user { color: #fff; font-size: .95rem; font-weight: 600; line-height: 1.5; }
 
 /* The one action on the bar is filled; the quieter one is an outline. */
@@ -866,7 +869,6 @@ button:disabled { opacity: .6; cursor: default; }
 body.is-loading { overflow: hidden; }
 body.is-loading > header,
 body.is-loading > main,
-body.is-loading > .fact-strip,
 body.is-loading > .footer {
   filter: blur(4px);
   pointer-events: none;
@@ -902,64 +904,13 @@ body.is-loading > .footer {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* --- facts about logic --- */
-.fact-strip {
-  border-top: 1px solid var(--border);
-  background: var(--bg-tint);
-  padding: 1.5rem 2rem;
-}
-.fact {
-  margin: 0 auto;
-  max-width: 46rem;
-  text-align: center;
-}
-.fact blockquote {
-  margin: 0;
-  color: var(--text);
-  font-size: .95rem;
-  line-height: 1.65;
-}
-.fact figcaption {
-  margin-top: .5rem;
-  color: var(--muted);
-  font-size: .78rem;
-  letter-spacing: .3px;
-  text-transform: uppercase;
-}
-/* Facts are swapped in place every ten seconds, so each arrival fades up. The
-   class is removed and re-added by facts.js to replay it.
-   No fill mode: a fact must be opaque whenever the animation is NOT running.
-   With `both` the backwards fill pins opacity at 0, and an animation started
-   inside a display:none subtree — the overlay before it is raised — never runs
-   at all, leaving the fact invisible when the overlay opens. */
-.fact.is-in { animation: fact-in .5s ease; }
-@keyframes fact-in {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* On the overlay the fact sits on the blurred page rather than on a panel, so
-   it gets a panel of its own — opaque, or the blurred card edges behind it
-   show through the text. Lighter than the spinner's card, so the two read in
-   order rather than competing. */
-.loading .fact {
-  max-width: 34rem;
-  padding: 1.1rem 1.6rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-tint);
-  box-shadow: 0 2px 8px rgba(31, 29, 28, .05);
-}
-
 @media (prefers-reduced-motion: reduce) {
   /* Keep the spinner legible as a ring rather than removing it: a still
      circle still reads as "busy" next to the message. */
   .spinner { animation-duration: 2.4s; }
-  .fact.is-in { animation: none; }
 }
 
 @media (max-width: 700px) {
-  .fact-strip { padding: 1.2rem 1.2rem; }
   .loading { gap: 1.2rem; }
   .loading-card { padding: 1.6rem 1.4rem; }
 }

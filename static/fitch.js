@@ -1,17 +1,19 @@
 /* Fitch proof editor.
  *
  * The Stanford intro-logic Fitch system: the propositional rules of Chapter 5,
- * the quantifier rules of Chapter 10, and Domain Closure and Induction from
- * Chapter 13. You select lines with the checkboxes and press a rule button; the
- * rule is applied for you and the new lines are appended. Nothing is typed
- * except premises, assumptions, the target of Or Introduction, the term or
- * sentence a quantifier rule needs, and the conclusion of an induction.
+ * the quantifier rules of Chapter 10, Domain Closure and Induction from
+ * Chapter 13, and the equality rules of Chapter 15 with the Stanford tool's
+ * Rational Equation and Rational Induction. You select lines with the
+ * checkboxes and press a rule button; the rule is applied for you and the new
+ * lines are appended. Nothing is typed except premises, assumptions, the target
+ * of Or Introduction, the term or sentence a quantifier rule needs, the
+ * conclusion of an induction, and the result of an equality rule.
  *
- * Quantifiers are written the way the Stanford tool writes them: AX: p(X) for
- * every X, EX: p(X) for some X. Variables are uppercase, so a lowercase name is
- * an object constant or a placeholder, and "ground" just means "no uppercase
- * name in it". The Unicode forms ∀x.p(x) and ∃x.p(x) are accepted too, and are
- * normalized to uppercase variables on the way in.
+ * Quantifiers are shown the way the textbook writes them: ∀X.p(X) for every X,
+ * ∃X.p(X) for some X. They can be typed that way or as the Stanford tool's
+ * AX: p(X) and EX: p(X). Variables are uppercase, so a lowercase name is an
+ * object constant or a placeholder, and "ground" just means "no uppercase name
+ * in it"; ∀x.p(x) with a lowercase variable is normalized on the way in.
  *
  * Everything runs in the browser; nothing is sent to the server.
  */
@@ -27,13 +29,16 @@
   // would not be followed by an uppercase name and a colon.
   const QUANT = /^(?:([AE])([A-Z][A-Za-z0-9_]*)|([∀∃])\s*([A-Za-z][A-Za-z0-9_]*))\s*[:.]/;
 
-  // Longest match first, so "<=>" never reads as "<" then "=>".
+  // Longest match first, so "<=>" never reads as "<" then "=>", and "=>" never
+  // as an equation. + and * build terms (Chapter 15), so + is not "or" here.
   const OPERATORS = [
     ["<=>", "iff"], ["<->", "iff"], ["⇔", "iff"], ["↔", "iff"], ["≡", "iff"],
     ["=>", "imp"], ["->", "imp"], ["⇒", "imp"], ["→", "imp"], ["⊃", "imp"],
     ["/\\", "and"], ["&&", "and"], ["&", "and"], ["∧", "and"], ["^", "and"],
-    ["\\/", "or"], ["||", "or"], ["|", "or"], ["∨", "or"], ["+", "or"],
+    ["\\/", "or"], ["||", "or"], ["|", "or"], ["∨", "or"],
+    ["!=", "neq"], ["≠", "neq"], ["=", "="],
     ["~", "not"], ["!", "not"], ["¬", "not"], ["-", "not"],
+    ["*", "*"], ["+", "+"],
     ["(", "("], [")", ")"], [",", ","],
   ];
 
@@ -59,6 +64,9 @@
         i += quant[0].length;
         continue;
       }
+      if (ch === "∀" || ch === "∃") {
+        throw new Error("After " + ch + " write the variable and a dot, e.g. " + ch + "X.p(X).");
+      }
       // A numeral like 0 is a name too: Chapter 13's arithmetic counts from it.
       const name = /^[A-Za-z0-9][A-Za-z0-9_]*/.exec(src.slice(i));
       if (name) { tokens.push({ kind: "atom", text: name[0] }); i += name[0].length; continue; }
@@ -72,13 +80,18 @@
   //   imp  ::= or ( => imp )?            -- right associative
   //   or   ::= and ( | and )*            -- flattened into one n-ary node
   //   and  ::= unary ( & unary )*        -- flattened into one n-ary node
-  //   unary::= ~ unary | AX: unary | EX: unary | relation | ( iff )
+  //   unary::= ~ unary | AX: unary | EX: unary | equation | relation | ( iff )
+  //   equation ::= term = term | term ≠ term
   //   relation ::= name ( "(" term ("," term)* ")" )?
-  //   term ::= name ( "(" term ("," term)* ")" )?
+  //   term ::= product ( + product )*     -- left associative, plus(x,y)
+  //   product ::= primary ( * primary )*  -- left associative, times(x,y)
+  //   primary ::= name ( "(" term ("," term)* ")" )? | ( term )
   // Flattening only happens at the same parenthesis level, so (p&q)&r stays nested.
   // A quantifier binds as tightly as ~, so AX: p(X) & AX: q(X) is a conjunction
   // of two quantified sentences and a wider scope is written AX: (p(X) & q(X)).
-  function parse(src) {
+  // An equation is a relation like any other, named "=" — equal(a,b) reads as
+  // a = b — and binds tighter than ~, so ~a = b is ¬(a = b), as in the chapter.
+  function read(src, asTerm) {
     const tokens = tokenize(src);
     let pos = 0;
     const peek = () => tokens[pos];
@@ -95,10 +108,42 @@
     }
 
     function term() {
+      let left = product();
+      while (peek() && peek().kind === "+") { pos++; left = { n: "plus", args: [left, product()] }; }
+      return left;
+    }
+
+    function product() {
+      let left = primary();
+      while (peek() && peek().kind === "*") { pos++; left = { n: "times", args: [left, primary()] }; }
+      return left;
+    }
+
+    function primary() {
       const tok = peek();
+      if (tok && tok.kind === "(") {
+        pos++;
+        const inner = term();
+        if (!eat(")")) throw new Error("Missing a closing parenthesis.");
+        return inner;
+      }
       if (!tok || tok.kind !== "atom") throw new Error("Expected a term.");
       pos++;
       return { n: tok.text, args: argList() || [] };
+    }
+
+    // A term followed by = or ≠, or null with nothing consumed. Both sides of
+    // an equation are terms, and a term can open with "(" just as a formula
+    // can, so this reads ahead and backs off when no = follows.
+    function equation() {
+      const start = pos;
+      let left;
+      try { left = term(); } catch (e) { pos = start; return null; }
+      const op = peek();
+      if (!op || (op.kind !== "=" && op.kind !== "neq")) { pos = start; return null; }
+      pos++;
+      const eq = equals(left, term());
+      return op.kind === "=" ? eq : not(eq);
     }
 
     function unary() {
@@ -112,7 +157,16 @@
         // uppercase, so rename as it is read and everything downstream is uniform.
         return { t: tok.kind, v: tok.v, a: toVariable(body, tok.raw, tok.v) };
       }
-      if (tok.kind === "atom") { pos++; return { t: "atom", name: tok.text, args: argList() || [] }; }
+      if (tok.kind === "atom" || tok.kind === "(") {
+        const eq = equation();
+        if (eq) return eq;
+      }
+      if (tok.kind === "atom") {
+        pos++;
+        const args = argList() || [];
+        return tok.text === "equal" && args.length === 2 ? equals(args[0], args[1])
+                                                          : { t: "atom", name: tok.text, args: args };
+      }
       if (tok.kind === "(") {
         pos++;
         const inner = iff();
@@ -148,15 +202,39 @@
       return left;
     }
 
-    const result = iff();
-    if (pos < tokens.length) throw new Error('Unexpected "' + tokens[pos].text + '" after the formula.');
+    const result = asTerm ? term() : iff();
+    if (pos < tokens.length) {
+      throw new Error('Unexpected "' + tokens[pos].text + '" after the ' + (asTerm ? "term." : "formula."));
+    }
     return result;
   }
 
+  // A formula, or a term on its own for the rules that ask for one. Each
+  // takes exactly one argument, so both are safe to hand to Array.map.
+  const parse = (src) => read(src, false);
+  const parseTerm = (src) => read(src, true);
+
   const PREC = { atom: 5, not: 4, all: 4, exists: 4, and: 3, or: 2, imp: 1, iff: 0 };
 
-  function showTerm(t) {
-    return t.args.length ? t.n + "(" + t.args.map(showTerm).join(",") + ")" : t.n;
+  const equals = (s, t) => ({ t: "atom", name: "=", args: [s, t] });
+  const isEquation = (f) => !!f && f.t === "atom" && f.name === "=" && (f.args || []).length === 2;
+
+  // plus and times are written infix, the way the chapters write arithmetic,
+  // * binding tighter than +, both left associative. A product inside a
+  // product always keeps its parentheses — (x*y)*z against x*(y*z) is the
+  // whole point of a group's associativity axiom — while a sum reads
+  // x*x + 2*x + 1 without them.
+  const TERM_PREC = { plus: 1, times: 2 };
+  const infix = (t) => t.args.length === 2 && (t.n === "plus" || t.n === "times");
+
+  function showTerm(t, parentPrec) {
+    if (infix(t)) {
+      const prec = TERM_PREC[t.n];
+      const leftPrec = t.n === "times" ? prec + 0.5 : prec;
+      const out = showTerm(t.args[0], leftPrec) + (t.n === "plus" ? " + " : "*") + showTerm(t.args[1], prec + 0.5);
+      return prec < (parentPrec || 0) ? "(" + out + ")" : out;
+    }
+    return t.args.length ? t.n + "(" + t.args.map((a) => showTerm(a)).join(",") + ")" : t.n;
   }
 
   function show(f, parentPrec) {
@@ -164,11 +242,19 @@
     const prec = PREC[f.t];
     let out;
     switch (f.t) {
-      case "atom": return showTerm({ n: f.name, args: f.args || [] });
-      case "not": return SYM.not + show(f.a, PREC.not);
+      case "atom":
+        if (isEquation(f)) return showTerm(f.args[0]) + " = " + showTerm(f.args[1]);
+        return showTerm({ n: f.name, args: f.args || [] });
+      case "not":
+        // ¬(a = b) is written a ≠ b; it takes parentheses under another ¬.
+        if (isEquation(f.a)) {
+          out = showTerm(f.a.args[0]) + " ≠ " + showTerm(f.a.args[1]);
+          return PREC.not - 0.1 < parentPrec ? "(" + out + ")" : out;
+        }
+        return SYM.not + show(f.a, PREC.not);
       case "all":
       case "exists":
-        out = (f.t === "all" ? "A" : "E") + f.v + ": " + show(f.a, prec);
+        out = (f.t === "all" ? "∀" : "∃") + f.v + "." + show(f.a, prec);
         break;
       case "and":
       case "or":
@@ -466,10 +552,19 @@
     return { at: at };
   }
 
-  /* Why the language rules out Domain Closure or Induction, or null when it
-   * does not. The same split as the Stanford tool: Domain Closure needs object
-   * constants and no function constants, Induction needs both. */
+  /* Why the language rules out Domain Closure, Induction or Rational
+   * Induction, or null when it does not. The same split as the Stanford tool:
+   * Domain Closure needs object constants and no function constants, Induction
+   * needs both, and Rational Induction is for arithmetic — numerals, + and *,
+   * and nothing else. */
   function languageFor(rule, language) {
+    if (rule === "rind") {
+      const other = language.objects.filter((n) => !/^[0-9]+$/.test(n))
+        .concat(language.functions.filter((n) => n !== "plus" && n !== "times"));
+      return other.length
+        ? "Rational Induction ranges over the numbers, but the language also has " + other.join(", ") + "."
+        : null;
+    }
     if (!language.objects.length) {
       return "The language has no object constants yet — add them with Objects +.";
     }
@@ -503,6 +598,155 @@
     return null;
   }
 
+  /* ----------------------------------------------------------------- equality
+   *
+   * Chapter 15. Equality Introduction writes down σ = σ for any ground σ.
+   * Equality Elimination takes φ and an equation σ = τ and gives φ with some or
+   * all occurrences of σ replaced by τ — or of τ by σ, since the equation reads
+   * both ways. A replacement never reaches under a quantifier that binds a name
+   * in the equation, which is the chapter's substitutability condition.
+   *
+   * The two Rational rules are the Stanford tool's arithmetic over + and *.
+   * Rational Equation writes down σ = τ when the two ground terms agree once
+   * multiplied out; Rational Induction is induction over the naturals, from
+   * φ[0] and AX: (φ[X] ⇒ φ[X + 1]).
+   */
+
+  const termKey = (t) => showTerm(t);
+  const sameTerm = (s, t) => termKey(s) === termKey(t);
+  const bindsInto = (v, from, to) => termNames(from).has(v) || termNames(to).has(v);
+
+  // Every occurrence of `from` replaced by `to`, for the prompt's suggestion.
+  function replaceTerm(t, from, to) {
+    if (sameTerm(t, from)) return to;
+    return { n: t.n, args: t.args.map((a) => replaceTerm(a, from, to)) };
+  }
+
+  function replaceAll(f, from, to) {
+    switch (f.t) {
+      case "atom": return { t: "atom", name: f.name, args: (f.args || []).map((a) => replaceTerm(a, from, to)) };
+      case "all":
+      case "exists": return bindsInto(f.v, from, to) ? f : { t: f.t, v: f.v, a: replaceAll(f.a, from, to) };
+      case "not": return { t: "not", a: replaceAll(f.a, from, to) };
+      case "and":
+      case "or": return { t: f.t, args: f.args.map((a) => replaceAll(a, from, to)) };
+      default: return { t: f.t, a: replaceAll(f.a, from, to), b: replaceAll(f.b, from, to) };
+    }
+  }
+
+  // Whether q is p with some occurrences of `from` replaced by `to`.
+  function termRewrites(p, q, from, to) {
+    if (sameTerm(p, from) && sameTerm(q, to)) return true;
+    return p.n === q.n && p.args.length === q.args.length &&
+           p.args.every((a, i) => termRewrites(a, q.args[i], from, to));
+  }
+
+  function rewrites(p, q, from, to) {
+    if (p.t !== q.t) return false;
+    switch (p.t) {
+      case "atom":
+        return p.name === q.name && (p.args || []).length === (q.args || []).length &&
+               (p.args || []).every((a, i) => termRewrites(a, q.args[i], from, to));
+      case "all":
+      case "exists":
+        if (p.v !== q.v) return false;
+        return bindsInto(p.v, from, to) ? same(p, q) : rewrites(p.a, q.a, from, to);
+      case "not": return rewrites(p.a, q.a, from, to);
+      case "and":
+      case "or":
+        return p.args.length === q.args.length && p.args.every((a, i) => rewrites(a, q.args[i], from, to));
+      default: return rewrites(p.a, q.a, from, to) && rewrites(p.b, q.b, from, to);
+    }
+  }
+
+  /* The ways two checked lines can be "φ, then the equation": the order they
+   * were ticked first, so the prompt's suggestion follows the reader's lead. */
+  function equalityPairs(items, formulaOf) {
+    const pairs = [];
+    if (isEquation(formulaOf(items[1]))) pairs.push([items[0], items[1]]);
+    if (isEquation(formulaOf(items[0]))) pairs.push([items[1], items[0]]);
+    return pairs;
+  }
+
+  // Whether `result` follows from φ by the equation, read either way.
+  function eliminates(phi, eq, result) {
+    const [s, t] = eq.args;
+    return rewrites(phi, result, s, t) || rewrites(phi, result, t, s);
+  }
+
+  /* A ground term multiplied out: a map from monomial to coefficient, where a
+   * monomial is a sorted list of the non-arithmetic subterms it multiplies.
+   * Numerals are numbers; anything else — a, f(a), inv(c) — is opaque. */
+  const isNumeral = (name) => /^[0-9]+$/.test(name);
+  const MONO = "\u0001";
+
+  function polynomial(t) {
+    if (!t.args.length && isNumeral(t.n)) return new Map([["", BigInt(t.n)]]);
+    if (t.n === "plus" && t.args.length === 2) {
+      const out = new Map(polynomial(t.args[0]));
+      polynomial(t.args[1]).forEach((c, m) => out.set(m, (out.get(m) || 0n) + c));
+      return out;
+    }
+    if (t.n === "times" && t.args.length === 2) {
+      const out = new Map();
+      const right = polynomial(t.args[1]);
+      polynomial(t.args[0]).forEach((c1, m1) => right.forEach((c2, m2) => {
+        const m = m1.split(MONO).concat(m2.split(MONO)).filter(Boolean).sort().join(MONO);
+        out.set(m, (out.get(m) || 0n) + c1 * c2);
+      }));
+      return out;
+    }
+    return new Map([[termKey(t), 1n]]);
+  }
+
+  function samePolynomial(s, t) {
+    const canon = (p) => [...p].filter(([, c]) => c !== 0n).map(([m, c]) => m + "=" + c).sort().join(";");
+    return canon(polynomial(s)) === canon(polynomial(t));
+  }
+
+  // AV: (φ[V] ⇒ φ[V + 1]), the inductive case Rational Induction needs.
+  function successorCase(conclusion, v) {
+    const step = caseOf(conclusion, { n: "plus", args: [constant(v), constant("1")] });
+    return { t: "all", v: v, a: imp(caseOf(conclusion, constant(v)), step) };
+  }
+
+  // The base case φ[0] and the inductive case, as indices, or { error }.
+  function rationalCases(conclusion, formulas) {
+    let base;
+    try { base = caseOf(conclusion, constant("0")); }
+    catch (e) { return { error: e.message }; }
+    const b = formulas.findIndex((f) => same(f, base));
+    if (b === -1) return { error: "Missing the base case: " + show(base) + "." };
+    const s = formulas.findIndex((f) => {
+      try { return f.t === "all" && same(f, successorCase(conclusion, f.v)); }
+      catch (e) { return false; }
+    });
+    if (s === -1) {
+      let want = "∀X.(φ[X] ⇒ φ[X + 1])";
+      try { want = show(successorCase(conclusion, conclusion.v)); } catch (e) { /* keep the schema */ }
+      return { error: "Missing the inductive case: " + want + "." };
+    }
+    return { at: [b, s] };
+  }
+
+  function guessRational(formulas) {
+    for (const f of formulas) {
+      if (f.t !== "all" || f.a.t !== "imp") continue;
+      const guess = { t: "all", v: f.v, a: f.a.a };
+      if (!rationalCases(guess, formulas).error) return guess;
+    }
+    return null;
+  }
+
+  // A term from a prompt: parseTerm gives one, and parse gives a relation
+  // that reads as one, e.g. f(a).
+  function asTerm(x) {
+    if (!x) return null;
+    if (x.n !== undefined) return x;
+    if (x.t === "atom" && !isEquation(x)) return { n: x.name, args: x.args || [] };
+    return null;
+  }
+
   /* ------------------------------------------------------------------ rules */
 
   const RULES = [
@@ -525,6 +769,10 @@
     { id: "ee", label: "Existential Elimination", short: "EE" },
     { id: "dc", label: "Domain Closure", short: "DC" },
     { id: "ind", label: "Induction", short: "Ind" },
+    { id: "qi", label: "Equality Introduction", short: "QI" },
+    { id: "qe", label: "Equality Elimination", short: "QE" },
+    { id: "req", label: "Rational Equation", short: "RatEq" },
+    { id: "rind", label: "Rational Induction", short: "RatInd" },
   ];
   const RULE_BY_ID = {};
   RULES.forEach((r) => { RULE_BY_ID[r.id] = r; });
@@ -782,7 +1030,7 @@
         }
         const pair = existentialPair(cited[0], cited[1]) || existentialPair(cited[1], cited[0]);
         if (!pair) {
-          return { ok: false, msg: "The cited lines are no longer EX: φ together with AX: (φ ⇒ ψ) for the same φ." };
+          return { ok: false, msg: "The cited lines are no longer ∃X.φ together with ∀X.(φ ⇒ ψ) for the same φ." };
         }
         if (!same(pair.conclusion, f)) {
           return { ok: false, msg: "That implication concludes " + show(pair.conclusion) + ", not " + show(f) + "." };
@@ -808,6 +1056,37 @@
         const why = languageFor("ind", language);
         if (why) return { ok: false, msg: why };
         const cases = inductionCases(f, language, cited);
+        return cases.error ? { ok: false, msg: cases.error } : { ok: true };
+      }
+
+      case "qi":
+        if (!isEquation(f) || !sameTerm(f.args[0], f.args[1]) || !isGround(f.args[0])) {
+          return { ok: false, msg: "Equality Introduction writes down σ = σ for a ground term σ." };
+        }
+        return { ok: true };
+
+      case "qe": {
+        if (cited.length !== 2) return { ok: false, msg: "Equality Elimination cites a line and an equation." };
+        const pairs = equalityPairs(cited, (x) => x);
+        if (!pairs.length) return { ok: false, msg: "Neither cited line is an equation any more." };
+        if (!pairs.some(([phi, eq]) => eliminates(phi, eq, f))) {
+          return { ok: false, msg: "This is not the cited line with equals put in for equals." };
+        }
+        return { ok: true };
+      }
+
+      case "req":
+        if (!isEquation(f) || !isGround(f.args[0]) || !isGround(f.args[1])) {
+          return { ok: false, msg: "Rational Equation writes down an equation between ground terms." };
+        }
+        if (!samePolynomial(f.args[0], f.args[1])) return { ok: false, msg: "The two sides differ once multiplied out." };
+        return { ok: true };
+
+      case "rind": {
+        if (f.t !== "all") return { ok: false, msg: "Rational Induction concludes a universally quantified line." };
+        const why = languageFor("rind", language);
+        if (why) return { ok: false, msg: why };
+        const cases = rationalCases(f, cited);
         return cases.error ? { ok: false, msg: cases.error } : { ok: true };
       }
     }
@@ -927,10 +1206,11 @@
       if (f.t !== "all") return { error: "Line " + (sel[0].index + 1) + " is not universally quantified." };
       if (!typed) {
         return { prompt: "Universal Elimination — type the ground term to put in for " + f.v +
-                         ", e.g. a or jack. " + show(f) + " then gives you that instance." };
+                         ", e.g. a, jack or inv(c). " + show(f) + " then gives you that instance.",
+                 term: true };
       }
-      if (typed.t !== "atom") return { error: "That is a formula, not a term. A term is a name like a, or f(a)." };
-      const t = { n: typed.name, args: typed.args || [] };
+      const t = asTerm(typed);
+      if (!t) return { error: "That is a formula, not a term. A term is a name like a, or f(a)." };
       if (!isGround(t)) {
         return { error: showTerm(t) + " contains a variable, and Universal Elimination only puts in ground terms." };
       }
@@ -946,10 +1226,10 @@
     ui: function (sel, typed, block) {
       if (sel.length !== 1) return { error: "Check exactly one line to generalize." };
       if (!typed) {
-        return { prompt: "Universal Introduction — type the universally quantified sentence to introduce, e.g. AX: p(X).",
-                 seed: "AX: " };
+        return { prompt: "Universal Introduction — type the universally quantified sentence to introduce, e.g. ∀X.p(X).",
+                 seed: "∀X." };
       }
-      if (typed.t !== "all") return { error: "That is not a universally quantified sentence; it should start AX: or EX: — here, AX:." };
+      if (typed.t !== "all") return { error: "That is not a universally quantified sentence; it should start ∀, e.g. ∀X.p(X)." };
       let t;
       try { t = instanceOf(typed.a, typed.v, sel[0].formula); }
       catch (e) { return { error: show(sel[0].formula) + " is not an instance of " + show(typed) + ": " + e.message }; }
@@ -966,11 +1246,11 @@
     ei: function (sel, typed) {
       if (sel.length !== 1) return { error: "Check exactly one line to generalize." };
       if (!typed) {
-        return { prompt: "Existential Introduction — type the existential sentence to introduce, e.g. EX: p(X). " +
+        return { prompt: "Existential Introduction — type the existential sentence to introduce, e.g. ∃X.p(X). " +
                          "One, some, or all occurrences of a ground term may be replaced.",
-                 seed: "EX: " };
+                 seed: "∃X." };
       }
-      if (typed.t !== "exists") return { error: "That is not an existentially quantified sentence; it should start EX:." };
+      if (typed.t !== "exists") return { error: "That is not an existentially quantified sentence; it should start ∃, e.g. ∃X.p(X)." };
       let t;
       try { t = instanceOf(typed.a, typed.v, sel[0].formula); }
       catch (e) { return { error: show(sel[0].formula) + " is not an instance of " + show(typed) + ": " + e.message }; }
@@ -988,7 +1268,7 @@
       const forward = existentialPair(x.formula, y.formula);
       const pair = forward || existentialPair(y.formula, x.formula);
       if (!pair) {
-        return { error: "Existential Elimination needs EX: φ together with AX: (φ ⇒ ψ) — the same φ, and a ψ that does not mention X." };
+        return { error: "Existential Elimination needs ∃X.φ together with ∀X.(φ ⇒ ψ) — the same φ, and a ψ that does not mention X." };
       }
       if (freeNames(pair.conclusion).has(pair.v)) {
         return { error: pair.v + " occurs free in " + show(pair.conclusion) + ", which Existential Elimination does not allow." };
@@ -1007,11 +1287,11 @@
       if (why) return { error: why };
       if (!sel.length) return { error: "Check the instances, one for each of " + language.objects.join(", ") + "." };
       if (!typed) {
-        return { prompt: "Domain Closure — type the universally quantified sentence to conclude, e.g. AX: p(X). " +
+        return { prompt: "Domain Closure — type the universally quantified sentence to conclude, e.g. ∀X.p(X). " +
                          "The checked lines have to give its instance for each of " + language.objects.join(", ") + ".",
-                 seed: "AX: " };
+                 seed: "∀X." };
       }
-      if (typed.t !== "all") return { error: "Domain Closure concludes a universally quantified sentence; it should start AX:." };
+      if (typed.t !== "all") return { error: "Domain Closure concludes a universally quantified sentence; it should start ∀." };
       const base = baseCases(typed, language.objects, sel.map((l) => l.formula));
       if (base.error) return { error: base.error };
       return { lines: [{ formula: typed, rule: "dc", refIds: base.at.map((i) => sel[i].id) }] };
@@ -1025,83 +1305,84 @@
       const formulas = sel.map((l) => l.formula);
       if (!typed) {
         const guess = guessInduction(language, formulas);
-        return { prompt: "Induction — type the universally quantified sentence to conclude, e.g. AX: p(X). " +
+        return { prompt: "Induction — type the universally quantified sentence to conclude, e.g. ∀X.p(X). " +
                          "The checked lines need its base case for " + language.objects.join(", ") +
                          " and its inductive case for " + language.functions.join(", ") + ".",
-                 seed: guess ? show(guess) : "AX: " };
+                 seed: guess ? show(guess) : "∀X." };
       }
-      if (typed.t !== "all") return { error: "Induction concludes a universally quantified sentence; it should start AX:." };
+      if (typed.t !== "all") return { error: "Induction concludes a universally quantified sentence; it should start ∀." };
       const cases = inductionCases(typed, language, formulas);
       if (cases.error) return { error: cases.error };
       return { lines: [{ formula: typed, rule: "ind", refIds: cases.at.map((i) => sel[i].id) }] };
     },
+
+    /* Equality Introduction and Rational Equation cite nothing: one asks for
+     * the term, the other for the equation. */
+    qi: function (sel, typed) {
+      if (!typed) {
+        return { prompt: "Equality Introduction — type a ground term σ, e.g. a or f(a)*c; this adds σ = σ.", term: true };
+      }
+      const t = asTerm(typed);
+      if (!t) return { error: "That is a formula, not a term. A term is a name like a, or f(a)." };
+      if (!isGround(t)) return { error: showTerm(t) + " contains a variable; Equality Introduction takes a ground term." };
+      return { lines: [{ formula: equals(t, t), rule: "qi", refIds: [] }] };
+    },
+
+    /* Equality Elimination asks for the result, because the chapter lets you
+     * replace one occurrence, some, or all. The prompt starts from "all of
+     * them", rewriting the line ticked first with the one ticked second. */
+    qe: function (sel, typed) {
+      if (sel.length !== 2) return { error: "Check the line to rewrite, then the equation to rewrite it with." };
+      const pairs = equalityPairs(sel, (l) => l.formula);
+      if (!pairs.length) return { error: "One of the two checked lines has to be an equation, σ = τ." };
+      if (!typed) {
+        const [phi, eq] = pairs[0];
+        const [s, t] = eq.formula.args;
+        let seed = replaceAll(phi.formula, s, t);
+        if (same(seed, phi.formula)) seed = replaceAll(phi.formula, t, s);
+        return { prompt: "Equality Elimination — type line " + (phi.index + 1) + " with " + showTerm(s) + " and " +
+                         showTerm(t) + " exchanged where you want them; one occurrence, some, or all.",
+                 seed: show(seed) };
+      }
+      const hit = pairs.find(([phi, eq]) => eliminates(phi.formula, eq.formula, typed));
+      if (!hit) {
+        return { error: show(typed) + " is not either checked line with one side of the equation put in for the other." };
+      }
+      return { lines: [{ formula: typed, rule: "qe", refIds: citeIds(hit) }] };
+    },
+
+    req: function (sel, typed) {
+      if (!typed) {
+        return { prompt: "Rational Equation — type an equation between ground terms that agree once multiplied out, " +
+                         "e.g. (c + 1)*(c + 1) = c*c + 2*c + 1.", seed: "" };
+      }
+      if (!isEquation(typed)) return { error: "That is not an equation; it should read σ = τ." };
+      const [s, t] = typed.args;
+      if (!isGround(s) || !isGround(t)) return { error: "Both sides have to be ground terms, with no variables." };
+      if (!samePolynomial(s, t)) return { error: showTerm(s) + " and " + showTerm(t) + " differ once multiplied out." };
+      return { lines: [{ formula: typed, rule: "req", refIds: [] }] };
+    },
+
+    rind: function (sel, typed) {
+      const why = languageFor("rind", state.language);
+      if (why) return { error: why };
+      if (!sel.length) return { error: "Check the base case φ[0] and the inductive case ∀X.(φ[X] ⇒ φ[X + 1])." };
+      const formulas = sel.map((l) => l.formula);
+      if (!typed) {
+        const guess = guessRational(formulas);
+        return { prompt: "Rational Induction — type the universally quantified sentence to conclude. " +
+                         "The checked lines need its base case φ[0] and its inductive case ∀X.(φ[X] ⇒ φ[X + 1]).",
+                 seed: guess ? show(guess) : "∀X." };
+      }
+      if (typed.t !== "all") return { error: "Rational Induction concludes a universally quantified sentence; it should start ∀." };
+      const cases = rationalCases(typed, formulas);
+      if (cases.error) return { error: cases.error };
+      return { lines: [{ formula: typed, rule: "rind", refIds: cases.at.map((i) => sel[i].id) }] };
+    },
   };
 
-  /* ---------------------------------------------------------------- problems */
-
-  const PROBLEMS = [
-    { id: "and-comm", title: "Commuting a conjunction", premises: ["p & q"], goal: "q & p", tags: "AI, AE" },
-    { id: "mp", title: "Modus ponens, twice", premises: ["p", "p => q", "q => r"], goal: "r", tags: "IE" },
-    { id: "imp-self", title: "Implication is reflexive", premises: [], goal: "p => p", tags: "II" },
-    { id: "and-imp", title: "Currying", premises: ["(p & q) => r"], goal: "p => (q => r)", tags: "II, AI, IE" },
-    { id: "hyp-syll", title: "Hypothetical syllogism", premises: ["p => q", "q => r"], goal: "p => r", tags: "II, IE" },
-    { id: "contra", title: "Contraposition", premises: ["p => q"], goal: "~q => ~p", tags: "II, NI" },
-    { id: "mt", title: "Modus tollens", premises: ["p => q", "~q"], goal: "~p", tags: "NI, II, R" },
-    { id: "or-comm", title: "Commuting a disjunction", premises: ["p | q"], goal: "q | p", tags: "OE, OI, II" },
-    { id: "dilemma", title: "Constructive dilemma", premises: ["p | q", "p => r", "q => r"], goal: "r", tags: "OE" },
-    { id: "iff-comm", title: "Biconditionals commute", premises: ["p <=> q"], goal: "q <=> p", tags: "BE, BI" },
-    { id: "dn-in", title: "Double negation introduction", premises: ["p"], goal: "~~p", tags: "NI, II, R" },
-    { id: "and-assoc", title: "Regrouping a conjunction", premises: ["p & (q & r)"], goal: "(p & q) & r", tags: "AE, AI" },
-    { id: "distrib", title: "Distribution", premises: ["p & (q | r)"], goal: "(p & q) | (p & r)", tags: "OE, OI, AI, II" },
-    { id: "demorgan", title: "De Morgan, one direction", premises: ["~p & ~q"], goal: "~(p | q)", tags: "NI, II, OE" },
-    { id: "excluded", title: "Excluded middle", premises: [], goal: "p | ~p", tags: "NI, NE, II, OI" },
-    { id: "peirce", title: "Peirce's law", premises: ["(p => q) => p"], goal: "p", tags: "NI, NE, II, IE" },
-
-    // Chapter 10: the quantifier rules. AX: p(X) is "every X is p", EX: p(X) is
-    // "some X is p".
-    { id: "all-some", title: "Every implies some", premises: ["AX: p(X)"], goal: "EX: p(X)", tags: "UE, EI" },
-    { id: "all-mp", title: "Universal modus ponens", premises: ["AX: (p(X) => q(X))", "p(a)"], goal: "q(a)", tags: "UE, IE" },
-    { id: "all-and-out", title: "Splitting a universal", premises: ["AX: (p(X) & q(X))"], goal: "AX: p(X) & AX: q(X)", tags: "UE, AE, UI, AI" },
-    { id: "all-and-in", title: "Joining two universals", premises: ["AX: p(X) & AX: q(X)"], goal: "AX: (p(X) & q(X))", tags: "AE, UE, AI, UI" },
-    { id: "all-swap", title: "Swapping two universals", premises: ["AX: AY: p(X,Y)"], goal: "AY: AX: p(X,Y)", tags: "UE, UI" },
-    { id: "all-chain", title: "Universal hypothetical syllogism", premises: ["AX: (p(X) => q(X))", "AX: (q(X) => r(X))"], goal: "AX: (p(X) => r(X))", tags: "UE, IE, II, UI" },
-    { id: "some-mp", title: "Some, through an implication", premises: ["AX: (p(X) => q(X))", "EX: p(X)"], goal: "EX: q(X)", tags: "UE, IE, EI, II, UI, EE" },
-    { id: "some-and", title: "Splitting an existential", premises: ["EX: (p(X) & q(X))"], goal: "EX: q(X)", tags: "AE, EI, II, UI, EE" },
-    { id: "some-swap", title: "Swapping two existentials", premises: ["EX: EY: p(X,Y)"], goal: "EY: EX: p(X,Y)", tags: "EI, II, UI, EE" },
-    { id: "some-all", title: "One for all, all have one", premises: ["EY: AX: p(X,Y)"], goal: "AX: EY: p(X,Y)", tags: "UE, EI, UI, II, EE" },
-    { id: "no-p", title: "No p at all", premises: ["AX: ~p(X)"], goal: "~EX: p(X)", tags: "UE, NI, II, EE, R" },
-
-    // Chapter 12: the same rules over terms. c(X) is the state after a click.
-    { id: "clicks", title: "Three clicks back to blank",
-      premises: ["AX: (blank(X) => check(c(X)))", "AX: (check(X) => ex(c(X)))", "AX: (ex(X) => blank(c(X)))"],
-      goal: "AX: (blank(X) => blank(c(c(c(X)))))", tags: "UE, IE, II, UI" },
-
-    // Chapter 13: induction. The language — what Domain Closure and Induction
-    // range over — is read off the premises and the goal.
-    { id: "dc-two", title: "Domain closure over a and b", premises: ["q(a)", "q(b)"],
-      goal: "AX: (p(X) => q(X))", tags: "R, II, DC" },
-    { id: "right-zero", title: "Zero is a right identity",
-      premises: ["AY: plus(0,Y,Y)", "AX: AY: AZ: (plus(X,Y,Z) => plus(s(X),Y,s(Z)))"],
-      goal: "AX: plus(X,0,X)", tags: "UE, UI, Ind" },
-    { id: "lin-split", title: "Linear induction through a case split",
-      premises: ["r(a)", "AX: (p(X) => r(s(X)))", "AX: (q(X) => r(s(X)))", "AX: (r(X) => p(X) | q(X))"],
-      goal: "AX: r(X)", tags: "UE, IE, OE, II, UI, Ind" },
-    { id: "alternate", title: "Alternating p and q",
-      premises: ["p(a)", "AX: (p(X) => q(f(X)))", "AX: (q(X) => p(f(X)))"],
-      goal: "AX: (p(X) | q(X))", tags: "OI, UE, IE, OE, II, UI, Ind" },
-    { id: "purebred", title: "A purebred line",
-      premises: ["purebred(rex)", "AX: (purebred(X) => purebred(f(X)) & purebred(g(X)))"],
-      goal: "AX: purebred(X)", tags: "UE, IE, AE, II, UI, Ind" },
-    { id: "tree-fg", title: "Tree induction over f and g",
-      premises: ["p(a)", "AX: (p(X) => p(f(X)))", "AX: (p(f(X)) => p(g(X)))"],
-      goal: "AX: p(X)", tags: "UE, IE, II, UI, Ind" },
-    { id: "struct-h", title: "Structural induction over h",
-      premises: ["p(a)", "AX: AY: (p(X) | p(Y) => p(h(X,Y)))"],
-      goal: "AX: p(X)", tags: "AE, OI, UE, IE, II, UI, Ind" },
-    { id: "stronger", title: "Induction on a stronger claim",
-      premises: ["AX: (p(X) => p(s(s(X))))", "p(a)", "p(s(a))"],
-      goal: "AX: p(X)", tags: "AI, AE, UE, IE, II, UI, Ind" },
-  ];
+  // Rules that cite no lines, so a stale selection is no reason to refuse them.
+  const CITES_NOTHING = new Set(["qi", "req"]);
 
   /* --------------------------------------------------------------------- UI */
 
@@ -1146,7 +1427,22 @@
     state.lines = state.history.pop();
     state.selected.clear();
     state.pending = null;
+    syncPremises();
     render();
+  }
+
+  // A loaded question fixes its premises. Otherwise the tool is free-form and
+  // the premises are just the Premise lines on the board, so adding, deleting
+  // or undoing one also updates what UI may generalize and the language.
+  const isFree = () => !(state.problem && state.problem.id === "loaded");
+
+  function syncPremises() {
+    if (!isFree()) return;
+    state.premises = [];
+    state.lines.forEach((l) => {
+      if (l.rule === "premise" && !state.premises.some((p) => same(p, l.formula))) state.premises.push(l.formula);
+    });
+    resetLanguage(state.language.objects, state.language.functions);
   }
 
   function say(message, kind) {
@@ -1172,7 +1468,7 @@
 
   function runRule(ruleId, typed) {
     say("");
-    const sel = selectedLines();
+    const sel = CITES_NOTHING.has(ruleId) ? [] : selectedLines();
 
     if (ruleId === "premise" || ruleId === "assume") return addTypedLine(ruleId, typed);
     if (ruleId === "ii") return applyII(sel);
@@ -1188,7 +1484,7 @@
 
     const result = apply(sel, typed, block);
     if (result.error) return say(result.error);
-    if (result.prompt) return openPrompt(ruleId, result.prompt, result.seed);
+    if (result.prompt) return openPrompt(ruleId, result.prompt, result.seed, { term: !!result.term });
 
     snapshot();
     const depth = block.depth;
@@ -1211,6 +1507,7 @@
       while (at < state.lines.length && state.lines[at].rule === "premise" && state.lines[at].depth === 0) at++;
       state.lines.splice(at, 0, makeLine({ formula: typed, rule: "premise", depth: 0 }));
       if (!state.premises.some((p) => same(p, typed))) state.premises.push(typed);
+      syncPremises();
     } else {
       state.lines.push(makeLine({ formula: typed, rule: "assume", depth: currentBlock().depth + 1 }));
     }
@@ -1264,16 +1561,19 @@
     const doomed = new Set(sel.map((l) => l.id));
     state.lines = state.lines.filter((l) => !doomed.has(l.id));
     state.selected.clear();
+    syncPremises();
     say("");
     render();
   }
 
   /* ------------------------------------------------------------ typed input */
 
-  // `lang` marks a prompt for names to add to or remove from the language,
-  // rather than for a formula.
-  function openPrompt(ruleId, label, seed, lang) {
-    state.pending = { rule: ruleId, label: label, lang: lang || null };
+  // A prompt reads a formula unless `opts` says otherwise: `term` for the
+  // rules that take a term, `lang` for names to add to or remove from the
+  // language.
+  function openPrompt(ruleId, label, seed, opts) {
+    opts = opts || {};
+    state.pending = { rule: ruleId, label: label, lang: opts.lang || null, term: !!opts.term };
     render();
     const input = $("#fitch-entry-input");
     input.value = seed || "";
@@ -1284,10 +1584,10 @@
   function submitPrompt() {
     const input = $("#fitch-entry-input");
     if (state.pending.lang) return editLanguage(state.pending.lang, input.value);
-    let formula;
-    try { formula = parse(input.value); }
+    let typed;
+    try { typed = state.pending.term ? parseTerm(input.value) : parse(input.value); }
     catch (e) { return say(e.message); }
-    runRule(state.pending.rule, formula);
+    runRule(state.pending.rule, typed);
   }
 
   function insertSymbol(text) {
@@ -1350,7 +1650,7 @@
     if (objects) objects.textContent = state.language.objects.join(", ") || "none";
     if (functions) functions.textContent = state.language.functions.join(", ") || "none";
     // Greyed out the way the Stanford tool greys them, with the reason on hover.
-    ["dc", "ind"].forEach((id) => {
+    ["dc", "ind", "rind"].forEach((id) => {
       const button = ruleButtons[id];
       if (!button) return;
       const why = languageFor(id, state.language);
@@ -1428,16 +1728,12 @@
     if (palette) palette.hidden = !!(state.pending && state.pending.lang);
     renderLanguage();
 
-    $("#fitch-premises").textContent = state.premises.length
-      ? state.premises.map((p) => show(p)).join(",   ")
-      : "(none — this one is a theorem)";
-    $("#fitch-goal-display").textContent = state.goal ? show(state.goal) : "—";
-
     const reached = state.goal && lines.some((l) => l.depth === 0 && l.result.ok && same(l.formula, state.goal));
     const banner = $("#fitch-verdict");
     banner.className = "fitch-verdict";
+    banner.hidden = !state.goal && !state.goalError;
     if (!state.goal) {
-      banner.textContent = state.goalError ? "Goal does not parse: " + state.goalError : "Set a goal to prove.";
+      banner.textContent = state.goalError ? "Goal does not parse: " + state.goalError : "";
       banner.classList.add("verdict-error");
     } else if (reached && allValid) {
       banner.textContent = "✓ Proved. " + show(state.goal) + " follows from the premises.";
@@ -1538,6 +1834,11 @@
     catch (e) { state.goal = null; state.goalError = e.message; }
   }
 
+  function resetProof() {
+    if (isFree()) { state.premises = []; resetLanguage(); }
+    resetLines();
+  }
+
   function resetLines() {
     state.lines = state.premises.map((p) => makeLine({ formula: p, rule: "premise", depth: 0 }));
     state.selected.clear();
@@ -1550,15 +1851,16 @@
   const ruleButtons = {};
 
   function buildButtons() {
-    // Laid out in the columns of the Stanford tool: structural, And/Or,
-    // Implication/Biconditional, Negation, and the quantifiers with the two
-    // induction rules beneath them.
+    // Laid out in the Stanford tool's five columns: Premise and the editing
+    // buttons; Negation, And and Or; Reiteration, Assumption, Implication and
+    // Biconditional; the quantifiers with Domain Closure and Induction; and
+    // equality with the Rational rules.
     const columns = [
-      ["premise", "assume", "reit"],
-      ["ai", "ae", "oi", "oe"],
-      ["ii", "ie", "bi", "be"],
-      ["ni", "ne"],
-      ["ue", "ui", "ei", "ee", "dc", "ind"],
+      ["premise"],
+      ["ni", "ne", "ai", "ae", "oi", "oe"],
+      ["reit", "assume", "ii", "ie", "bi", "be"],
+      ["ui", "ue", "ei", "ee", "dc", "ind"],
+      ["qi", "qe", "req", "rind"],
     ];
     const grid = $("#fitch-buttons");
     columns.forEach((ids) => {
@@ -1572,58 +1874,28 @@
       });
       grid.appendChild(col);
     });
-    const col = el("div", "fitch-bcol");
-    [["Undo", undo], ["Delete", deleteSelected], ["Reset", resetLines]].forEach(([label, fn]) => {
+    // The editing buttons sit under Premise, as Delete does in the Stanford tool.
+    const first = grid.firstElementChild;
+    [["Undo", undo], ["Delete", deleteSelected], ["Reset", resetProof]].forEach(([label, fn]) => {
       const b = el("button", "fitch-rule-btn fitch-util", label);
       b.type = "button";
       b.addEventListener("click", fn);
-      col.appendChild(b);
+      first.appendChild(b);
     });
-    grid.appendChild(col);
   }
 
   function init() {
-    const picker = $("#fitch-problem");
-    if (!picker) return; // Not on the Fitch page.
-
-    // A question loaded from the Generate page goes to the top of the list and
-    // is what the editor opens on.
-    const loaded = window.__ILO_QUESTION
-      ? { id: "loaded", title: window.__ILO_QUESTION.title, tags: "generated",
-          premises: window.__ILO_QUESTION.premises, goal: window.__ILO_QUESTION.goal,
-          objects: window.__ILO_QUESTION.objects || [] }
-      : null;
-    const problems = loaded ? [loaded].concat(PROBLEMS) : PROBLEMS;
-
-    problems.forEach((p, i) => picker.appendChild(new Option((i + 1) + ". " + p.title + "  (" + p.tags + ")", p.id)));
-    picker.appendChild(new Option("Custom — write your own", "custom"));
-    picker.addEventListener("change", () => {
-      if (picker.value === "custom") { $("#fitch-custom").hidden = false; return; }
-      $("#fitch-custom").hidden = true;
-      loadProblem(problems.find((p) => p.id === picker.value));
-    });
-
-    $("#fitch-custom-apply").addEventListener("click", () => {
-      state.problem = null;
-      state.premiseSrc = $("#fitch-custom-premises").value.split(/[\n,;]/).map((s) => s.trim()).filter(Boolean);
-      state.goalSrc = $("#fitch-custom-goal").value;
-      reparseGoal();
-      const bad = (state.premiseErrors || []).concat(state.goalError ? ["goal: " + state.goalError] : []);
-      $("#fitch-custom-error").textContent = bad.join("  ·  ");
-      resetLanguage();
-      resetLines();
-    });
-
+    if (!$("#fitch-lines")) return; // Not on the Fitch page.
     [["objects", "Objects", "object constants"], ["functions", "Functions", "function constants"]]
       .forEach(([kind, label, noun]) => {
         const add = $("#fitch-" + kind + "-add");
         const remove = $("#fitch-" + kind + "-remove");
         if (add) add.addEventListener("click", () => openPrompt("lang",
           label + " — type the " + noun + " to add, separated by commas.", "",
-          { kind: kind, adding: true }));
+          { lang: { kind: kind, adding: true } }));
         if (remove) remove.addEventListener("click", () => openPrompt("lang",
           label + " — type the " + noun + " to remove. The ones the premises or the goal use stay.", "",
-          { kind: kind, adding: false }));
+          { lang: { kind: kind, adding: false } }));
       });
 
     $("#fitch-select-all").addEventListener("change", (ev) => {
@@ -1643,16 +1915,20 @@
     });
 
     buildButtons();
-    loadProblem(problems[0]);
+    // Opened from the Dashboard or Generate: that question. Otherwise a blank
+    // proof, the way the Stanford tool starts.
+    const q = window.__ILO_QUESTION;
+    loadProblem(q ? { id: "loaded", premises: q.premises, goal: q.goal, objects: q.objects || [] }
+                  : { id: "blank", premises: [], goal: "" });
   }
 
   // Exposed for the console and for tests.
   window.Fitch = {
     parse: parse, show: show, same: same, analyze: analyze, checkLine: checkLine,
-    runRule: runRule, state: state, PROBLEMS: PROBLEMS, RULES: RULES,
+    runRule: runRule, state: state, loadProblem: loadProblem, RULES: RULES,
     APPLY: APPLY, substitute: substitute, instanceOf: instanceOf,
     freeNames: freeNames, isGround: isGround, showTerm: showTerm,
-    vocabulary: vocabulary,
+    vocabulary: vocabulary, parseTerm: parseTerm,
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

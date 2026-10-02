@@ -225,25 +225,13 @@
     }
   }
 
-  function showBlurb() {
-    const spec = CHAPTERS.filter((c) => Number(c.number) === chapter)[0];
-    let text = spec ? spec.blurb : "";
-    if (chapter === 10) {
-      text += " Long relational proofs are the hardest to write, so a medium"
-        + " or hard run may come back with fewer than you asked for.";
-    }
-    $("#gen-blurb").textContent = text;
-  }
-
   function init() {
     if (!$("#gen-run")) return;
     const picker = $("#gen-chapter");
     chapter = Number(picker.value) || chapter;
-    showBlurb();
 
     picker.addEventListener("change", () => {
       chapter = Number(picker.value);
-      showBlurb();
       // The two chapters share nothing, so drop what the last one produced.
       $("#gen-results").hidden = true;
       $("#gen-new").textContent = "";

@@ -19,13 +19,22 @@ python3 app.py
 Then open http://localhost:5001. The app picks up `./serviceAccountKey.json`
 automatically; no environment variables are needed for local development.
 
-## Fitch practice
+## Fitch tool
 
-`/fitch` is a natural-deduction proof editor for the Stanford intro-logic Fitch
+`/fitch` is a natural-deduction proof tool for the Stanford intro-logic Fitch
 system: the propositional rules of Chapter 5, the quantifier rules of
-Chapter 10, and Domain Closure and Induction from Chapter 13. It needs no
-account and no server: the parser, the scope analysis, the rules, and the
-checker all live in `static/fitch.js`.
+Chapter 10, Domain Closure and Induction from Chapter 13, and the equality rules
+of Chapter 15 along with the Stanford tool's Rational Equation and Rational
+Induction. It needs no account and no server: the parser, the scope analysis,
+the rules, and the checker all live in `static/fitch.js`. The rule buttons sit in
+the Stanford tool's five columns.
+
+Like the Stanford tool, it opens blank: add premises with the Premise button
+and work from them, and Reset clears the board. There is no goal and no list
+of set problems. A question opened from the Dashboard or the Generate page
+(`/fitch?q=<id>`) is the exception: it loads that question's premises and goal,
+the banner says when the goal is reached, and a finished proof counts towards
+its level.
 
 It works the way the Stanford tool does. Tick the lines you want to work from,
 press a rule button, and the rule is *applied* — the resulting lines are
@@ -44,35 +53,37 @@ and closes it, emitting one level out. Cited lines have to be in scope — a
 line's own subproof or an enclosing one, never one that has already closed.
 
 Formulas accept ASCII or symbols (`~ & | => <=>` or `¬ ∧ ∨ ⇒ ⇔`) and are
-displayed as symbols.
+displayed as symbols. Equations are `a = b` and `a != b` (or `≠`), and terms may
+use `x*y` and `x + 1`. Because of that, `+` means plus, not "or".
 
 ### Quantifiers
 
-Quantifiers are written the way the Stanford tool writes them:
+Quantifiers are shown the way the textbook writes them, with the official
+symbols. They can be typed that way, using the palette's `∀` and `∃` buttons,
+or in the Stanford tool's keyboard form:
 
-| Written | Means |
-|---|---|
-| `AX: p(X)` | ∀x.p(x) — every X is p |
-| `EX: p(X)` | ∃x.p(x) — some X is p |
+| Shown | Also typed as | Means |
+|---|---|---|
+| `∀X.p(X)` | `AX: p(X)` | every X is p |
+| `∃X.p(X)` | `EX: p(X)` | some X is p |
 
 **Variables are uppercase.** That one convention does the work: a lowercase name
 is an object constant or a placeholder, and a term is *ground* exactly when no
 uppercase name appears in it — which is the side condition Universal Elimination
 and Existential Introduction turn on. A quantifier binds as tightly as `~`, so
-`AX: p(X) & AX: q(X)` is a conjunction of two quantified sentences and a wider
-scope is written `AX: (p(X) & q(X))`. The Unicode forms `∀x.p(x)` and `∃x.p(x)`
-are accepted on input, which is how a generated Chapter 10 question opens in the
-editor; they are normalized to uppercase variables and shown in the tool's own
-notation.
+`∀X.p(X) ∧ ∀X.q(X)` is a conjunction of two quantified sentences and a wider
+scope is written `∀X.(p(X) ∧ q(X))`. A lowercase variable, as in `∀x.p(x)`, is
+accepted on input and normalized to uppercase; that is how a generated
+Chapter 10 question opens in the editor.
 
 The four rules, and what each asks for:
 
 | Rule | Select | Type | Gives |
 |---|---|---|---|
-| Universal Elimination | one `AX: φ` | a ground term | φ with that term in for X |
-| Universal Introduction | one line | the `AX: …` to introduce | that sentence |
-| Existential Introduction | one line | the `EX: …` to introduce | that sentence |
-| Existential Elimination | `EX: φ` and `AX: (φ ⇒ ψ)` | — | ψ |
+| Universal Elimination | one `∀X.φ` | a ground term | φ with that term in for X |
+| Universal Introduction | one line | the `∀X.…` to introduce | that sentence |
+| Existential Introduction | one line | the `∃X.…` to introduce | that sentence |
+| Existential Elimination | `∃X.φ` and `∀X.(φ ⇒ ψ)` | — | ψ |
 
 Universal Elimination asks only for the term, since the instance follows from
 it. The two introductions ask for the sentence, because you choose the variable
@@ -89,7 +100,7 @@ free in the conclusion.
 
 ### Induction
 
-Chapter 13's two rules conclude `AX: φ` from cases of φ, and both range over
+Chapter 13's two rules conclude `∀X.φ` from cases of φ, and both range over
 the **language** — the object and function constants that exist. It sits at the
 top of the proof as two lines, *Objects* and *Functions*, as in the Stanford
 tool. They start as the constants the premises and the goal use (plus any a
@@ -100,8 +111,8 @@ more than the premises support. Numerals are names, so the chapter's arithmetic
 
 | Rule | Enabled when | Select | Type |
 |---|---|---|---|
-| Domain Closure | objects, no functions | φ[σ] for every object σ | the `AX: φ` to conclude |
-| Induction | objects and functions | the base cases and the inductive cases | the `AX: φ` to conclude |
+| Domain Closure | objects, no functions | φ[σ] for every object σ | the `∀X.φ` to conclude |
+| Induction | objects and functions | the base cases and the inductive cases | the `∀X.φ` to conclude |
 
 The base cases are φ[σ] for every object constant. The inductive case for a
 unary function π is `AM: (φ[M] ⇒ φ[π(M)])`, which covers linear and tree
@@ -115,15 +126,48 @@ Enter. A button the language rules out is greyed, and hovering says why.
 Changing the language re-checks the proof: add an object and an induction that
 has no base case for it turns red until you remove it again.
 
-The problem list carries Chapter 12's three-clicks example and the chapter's
-induction exercises — linear, tree, structural, Domain Closure, and the
-"stronger claim" pattern of Exercise 13.6.
+
+### Equality
+
+Chapter 15 treats an equation as a relational sentence like any other, so
+`a = b` is the relation `=` (and `equal(a,b)` is read as the same thing). It
+binds tighter than `¬`, so `~a = b` is `a ≠ b`. Terms gain infix `*` and `+`,
+which are the functions `times` and `plus`. `*` binds tighter, both are left
+associative, and a product inside a product always keeps its parentheses, so
+the group axiom reads `(X*Y)*Z = X*(Y*Z)`, as in the chapter.
+
+| Rule | Select | Type | Gives |
+|---|---|---|---|
+| Equality Introduction | — | a ground term σ | σ = σ |
+| Equality Elimination | φ, then σ = τ | the result | φ with σ and τ exchanged where you chose |
+| Rational Equation | — | an equation of ground terms | it, if both sides agree multiplied out |
+| Rational Induction | φ[0] and `∀X.(φ[X] ⇒ φ[X + 1])` | the conclusion | `∀X.φ` |
+
+Equality Elimination uses the equation in either direction and may replace one
+occurrence, some, or all. It never replaces under a quantifier that binds a
+name in the equation, which is the chapter's substitutability condition. Since
+the choice is yours, it asks for the result. The prompt starts from "replace
+every occurrence", rewriting the line ticked first with the equation ticked
+second. For most steps, including every one-step proof in the chapter, that is
+just Enter. Citations come out in the chapter's order: the line, then the
+equation.
+
+The last two rules come from the Stanford tool rather than the chapter.
+Rational Equation multiplies both sides out as polynomials over `+` and `*`,
+treating numerals as numbers and anything else (`c`, `f(a)`) as an unknown, so
+`(c + 1)*(c + 1) = c*c + 2*c + 1` goes through. Rational Induction is induction
+over the naturals. As in the Stanford tool, it is greyed out unless the
+language is arithmetic: numerals, `+` and `*`, and nothing else.
+
+The buttons reproduce the chapter's 19-line proof that the inverse of an
+inverse is the element itself, line for line.
 
 `static/fitch_tests.html` exercises all of this against the real script: run the
-app and open `/static/fitch_tests.html`. It checks the notation, each quantifier
-and induction rule in isolation, and then drives the editor itself the way the
-buttons do, building the chapter's existential pattern and its linear, tree,
-structural and Domain Closure proofs end to end.
+app and open `/static/fitch_tests.html`. It checks the notation, each quantifier,
+induction and equality rule in isolation, and then drives the editor itself the
+way the buttons do, building the chapter's existential pattern, its linear,
+tree, structural and Domain Closure proofs, and Chapter 15's group-theory proof
+end to end.
 
 Because rules are applied rather than typed, every line is correct when it is
 made. The checker still runs over the whole proof on every change, because
@@ -193,7 +237,7 @@ The ladder is enforced where a question is opened, not only where it is drawn:
   what would open it, whether the link came from the dashboard, the Generate
   page or a friend. Opening an unlocked one records the attempt.
 - Signed-out visitors are not gated. `/fitch` needs no account, and there is no
-  progress to gate them against — the built-in problems belong to no level.
+  progress to gate them against.
 
 When a proof is finished the editor posts the question id to
 `/api/progress/solved` and nothing else: the server reads the chapter and band
@@ -368,6 +412,7 @@ python3 openai_vector_store.py "Introduction to Logic - Chapter 10.html"
 # Chapters 12 and 13 share one store:
 python3 openai_vector_store.py "Introduction to Logic - Chapter 12.html" --name "Introduction to Logic - Chapters 12-13"
 python3 openai_vector_store.py "Introduction to Logic - Chapter 13.html" --store vs_6abfa15d0bf481919398f91c55d28dc7
+python3 openai_vector_store.py "Introduction to Logic - Chapter 15.html"
 python3 ch10_generator.py -n 4 --difficulty easy -o ch10_questions.json
 python3 ch10_generator.py -n 3 --difficulty medium -o ch10_questions.json -a
 ```
@@ -390,9 +435,9 @@ Chapter 10 is reached from the same `/generate` page by picking it in the
 chapter selector. Two things differ from Chapter 5 once a question is on screen:
 
 - An exercise that fixes its language names its object constants, and the card
-  and the practice editor both print them, since Domain Closure means nothing
+  and the Fitch tool both print them, since Domain Closure means nothing
   without them.
-- That list of constants is handed to the practice editor as its language, so
+- That list of constants is handed to the Fitch tool as its language, so
   a proof answered by **Domain Closure** can be worked through there like any
   other.
 
@@ -520,6 +565,7 @@ Before deploying, add your production domain to the authorized domains list.
 | `FITCH_MODEL` | Defaults to `gpt-6-astra`; both generators read it |
 | `CH10_VECTOR_STORE_ID` | Vector store holding Chapter 10 (has a default) |
 | `CH12_13_VECTOR_STORE_ID` | Vector store holding Chapters 12 and 13, `vs_6abfa15d0bf481919398f91c55d28dc7`; no generator reads it yet |
+| `CH15_VECTOR_STORE_ID` | Vector store holding Chapter 15, `vs_6abfa643a7988191b6ebaf99ed160697`; no generator reads it yet |
 | `PORT` | Defaults to 5001 (macOS uses 5000 for AirPlay) |
 
 ## Tests
@@ -583,7 +629,8 @@ waiting rather than something broken, and a cleared one turns the success teal.
 
 Every page carries all three. The bar keeps ordinary links — colour arrives on
 hover, as an underline in each link's own accent, lightened because the body's
-orange and blue are too dark to register against the red. The main block on a
+orange and blue are too dark to register against the red. The link for the page
+you are on keeps that underline, so the bar also says where you are. The main block on a
 page (the auth card, the proof board) is topped with a three-colour stripe, and
 card rows cycle blue → red → orange, the way the ILO home page tints its three
 day-cards.
@@ -615,7 +662,6 @@ links inside cards included.
 | `static/fitch_tests.html` | Browser tests for the editor; open `/static/fitch_tests.html` |
 | `static/style.css` | The whole stylesheet; the palette is the `:root` block at the top |
 | `static/generate.js` | The Generate page |
-| `static/facts.js` | The rotating facts about logic, drawn from both chapters |
 | `static/auth.js` | Firebase Auth in the browser (ES module) |
 | `static/main.js` | Password strength, username availability, show/hide |
 | `templates/` | Jinja templates |

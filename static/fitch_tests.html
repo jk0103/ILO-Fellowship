@@ -8,7 +8,7 @@
 <style>
   body { font: 13px/1.5 ui-monospace, monospace; margin: 1.5rem; }
   pre { white-space: pre-wrap; }
-  .fitch-board, .fitch-setup, .hero { display: none; }   /* the editor is only here to be driven */
+  .fitch-board, .hero { display: none; }   /* the editor is only here to be driven */
   b.bad { color: #b00; }
 </style>
 <body>
@@ -19,50 +19,7 @@
 <div id="editor-dom">
 
 <section class="hero hero-compact">
-  <h1>Fitch practice</h1>
-  <p class="lede">Check the lines you want to work from, then press a rule.
-     The rule is applied for you and the new lines are added to the proof.</p>
-  <p class="hint">Quantifiers are written <code>AX: p(X)</code> for &forall;x.p(x) and
-     <code>EX: p(X)</code> for &exist;x.p(x). Variables are uppercase; a lowercase
-     name is an object constant or a placeholder.</p>
-</section>
-
-
-  <p class="hint">Its worked answer is # lines &mdash;
-     see it on the <a href="#">Generate</a> page.</p>
-</section>
-<script>
-  window.__ILO_QUESTION = {
-    title: "Generated question",
-    premises: #,
-    goal: #
-  };
-</script>
-{% endif %}
-
-<section class="fitch-setup">
-  <label class="field">
-    <span>Problem</span>
-    <select id="fitch-problem"></select>
-  </label>
-
-  <div id="fitch-custom" hidden>
-    <label class="field">
-      <span>Premises (one per line, or comma separated)</span>
-      <textarea id="fitch-custom-premises" rows="3" spellcheck="false"></textarea>
-    </label>
-    <label class="field">
-      <span>Goal</span>
-      <input id="fitch-custom-goal" spellcheck="false">
-    </label>
-    <button class="btn btn-primary" id="fitch-custom-apply" type="button">Start this proof</button>
-    <p class="hint danger" id="fitch-custom-error"></p>
-  </div>
-
-  <dl class="fitch-summary">
-    <dt>Premises</dt><dd id="fitch-premises">&mdash;</dd>
-    <dt>Goal</dt><dd id="fitch-goal-display">&mdash;</dd>
-  </dl>
+  <h1>Fitch tool</h1>
 </section>
 
 <p id="fitch-verdict" class="fitch-verdict"></p>
@@ -106,10 +63,13 @@
       <button type="button" class="fitch-sym" data-symbol="∨">∨</button>
       <button type="button" class="fitch-sym" data-symbol="⇒">⇒</button>
       <button type="button" class="fitch-sym" data-symbol="⇔">⇔</button>
-      <button type="button" class="fitch-sym" data-symbol="AX: ">AX:</button>
-      <button type="button" class="fitch-sym" data-symbol="EX: ">EX:</button>
-      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code>.
-        Quantifiers: <code>AX: p(X)</code> for every X, <code>EX: p(X)</code> for some X
+      <button type="button" class="fitch-sym" data-symbol="∀">∀</button>
+      <button type="button" class="fitch-sym" data-symbol="∃">∃</button>
+      <button type="button" class="fitch-sym" data-symbol=" = ">=</button>
+      <button type="button" class="fitch-sym" data-symbol=" ≠ ">≠</button>
+      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code> and <code>!=</code>.
+        Quantifiers: <code>&forall;X.p(X)</code> for every X, <code>&exist;X.p(X)</code> for some X
+        (or <code>AX: p(X)</code>, <code>EX: p(X)</code> from the keyboard)
         &mdash; variables uppercase, constants lowercase.</span>
     </div>
   </div>
@@ -122,6 +82,96 @@
 </div>
 
 <script src="fitch.js"></script>
+<script>
+/* Fixtures: the arguments the suites prove. The tool itself starts blank; these
+   are loaded straight into it with Fitch.loadProblem. */
+window.TEST_PROBLEMS = (function () {
+  return [
+    { id: "and-comm", title: "Commuting a conjunction", premises: ["p & q"], goal: "q & p", tags: "AI, AE" },
+    { id: "mp", title: "Modus ponens, twice", premises: ["p", "p => q", "q => r"], goal: "r", tags: "IE" },
+    { id: "imp-self", title: "Implication is reflexive", premises: [], goal: "p => p", tags: "II" },
+    { id: "and-imp", title: "Currying", premises: ["(p & q) => r"], goal: "p => (q => r)", tags: "II, AI, IE" },
+    { id: "hyp-syll", title: "Hypothetical syllogism", premises: ["p => q", "q => r"], goal: "p => r", tags: "II, IE" },
+    { id: "contra", title: "Contraposition", premises: ["p => q"], goal: "~q => ~p", tags: "II, NI" },
+    { id: "mt", title: "Modus tollens", premises: ["p => q", "~q"], goal: "~p", tags: "NI, II, R" },
+    { id: "or-comm", title: "Commuting a disjunction", premises: ["p | q"], goal: "q | p", tags: "OE, OI, II" },
+    { id: "dilemma", title: "Constructive dilemma", premises: ["p | q", "p => r", "q => r"], goal: "r", tags: "OE" },
+    { id: "iff-comm", title: "Biconditionals commute", premises: ["p <=> q"], goal: "q <=> p", tags: "BE, BI" },
+    { id: "dn-in", title: "Double negation introduction", premises: ["p"], goal: "~~p", tags: "NI, II, R" },
+    { id: "and-assoc", title: "Regrouping a conjunction", premises: ["p & (q & r)"], goal: "(p & q) & r", tags: "AE, AI" },
+    { id: "distrib", title: "Distribution", premises: ["p & (q | r)"], goal: "(p & q) | (p & r)", tags: "OE, OI, AI, II" },
+    { id: "demorgan", title: "De Morgan, one direction", premises: ["~p & ~q"], goal: "~(p | q)", tags: "NI, II, OE" },
+    { id: "excluded", title: "Excluded middle", premises: [], goal: "p | ~p", tags: "NI, NE, II, OI" },
+    { id: "peirce", title: "Peirce's law", premises: ["(p => q) => p"], goal: "p", tags: "NI, NE, II, IE" },
+
+    // Chapter 10: the quantifier rules. AX: p(X) is "every X is p", EX: p(X) is
+    // "some X is p".
+    { id: "all-some", title: "Every implies some", premises: ["AX: p(X)"], goal: "EX: p(X)", tags: "UE, EI" },
+    { id: "all-mp", title: "Universal modus ponens", premises: ["AX: (p(X) => q(X))", "p(a)"], goal: "q(a)", tags: "UE, IE" },
+    { id: "all-and-out", title: "Splitting a universal", premises: ["AX: (p(X) & q(X))"], goal: "AX: p(X) & AX: q(X)", tags: "UE, AE, UI, AI" },
+    { id: "all-and-in", title: "Joining two universals", premises: ["AX: p(X) & AX: q(X)"], goal: "AX: (p(X) & q(X))", tags: "AE, UE, AI, UI" },
+    { id: "all-swap", title: "Swapping two universals", premises: ["AX: AY: p(X,Y)"], goal: "AY: AX: p(X,Y)", tags: "UE, UI" },
+    { id: "all-chain", title: "Universal hypothetical syllogism", premises: ["AX: (p(X) => q(X))", "AX: (q(X) => r(X))"], goal: "AX: (p(X) => r(X))", tags: "UE, IE, II, UI" },
+    { id: "some-mp", title: "Some, through an implication", premises: ["AX: (p(X) => q(X))", "EX: p(X)"], goal: "EX: q(X)", tags: "UE, IE, EI, II, UI, EE" },
+    { id: "some-and", title: "Splitting an existential", premises: ["EX: (p(X) & q(X))"], goal: "EX: q(X)", tags: "AE, EI, II, UI, EE" },
+    { id: "some-swap", title: "Swapping two existentials", premises: ["EX: EY: p(X,Y)"], goal: "EY: EX: p(X,Y)", tags: "EI, II, UI, EE" },
+    { id: "some-all", title: "One for all, all have one", premises: ["EY: AX: p(X,Y)"], goal: "AX: EY: p(X,Y)", tags: "UE, EI, UI, II, EE" },
+    { id: "no-p", title: "No p at all", premises: ["AX: ~p(X)"], goal: "~EX: p(X)", tags: "UE, NI, II, EE, R" },
+
+    // Chapter 12: the same rules over terms. c(X) is the state after a click.
+    { id: "clicks", title: "Three clicks back to blank",
+      premises: ["AX: (blank(X) => check(c(X)))", "AX: (check(X) => ex(c(X)))", "AX: (ex(X) => blank(c(X)))"],
+      goal: "AX: (blank(X) => blank(c(c(c(X)))))", tags: "UE, IE, II, UI" },
+
+    // Chapter 13: induction. The language — what Domain Closure and Induction
+    // range over — is read off the premises and the goal.
+    { id: "dc-two", title: "Domain closure over a and b", premises: ["q(a)", "q(b)"],
+      goal: "AX: (p(X) => q(X))", tags: "R, II, DC" },
+    { id: "right-zero", title: "Zero is a right identity",
+      premises: ["AY: plus(0,Y,Y)", "AX: AY: AZ: (plus(X,Y,Z) => plus(s(X),Y,s(Z)))"],
+      goal: "AX: plus(X,0,X)", tags: "UE, UI, Ind" },
+    { id: "lin-split", title: "Linear induction through a case split",
+      premises: ["r(a)", "AX: (p(X) => r(s(X)))", "AX: (q(X) => r(s(X)))", "AX: (r(X) => p(X) | q(X))"],
+      goal: "AX: r(X)", tags: "UE, IE, OE, II, UI, Ind" },
+    { id: "alternate", title: "Alternating p and q",
+      premises: ["p(a)", "AX: (p(X) => q(f(X)))", "AX: (q(X) => p(f(X)))"],
+      goal: "AX: (p(X) | q(X))", tags: "OI, UE, IE, OE, II, UI, Ind" },
+    { id: "purebred", title: "A purebred line",
+      premises: ["purebred(rex)", "AX: (purebred(X) => purebred(f(X)) & purebred(g(X)))"],
+      goal: "AX: purebred(X)", tags: "UE, IE, AE, II, UI, Ind" },
+    { id: "tree-fg", title: "Tree induction over f and g",
+      premises: ["p(a)", "AX: (p(X) => p(f(X)))", "AX: (p(f(X)) => p(g(X)))"],
+      goal: "AX: p(X)", tags: "UE, IE, II, UI, Ind" },
+    { id: "struct-h", title: "Structural induction over h",
+      premises: ["p(a)", "AX: AY: (p(X) | p(Y) => p(h(X,Y)))"],
+      goal: "AX: p(X)", tags: "AE, OI, UE, IE, II, UI, Ind" },
+    { id: "stronger", title: "Induction on a stronger claim",
+      premises: ["AX: (p(X) => p(s(s(X))))", "p(a)", "p(s(a))"],
+      goal: "AX: p(X)", tags: "AI, AE, UE, IE, II, UI, Ind" },
+
+    // Chapter 15: equality. a = b is a relational sentence like any other;
+    // x*y and x + 1 are terms.
+    { id: "eq-chain", title: "Equals of equals", premises: ["b = a", "b = c"], goal: "a = c", tags: "QE" },
+    { id: "eq-sub", title: "Putting equals into a predicate", premises: ["a = b", "p(a)"], goal: "p(b)", tags: "QE" },
+    { id: "eq-fn", title: "Equals inside a function", premises: ["f(a) = b", "f(b) = a"], goal: "f(f(a)) = a", tags: "QE" },
+    { id: "eq-older", title: "Quincy is older than Pat",
+      premises: ["father(pat) = quincy", "AX: older(father(X),X)"], goal: "older(quincy,pat)", tags: "UE, QE" },
+    { id: "eq-cases", title: "A disjunction of equations",
+      premises: ["p(a)", "p(b)", "a = c | b = c"], goal: "p(c)", tags: "QE, II, OE" },
+    { id: "eq-sym", title: "Equality is symmetric", premises: [],
+      goal: "AX: AY: (X = Y => Y = X)", tags: "QI, QE, II, UI" },
+    { id: "group-inv", title: "The inverse of an inverse",
+      premises: ["AX: AY: AZ: (X*Y)*Z = X*(Y*Z)", "AX: X*e = X", "AX: e*X = X",
+                 "AX: X*inv(X) = e", "AX: inv(X)*X = e"],
+      goal: "AX: inv(inv(X)) = X", tags: "UE, QI, QE, UI" },
+    { id: "rat-square", title: "Multiplying out a square", premises: [],
+      goal: "AX: (X + 1)*(X + 1) = X*X + 2*X + 1", tags: "RatEq, UI" },
+    { id: "rat-parity", title: "Every number is even or odd",
+      premises: ["even(0)", "AX: (even(X) => odd(X + 1))", "AX: (odd(X) => even(X + 1))"],
+      goal: "AX: (even(X) | odd(X))", tags: "OI, UE, IE, OE, II, UI, RatInd" },
+  ];
+})();
+</script>
 <script>
 /* The unit suite: notation and the rules in isolation. */
 try {
@@ -141,18 +191,23 @@ try {
   }
 
   /* ---- notation ---- */
-  roundTrip("AX: p(X)", "AX: p(X)");
-  roundTrip("EX:p(X)", "EX: p(X)");
-  roundTrip("AX: (p(X) & q(X))", "AX: (p(X) ∧ q(X))");
-  roundTrip("AX: p(X) & AX: q(X)", "AX: p(X) ∧ AX: q(X)");
-  roundTrip("AX: AY: p(X,Y)", "AX: AY: p(X,Y)");
-  roundTrip("~EX: p(X)", "¬EX: p(X)");
-  roundTrip("EX: (p(X) => q(a))", "EX: (p(X) ⇒ q(a))");
+  roundTrip("AX: p(X)", "∀X.p(X)");
+  roundTrip("EX:p(X)", "∃X.p(X)");
+  roundTrip("AX: (p(X) & q(X))", "∀X.(p(X) ∧ q(X))");
+  roundTrip("AX: p(X) & AX: q(X)", "∀X.p(X) ∧ ∀X.q(X)");
+  roundTrip("AX: AY: p(X,Y)", "∀X.∀Y.p(X,Y)");
+  roundTrip("~EX: p(X)", "¬∃X.p(X)");
+  roundTrip("EX: (p(X) => q(a))", "∃X.(p(X) ⇒ q(a))");
   roundTrip("p & q", "p ∧ q");                 // the propositional fragment is untouched
   roundTrip("(p => q) => p", "(p ⇒ q) ⇒ p");
-  roundTrip("∀x.p(x)", "AX: p(X)");            // Unicode in, tool notation out
-  roundTrip("∃y.loves(jack,y)", "EY: loves(jack,Y)");
-  roundTrip("AX: EY: r(X,Y)", "AX: EY: r(X,Y)");
+  roundTrip("∀x.p(x)", "∀X.p(X)");            // Unicode in, tool notation out
+  roundTrip("∃y.loves(jack,y)", "∃Y.loves(jack,Y)");
+  roundTrip("AX: EY: r(X,Y)", "∀X.∃Y.r(X,Y)");
+  roundTrip("∀X.(p(X) => q(X))", "∀X.(p(X) ⇒ q(X))");     // what the ∀ button starts
+  roundTrip("∀X:p(X)", "∀X.p(X)");
+  let bare = "";
+  try { F.parse("∀ p(X)"); } catch (e) { bare = e.message; }
+  check("a ∀ with no variable says what to write", bare.indexOf("∀X.p(X)") > 0, bare);
 
   check("a quantified sentence is not the same as its instance",
         !F.same(F.parse("AX: p(X)"), F.parse("p(a)")));
@@ -184,7 +239,7 @@ try {
   check("UE replaces every occurrence",
         shows(apply("ue", [line("AX: p(X,X)", "premise")], "c")) === "p(c,c)");
   check("UE into a nested quantifier",
-        shows(apply("ue", [line("AX: EY: r(X,Y)", "premise")], "a")) === "EY: r(a,Y)");
+        shows(apply("ue", [line("AX: EY: r(X,Y)", "premise")], "a")) === "∃Y.r(a,Y)");
   check("UE refuses a variable as the term",
         shows(apply("ue", [line("AX: p(X)", "premise")], "Y")).indexOf("error") === 0);
   check("UE refuses a non-universal line",
@@ -192,9 +247,9 @@ try {
 
   // Existential Introduction
   check("EI generalizes a constant",
-        shows(apply("ei", [line("p(a)", "premise")], "EX: p(X)")) === "EX: p(X)");
+        shows(apply("ei", [line("p(a)", "premise")], "EX: p(X)")) === "∃X.p(X)");
   check("EI may generalize some occurrences only",
-        shows(apply("ei", [line("r(a,a)", "premise")], "EX: r(a,X)")) === "EX: r(a,X)");
+        shows(apply("ei", [line("r(a,a)", "premise")], "EX: r(a,X)")) === "∃X.r(a,X)");
   check("EI refuses a sentence that is not an instance",
         shows(apply("ei", [line("p(a)", "premise")], "EX: q(X)")).indexOf("error") === 0);
   check("EI refuses generalizing a bound variable (the chapter's warning)",
@@ -203,7 +258,7 @@ try {
   // Universal Introduction
   F.state.premises = [];
   check("UI generalizes an arbitrary placeholder",
-        shows(apply("ui", [line("p(c)", "ue")], "AX: p(X)")) === "AX: p(X)");
+        shows(apply("ui", [line("p(c)", "ue")], "AX: p(X)")) === "∀X.p(X)");
   F.state.premises = [F.parse("p(a)")];
   check("UI refuses a name a premise pins down",
         shows(apply("ui", [line("p(a)", "premise")], "AX: p(X)")).indexOf("error") === 0);
@@ -274,7 +329,7 @@ try {
   check("checkLine catches UE to a non-ground instance", bad.length === 1, bad.join(" | "));
 
   /* ---- Chapter 13: the language, Domain Closure, and Induction ---- */
-  roundTrip("AY: plus(0,Y,Y)", "AY: plus(0,Y,Y)");          // numerals are names
+  roundTrip("AY: plus(0,Y,Y)", "∀Y.plus(0,Y,Y)");          // numerals are names
   roundTrip("(p & q) & r", "(p ∧ q) ∧ r");                   // nesting stays visible
   roundTrip("p & q & r", "p ∧ q ∧ r");
 
@@ -292,7 +347,7 @@ try {
   check("DC asks for the conclusion", apply("dc", [line("q(a)", "premise")]).prompt !== undefined);
   check("DC concludes from one instance per object",
         shows(apply("dc", [line("p(b) => q(b)", "ii", 0, 2), line("p(a) => q(a)", "ii", 0, 1)], "AX: (p(X) => q(X))")) ===
-        "AX: (p(X) ⇒ q(X))");
+        "∀X.(p(X) ⇒ q(X))");
   check("DC cites the instances in the order of the objects",
         apply("dc", [line("q(b)", "premise", 0, 2), line("q(a)", "premise", 0, 1)], "AX: q(X)").lines[0].refIds.join() === "1,2");
   check("DC refuses a missing instance",
@@ -309,15 +364,15 @@ try {
   const base0 = line("plus(0,0,0)", "ue", 0, 1);
   const step0 = line("AY: (plus(Y,0,Y) => plus(s(Y),0,s(Y)))", "ui", 0, 2);
   check("Ind proposes the conclusion its inductive case points to",
-        apply("ind", [base0, step0]).seed === "AY: plus(Y,0,Y)", apply("ind", [base0, step0]).seed);
+        apply("ind", [base0, step0]).seed === "∀Y.plus(Y,0,Y)", apply("ind", [base0, step0]).seed);
   check("Ind: linear induction from base and step",
-        shows(apply("ind", [step0, base0], "AX: plus(X,0,X)")) === "AX: plus(X,0,X)");
+        shows(apply("ind", [step0, base0], "AX: plus(X,0,X)")) === "∀X.plus(X,0,X)");
   check("Ind cites base cases first, then inductive cases",
         apply("ind", [step0, base0], "AX: plus(X,0,X)").lines[0].refIds.join() === "1,2");
   check("Ind refuses a missing base case",
         shows(apply("ind", [step0], "AX: plus(X,0,X)")).indexOf("base case for 0") > 0);
   check("Ind refuses a missing inductive case, and says what it is",
-        shows(apply("ind", [base0], "AX: plus(X,0,X)")).indexOf("AX: (plus(X,0,X) ⇒ plus(s(X),0,s(X)))") > 0,
+        shows(apply("ind", [base0], "AX: plus(X,0,X)")).indexOf("∀X.(plus(X,0,X) ⇒ plus(s(X),0,s(X)))") > 0,
         shows(apply("ind", [base0], "AX: plus(X,0,X)")));
   check("Ind refuses an inductive case that goes backwards",
         shows(apply("ind", [base0, line("AX: (plus(s(X),0,s(X)) => plus(X,0,X))", "ui", 0, 3)], "AX: plus(X,0,X)")).indexOf("error") === 0);
@@ -328,7 +383,7 @@ try {
   const treeF = line("AX: (purebred(X) => purebred(f(X)))", "ui", 0, 2);
   const treeG = line("AX: (purebred(X) => purebred(g(X)))", "ui", 0, 3);
   check("Ind: tree induction over f and g",
-        shows(apply("ind", [treeBase, treeF, treeG], "AX: purebred(X)")) === "AX: purebred(X)");
+        shows(apply("ind", [treeBase, treeF, treeG], "AX: purebred(X)")) === "∀X.purebred(X)");
   check("Ind: tree induction refuses to skip g",
         shows(apply("ind", [treeBase, treeF], "AX: purebred(X)")).indexOf("inductive case for g") > 0);
 
@@ -336,9 +391,9 @@ try {
   F.state.language = lang(["a"], ["h"], { h: 2 });
   const structStep = line("AX: AY: (p(X) & p(Y) => p(h(X,Y)))", "ui", 0, 2);
   check("Ind: structural induction over a binary function",
-        shows(apply("ind", [line("p(a)", "premise", 0, 1), structStep], "AX: p(X)")) === "AX: p(X)");
+        shows(apply("ind", [line("p(a)", "premise", 0, 1), structStep], "AX: p(X)")) === "∀X.p(X)");
   check("Ind: structural guess",
-        apply("ind", [line("p(a)", "premise", 0, 1), structStep]).seed === "AX: p(X)");
+        apply("ind", [line("p(a)", "premise", 0, 1), structStep]).seed === "∀X.p(X)");
   check("Ind: a unary case does not cover a binary function",
         shows(apply("ind", [line("p(a)", "premise", 0, 1),
                             line("AX: (p(X) => p(h(X,X)))", "ui", 0, 2)], "AX: p(X)")).indexOf("error") === 0);
@@ -383,10 +438,107 @@ try {
   ]);
   check("a Domain Closure line verifies", bad.length === 0, bad.join(" | "));
 
+  /* ---- Chapter 15: equality, and the Stanford tool's arithmetic ---- */
+  roundTrip("a = b", "a = b");
+  roundTrip("~a = b", "a ≠ b");                              // = binds tighter than ~
+  roundTrip("a != b", "a ≠ b");
+  roundTrip("~(a != b)", "¬(a ≠ b)");
+  roundTrip("equal(f(a),b)", "f(a) = b");                    // the chapter's sugar
+  roundTrip("∀x.x*e=x", "∀X.X*e = X");
+  roundTrip("AX: AY: AZ: (X*Y)*Z = X*(Y*Z)", "∀X.∀Y.∀Z.(X*Y)*Z = X*(Y*Z)");
+  roundTrip("AX: X*Y*Z = X", "∀X.(X*Y)*Z = X");             // * is left associative
+  roundTrip("AX: (X + 1)*(X + 1) = X*X + 2*X + 1", "∀X.(X + 1)*(X + 1) = X*X + 2*X + 1");
+  roundTrip("a = b => b = a", "a = b ⇒ b = a");
+  roundTrip("a = c | b = c", "a = c ∨ b = c");
+  roundTrip("(p => q) => p", "(p ⇒ q) ⇒ p");                 // ( still opens a formula
+  roundTrip("older(father(pat),pat)", "older(father(pat),pat)");
+  check("parseTerm reads an infix term", F.showTerm(F.parseTerm("(c + 1)*(c + 1)")) === "(c + 1)*(c + 1)");
+  let plusOr = "parsed";
+  try { F.parse("p + q"); } catch (e) { plusOr = "refused"; }
+  check("+ is arithmetic now, not or", plusOr === "refused");
+
+  // Equality Introduction
+  check("QI asks for a term", apply("qi", []).prompt !== undefined && apply("qi", []).term === true);
+  check("QI writes down a = a", shows(apply("qi", [], "a")) === "a = a");
+  check("QI takes an infix term",
+        shows(F.APPLY.qi([], F.parseTerm("f(a)*c"))) === "f(a)*c = f(a)*c");
+  check("QI refuses a variable", shows(apply("qi", [], "X")).indexOf("error") === 0);
+
+  // Equality Elimination
+  const bc = line("b = c", "premise", 0, 2), ba = line("b = a", "premise", 0, 1);
+  check("QE suggests rewriting the first ticked line with the second", apply("qe", [bc, ba]).seed === "a = c",
+        apply("qe", [bc, ba]).seed);
+  check("QE: the chapter's one-step a = c", shows(apply("qe", [bc, ba], "a = c")) === "a = c");
+  check("QE cites the rewritten line, then the equation",
+        apply("qe", [ba, bc], "a = c").lines[0].refIds.join() === "2,1");
+  check("QE reads the equation right to left as well",
+        apply("qe", [line("f(b) = a", "premise", 0, 2), line("f(a) = b", "premise", 0, 1)]).seed === "f(f(a)) = a");
+  check("QE may replace some occurrences only",
+        shows(apply("qe", [line("p(a,a)", "premise"), line("a = b", "premise")], "p(a,b)")) === "p(a,b)");
+  check("QE reaches under a quantifier that binds nothing in the equation",
+        shows(apply("qe", [line("AX: p(X,a)", "premise"), line("a = b", "premise")], "AX: p(X,b)")) === "∀X.p(X,b)");
+  check("QE refuses a rewrite the equation does not license",
+        shows(apply("qe", [line("p(a)", "premise"), line("a = b", "premise")], "p(c)")).indexOf("error") === 0);
+  check("QE refuses without an equation",
+        shows(apply("qe", [line("p(a)", "premise"), line("q(a)", "premise")])).indexOf("equation") > 0);
+
+  // Rational Equation
+  check("RatEq: 2 + 2 = 2*2", shows(apply("req", [], "2 + 2 = 2*2")) === "2 + 2 = 2*2");
+  check("RatEq multiplies out a square",
+        shows(apply("req", [], "(c + 1)*(c + 1) = c*c + 2*c + 1")) === "(c + 1)*(c + 1) = c*c + 2*c + 1");
+  check("RatEq: * and + commute", shows(apply("req", [], "c*d + 1 = 1 + d*c")) === "c*d + 1 = 1 + d*c");
+  check("RatEq refuses an unequal pair",
+        shows(apply("req", [], "(c + 1)*(c + 1) = c*c + 1")).indexOf("differ") > 0);
+  check("RatEq refuses variables", shows(apply("req", [], "X + 0 = X")).indexOf("ground") > 0);
+
+  // Rational Induction
+  F.state.language = lang(["0", "1"], ["plus"], { plus: 2 });
+  const parityBase = line("even(0) | odd(0)", "oi", 0, 1);
+  const parityStep = line("AY: (even(Y) | odd(Y) => even(Y + 1) | odd(Y + 1))", "ui", 0, 2);
+  check("RatInd proposes the conclusion", apply("rind", [parityBase, parityStep]).seed === "∀Y.(even(Y) ∨ odd(Y))",
+        apply("rind", [parityBase, parityStep]).seed);
+  check("RatInd from φ[0] and the successor case",
+        shows(apply("rind", [parityStep, parityBase], "AX: (even(X) | odd(X))")) === "∀X.(even(X) ∨ odd(X))");
+  check("RatInd refuses a missing base case",
+        shows(apply("rind", [parityStep], "AX: (even(X) | odd(X))")).indexOf("base case") > 0);
+  check("RatInd refuses a step that is not + 1",
+        shows(apply("rind", [parityBase, line("AY: (even(Y) | odd(Y) => even(Y + 2) | odd(Y + 2))", "ui", 0, 2)],
+                    "AX: (even(X) | odd(X))")).indexOf("inductive case") > 0);
+  F.state.language = lang(["a"], ["s"], { s: 1 });
+  check("RatInd refuses a language that is not arithmetic",
+        shows(apply("rind", [parityBase, parityStep], "AX: (even(X) | odd(X))")).indexOf("a, s") > 0);
+
+  // checkLine: the chapter's group-theory proof, as the editor would store it
+  const groupPremises = ["AX: AY: AZ: (X*Y)*Z = X*(Y*Z)", "AX: X*e = X", "AX: e*X = X",
+                         "AX: X*inv(X) = e", "AX: inv(X)*X = e"];
+  const groupProof = groupPremises.map((p) => [p, "premise", 0]).concat([
+    ["inv(inv(c))*inv(c) = e", "ue", 0, [5]],
+    ["(inv(inv(c))*inv(c))*c = (inv(inv(c))*inv(c))*c", "qi", 0],
+    ["(inv(inv(c))*inv(c))*c = e*c", "qe", 0, [7, 6]],
+    ["e*c = c", "ue", 0, [3]],
+    ["(inv(inv(c))*inv(c))*c = c", "qe", 0, [8, 9]],
+    ["AY: AZ: (inv(inv(c))*Y)*Z = inv(inv(c))*(Y*Z)", "ue", 0, [1]],
+    ["AZ: (inv(inv(c))*inv(c))*Z = inv(inv(c))*(inv(c)*Z)", "ue", 0, [11]],
+    ["(inv(inv(c))*inv(c))*c = inv(inv(c))*(inv(c)*c)", "ue", 0, [12]],
+    ["inv(inv(c))*(inv(c)*c) = c", "qe", 0, [10, 13]],
+    ["inv(c)*c = e", "ue", 0, [5]],
+    ["inv(inv(c))*e = c", "qe", 0, [14, 15]],
+    ["inv(inv(c))*e = inv(inv(c))", "ue", 0, [2]],
+    ["inv(inv(c)) = c", "qe", 0, [16, 17]],
+    ["AX: inv(inv(X)) = X", "ui", 0, [18]],
+  ]);
+  bad = proofIn(lang(["e"], ["times", "inv"], { times: 2, inv: 1 }), groupPremises, groupProof);
+  check("the chapter's inverse-of-an-inverse proof verifies", bad.length === 0, bad.join(" | "));
+  const broken = groupProof.slice();
+  broken[7] = ["(inv(inv(c))*inv(c))*c = c*c", "qe", 0, [7, 6]];
+  bad = proofIn(lang(["e"], ["times", "inv"], { times: 2, inv: 1 }), groupPremises, broken);
+  check("checkLine catches a rewrite the equation does not give", bad.length >= 1 && bad[0].indexOf("8:") === 0,
+        bad.join(" | "));
+
   F.state.language = lang([], []);
 
   /* ---- every bundled problem parses ---- */
-  F.PROBLEMS.forEach((p) => {
+  window.TEST_PROBLEMS.forEach((p) => {
     let ok = true, why = "";
     try { p.premises.forEach(F.parse); F.parse(p.goal); }
     catch (e) { ok = false; why = e.message; }
@@ -416,8 +568,6 @@ try {
     else { fail++; out.push("FAIL  " + label + (extra ? "   [" + extra + "]" : "")); }
   };
 
-  const picker = document.getElementById("fitch-problem");
-  const byTitle = (t) => [...picker.options].find((o) => o.textContent.indexOf(t) >= 0);
   const verdict = () => document.getElementById("fitch-verdict").textContent;
   const message = () => document.getElementById("fitch-message").textContent;
   const proofText = () => F.state.lines.map((l, i) =>
@@ -425,9 +575,7 @@ try {
       (l.refIds.length ? " " + l.refIds.map((id) => F.state.lines.findIndex((x) => x.id === id) + 1).join(",") : "") + "]").join("\n");
 
   function load(title) {
-    const opt = byTitle(title);
-    picker.value = opt.value;
-    picker.dispatchEvent(new Event("change"));
+    F.loadProblem(window.TEST_PROBLEMS.find((p) => p.title.indexOf(title) >= 0));
   }
   function pick() {
     F.state.selected.clear();
@@ -451,7 +599,7 @@ try {
         verdict().indexOf("✓ Proved") === 0, verdict() + "\n" + proofText() + "\n" + message());
   check("it took nine lines", F.state.lines.length === 9, proofText());
   check("the last line is EX: q(X) at depth 0",
-        F.show(F.state.lines[8].formula) === "EX: q(X)" && F.state.lines[8].depth === 0, proofText());
+        F.show(F.state.lines[8].formula) === "∃X.q(X)" && F.state.lines[8].depth === 0, proofText());
   out.push("--- proof built by the buttons ---");
   out.push(proofText());
 
@@ -509,7 +657,7 @@ try {
   pick(6); run("ui", "AX: (plus(X,0,X) => plus(s(X),0,s(X)))");
   pick(3, 7); F.runRule("ind");
   check("Induction pre-fills the conclusion its inductive case points to",
-        inputSeed() === "AX: plus(X,0,X)", inputSeed());
+        inputSeed() === "∀X.plus(X,0,X)", inputSeed());
   document.getElementById("fitch-entry-ok").click();
   check("0 is a right identity, by linear induction", verdict().indexOf("✓ Proved") === 0,
         verdict() + "\n" + proofText() + "\n" + message());
@@ -578,6 +726,102 @@ try {
 
   load("Three clicks back to blank");
   check("a language with no objects greys out both", button("Domain Closure").disabled && button("Induction").disabled);
+
+  /* ---- Chapter 15: equality, through the buttons ---- */
+  const runTerm = (rule, src) => F.runRule(rule, F.parseTerm(src));
+  const accept = () => document.getElementById("fitch-entry-ok").click();
+
+  load("The inverse of an inverse");
+  check("the group language: e, with * and inv", lang() === "e / times,inv", lang());
+  check("Rational Induction is greyed out outside arithmetic", button("Rational Induction").disabled);
+  pick(5); runTerm("ue", "inv(c)");                                       // 6
+  runTerm("qi", "(inv(inv(c))*inv(c))*c");                                // 7
+  pick(7, 6); run("qe", "(inv(inv(c))*inv(c))*c = e*c");                 // 8: one occurrence
+  pick(3); runTerm("ue", "c");                                            // 9
+  pick(8, 9); F.runRule("qe");
+  check("QE suggests the full rewrite", inputSeed() === "(inv(inv(c))*inv(c))*c = c", inputSeed());
+  accept();                                                               // 10
+  pick(1); runTerm("ue", "inv(inv(c))");                                  // 11
+  pick(11); runTerm("ue", "inv(c)");                                      // 12
+  pick(12); runTerm("ue", "c");                                           // 13
+  pick(10, 13); F.runRule("qe"); accept();                                // 14
+  pick(5); runTerm("ue", "c");                                            // 15
+  pick(14, 15); F.runRule("qe"); accept();                                // 16
+  pick(2); runTerm("ue", "inv(inv(c))");                                  // 17
+  pick(16, 17); F.runRule("qe"); accept();                                // 18
+  pick(18); run("ui", "AX: inv(inv(X)) = X");                             // 19
+  check("the inverse of an inverse, by equality", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+  check("it takes the chapter's nineteen lines", F.state.lines.length === 19, proofText());
+  out.push("--- proof built by the buttons ---");
+  out.push(proofText());
+
+  load("A disjunction of equations");
+  run("assume", "a = c");
+  pick(1, 4); F.runRule("qe"); accept();
+  pick(4, 5); run("ii");
+  run("assume", "b = c");
+  pick(2, 7); F.runRule("qe"); accept();
+  pick(7, 8); run("ii");
+  pick(3, 6, 9); run("oe");
+  check("p(c) from a disjunction of equations", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  load("Equality is symmetric");
+  run("assume", "c = d");
+  runTerm("qi", "c");
+  pick(2, 1); run("qe", "d = c");
+  pick(1, 3); run("ii");
+  pick(4); run("ui", "AY: (c = Y => Y = c)");
+  pick(5); run("ui", "AX: AY: (X = Y => Y = X)");
+  check("symmetry from Equality Introduction and Elimination", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  load("Multiplying out a square");
+  run("req", "(c + 1)*(c + 1) = c*c + 2*c + 1");
+  pick(1); run("ui", "AX: (X + 1)*(X + 1) = X*X + 2*X + 1");
+  check("a polynomial identity by Rational Equation", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  load("Every number is even or odd");
+  check("arithmetic enables Rational Induction", !button("Rational Induction").disabled, lang());
+  pick(1); run("oi", "even(0) | odd(0)");                                 // 4
+  run("assume", "even(c) | odd(c)");                                      // 5
+  pick(2); runTerm("ue", "c");                                            // 6
+  pick(3); runTerm("ue", "c");                                            // 7
+  run("assume", "even(c)");                                               // 8
+  pick(6, 8); run("ie");                                                  // 9
+  pick(9); run("oi", "even(c + 1) | odd(c + 1)");                         // 10
+  pick(8, 10); run("ii");                                                 // 11
+  run("assume", "odd(c)");                                                // 12
+  pick(7, 12); run("ie");                                                 // 13
+  pick(13); run("oi", "even(c + 1) | odd(c + 1)");                        // 14
+  pick(12, 14); run("ii");                                                // 15
+  pick(5, 11, 15); run("oe");                                             // 16
+  pick(5, 16); run("ii");                                                 // 17
+  pick(17); run("ui", "AX: (even(X) | odd(X) => even(X + 1) | odd(X + 1))");
+  pick(4, 18); F.runRule("rind");
+  check("Rational Induction suggests its conclusion", inputSeed() === "∀X.(even(X) ∨ odd(X))", inputSeed());
+  accept();
+  check("every number is even or odd, by Rational Induction", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  /* ---- the tool with no question: a blank, free-form proof ---- */
+  F.loadProblem({ id: "blank", premises: [], goal: "" });
+  check("a blank tool starts empty, with no goal banner",
+        document.getElementById("fitch-verdict").hidden && F.state.lines.length === 0);
+  run("premise", "p(a)");
+  run("premise", "AX: (p(X) => q(X))");
+  check("premises typed into the tool set the language", lang() === "a / ", lang());
+  pick(2); runTerm("ue", "a");
+  pick(3, 1); run("ie");
+  check("and the rules run on them", F.show(F.state.lines[3].formula) === "q(a)" && F.state.lines[3].result.ok,
+        proofText());
+  pick(1); run("ui", "AX: p(X)");
+  check("UI still refuses a typed premise's constant", message().indexOf("not arbitrary") > 0, message());
+  [...document.querySelectorAll(".fitch-util")].find((b) => b.textContent === "Reset").click();
+  check("Reset clears a free-form proof", F.state.lines.length === 0 && F.state.premises.length === 0 && lang() === " / ",
+        lang());
 
   /* ---- the propositional rules still work, unchanged ---- */
   load("Peirce's law");

@@ -19,15 +19,17 @@
       <span class="brand-mark">ILO</span>
       <span class="brand-text">Bank</span>
     </a>
+    {# The link for the page you are on keeps its hover underline. #}
+    {% macro here(endpoint) %}{% if request.endpoint == endpoint %} aria-current="page"{% endif %}{% endmacro %}
     <nav class="nav-links">
-      <a href="{{ url_for('fitch') }}">Fitch</a>
+      <a href="{{ url_for('fitch') }}"{{ here('fitch') }}>Fitch</a>
       {% if current_user %}
-        <a href="{{ url_for('generate_page') }}">Generate</a>
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('generate_page') }}"{{ here('generate_page') }}>Generate</a>
+        <a href="{{ url_for('dashboard') }}"{{ here('dashboard') }}>Dashboard</a>
         <span class="nav-user">{{ current_user['username'] }}</span>
         <a class="btn btn-ghost" id="logout-btn" href="{{ url_for('logout') }}">Log out</a>
       {% else %}
-        <a href="{{ url_for('login') }}">Log in</a>
+        <a href="{{ url_for('login') }}"{{ here('login') }}>Log in</a>
         <a class="btn btn-primary" href="{{ url_for('register') }}">Sign up</a>
       {% endif %}
     </nav>
@@ -47,36 +49,21 @@
     {% block content %}{% endblock %}
   </main>
 
-  {# Facts about logic, from the two chapters the questions are built on. One
-     rotation drives every [data-fact] on the page; facts.js owns the clock. #}
-  <section class="fact-strip" aria-label="About logic">
-    <figure class="fact" data-fact>
-      <blockquote data-fact-text></blockquote>
-      <figcaption>&mdash; <span data-fact-source></span></figcaption>
-    </figure>
-  </section>
-
   <footer class="footer">
     <p>ILO Bank &middot; an unofficial question bank for the International Logic Olympiad.</p>
   </footer>
 
   {# Raised while the server is working. It has to be a direct child of <body>,
-     outside <main>, because what it blurs is everything beside it. The fact is
-     repeated here: the strip above the footer is behind the blur. #}
+     outside <main>, because what it blurs is everything beside it. #}
   <div class="loading" id="loading" hidden>
     <div class="loading-card" role="status" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
       <p class="loading-title" id="loading-title">Working&hellip;</p>
       <p class="loading-note" id="loading-note"></p>
     </div>
-    <figure class="fact" data-fact>
-      <blockquote data-fact-text></blockquote>
-      <figcaption>&mdash; <span data-fact-source></span></figcaption>
-    </figure>
   </div>
 
   <script type="module" src="{{ url_for('static', filename='auth.js') }}"></script>
   <script src="{{ url_for('static', filename='main.js') }}"></script>
-  <script src="{{ url_for('static', filename='facts.js') }}"></script>
 </body>
 </html>

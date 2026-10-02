@@ -4,12 +4,6 @@
 {% block content %}
 <section class="hero hero-compact">
   <h1>Generate questions</h1>
-  <p class="lede">New Fitch exercises, each with a worked proof. Nothing is saved
-     until the proof passes the same checker the practice editor runs, and the
-     difficulty comes from how long that proof is.</p>
-  <p class="hint">
-    Easy is under 10 lines, medium under 20, hard 20 or more.
-  </p>
 </section>
 
 {% if not generator_ready %}
@@ -46,7 +40,6 @@
   </label>
   <button class="btn btn-primary" id="gen-run" type="button"
           {% if not generator_ready %}disabled{% endif %}>Generate</button>
-  <p class="hint" id="gen-blurb"></p>
   <p class="hint" id="gen-status"></p>
 </section>
 

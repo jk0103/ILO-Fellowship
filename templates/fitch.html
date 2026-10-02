@@ -1,17 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Fitch practice &middot; ILO Bank{% endblock %}
+{% block title %}Fitch tool &middot; ILO Bank{% endblock %}
 {% block main_class %}fitch-main{% endblock %}
 
 {% block content %}
 <section class="hero hero-compact">
-  <h1>Fitch practice</h1>
-  <p class="lede">Check the lines you want to work from, then press a rule.
-     The rule is applied for you and the new lines are added to the proof.</p>
-  <p class="hint">Quantifiers are written <code>AX: p(X)</code> for &forall;x.p(x) and
-     <code>EX: p(X)</code> for &exist;x.p(x). Variables are uppercase; a lowercase
-     name is an object constant or a placeholder.</p>
-  <p class="hint">Domain Closure and Induction range over the language shown at
-     the top of the proof &mdash; the object and function constants that exist.</p>
+  <h1>Fitch tool</h1>
 </section>
 
 {% if question %}
@@ -19,15 +12,7 @@
   <span class="badge badge-{{ question['difficulty'] }}">{{ question['difficulty'] }}</span>
   <span class="hint">Chapter {{ question.get('chapter', 5) }}</span>
   <p class="gen-statement">{{ question['statement'] }}</p>
-  {% if question.get('constants') %}
-    <p class="hint">The language has just these object constants:
-       {{ question['constants'] | join(', ') }}.</p>
-  {% endif %}
   {% if question.get('hint') %}<p class="hint">Hint: {{ question['hint'] }}</p>{% endif %}
-  <p class="hint">Its worked answer is {{ question['line_count'] }} lines &mdash;
-     see it on the
-     <a href="{{ url_for('generate_page', chapter=question.get('chapter', 5)) }}">Generate</a>
-     page.</p>
   {# Filled in by fitch.js once the proof is finished and the server has
      counted it towards the level. #}
   <p class="level-report" id="fitch-progress" hidden></p>
@@ -37,7 +22,6 @@
     // The id is what the editor reports back when the proof is finished; it is
     // only there for a signed-in user, since nobody else has a ladder to climb.
     id: {{ (question['id'] if current_user else None) | tojson }},
-    title: "Generated question",
     premises: {{ question['premises'] | tojson }},
     goal: {{ question['goal'] | tojson }},
     // A Chapter 10 exercise that fixes its language: what Domain Closure needs.
@@ -45,31 +29,6 @@
   };
 </script>
 {% endif %}
-
-<section class="fitch-setup">
-  <label class="field">
-    <span>Problem</span>
-    <select id="fitch-problem"></select>
-  </label>
-
-  <div id="fitch-custom" hidden>
-    <label class="field">
-      <span>Premises (one per line, or comma separated)</span>
-      <textarea id="fitch-custom-premises" rows="3" spellcheck="false"></textarea>
-    </label>
-    <label class="field">
-      <span>Goal</span>
-      <input id="fitch-custom-goal" spellcheck="false">
-    </label>
-    <button class="btn btn-primary" id="fitch-custom-apply" type="button">Start this proof</button>
-    <p class="hint danger" id="fitch-custom-error"></p>
-  </div>
-
-  <dl class="fitch-summary">
-    <dt>Premises</dt><dd id="fitch-premises">&mdash;</dd>
-    <dt>Goal</dt><dd id="fitch-goal-display">&mdash;</dd>
-  </dl>
-</section>
 
 <p id="fitch-verdict" class="fitch-verdict"></p>
 
@@ -112,10 +71,13 @@
       <button type="button" class="fitch-sym" data-symbol="∨">∨</button>
       <button type="button" class="fitch-sym" data-symbol="⇒">⇒</button>
       <button type="button" class="fitch-sym" data-symbol="⇔">⇔</button>
-      <button type="button" class="fitch-sym" data-symbol="AX: ">AX:</button>
-      <button type="button" class="fitch-sym" data-symbol="EX: ">EX:</button>
-      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code>.
-        Quantifiers: <code>AX: p(X)</code> for every X, <code>EX: p(X)</code> for some X
+      <button type="button" class="fitch-sym" data-symbol="∀">∀</button>
+      <button type="button" class="fitch-sym" data-symbol="∃">∃</button>
+      <button type="button" class="fitch-sym" data-symbol=" = ">=</button>
+      <button type="button" class="fitch-sym" data-symbol=" ≠ ">≠</button>
+      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code> and <code>!=</code>.
+        Quantifiers: <code>&forall;X.p(X)</code> for every X, <code>&exist;X.p(X)</code> for some X
+        (or <code>AX: p(X)</code>, <code>EX: p(X)</code> from the keyboard)
         &mdash; variables uppercase, constants lowercase.</span>
     </div>
   </div>

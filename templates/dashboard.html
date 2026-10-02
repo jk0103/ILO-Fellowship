@@ -5,15 +5,6 @@
 {% set stats = current_user.get('stats') or {} %}
 <section class="hero hero-compact">
   <h1>Hi, {{ current_user['username'] }}.</h1>
-  <p class="lede">Work down the ladder. Each level opens when you have solved
-     {{ to_clear }} questions in the one before it, and a chapter opens when
-     every level of the chapter before it is cleared.</p>
-  <p class="hint">
-    Signed in as {{ current_user['email'] }}
-    {%- if current_user.get('providers') %} via
-      {{ current_user['providers'] | map('replace', 'password', 'email') | map('replace', 'google.com', 'Google') | join(', ') }}
-    {%- endif %}.
-  </p>
 </section>
 
 {# The ladder. Each chapter is a row of three levels, easy first; a level is
