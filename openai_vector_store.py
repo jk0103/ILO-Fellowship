@@ -56,12 +56,26 @@ def _get(api_key, path):
     return r.json()
 
 
+def as_utf8(raw):
+    """The file's bytes as UTF-8.
+
+    Some chapters are saved as Windows-1252, where ¬ is the single byte 0xAC.
+    Sent as-is, the indexer reads them as UTF-8 and every negation turns into a
+    replacement character — in a logic text, that loses the meaning."""
+    try:
+        raw.decode("utf-8")
+        return raw
+    except UnicodeDecodeError:
+        return raw.decode("cp1252").encode("utf-8")
+
+
 def upload_file(path, api_key):
     """Upload one local file and return its file id."""
     with open(path, "rb") as fh:
-        data = _post(api_key, "/files",
-                     files={"file": (os.path.basename(path), fh, "text/html")},
-                     data={"purpose": "assistants"})
+        body = as_utf8(fh.read())
+    data = _post(api_key, "/files",
+                 files={"file": (os.path.basename(path), body, "text/html")},
+                 data={"purpose": "assistants"})
     return data["id"]
 
 

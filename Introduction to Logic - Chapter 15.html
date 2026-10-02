@@ -1,0 +1,399 @@
+
+<!-- saved from url=(0055)http://intrologic.stanford.edu/chapters/chapter_15.html -->
+<html><!--=======================================================================--><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Introduction to Logic - Chapter 15</title>
+</head>
+
+<!--=======================================================================-->
+
+<body style="background-color:#990000">
+  <center>
+    <table width="720" cellpadding="40" bgcolor="#ffffff">
+      <tbody><tr>
+        <td>
+
+<!--=======================================================================-->
+
+  <center>
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <tbody><tr><td><br></td></tr>
+      <tr>
+        <td height="40" align="center">
+          <span style="font-size:18pt; text-align:center">C H A P T E R&nbsp;&nbsp;15</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <table width="100%" height="60" cellspacing="1" cellpadding="0" bgcolor="#dddddd" border="1">
+      <tbody><tr>
+        <td height="30" align="center">
+          <span style="font-size:28pt;text-align:center">Equality</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <br>
+  </center>
+
+<!--=======================================================================-->
+
+<center>
+  <br>
+  <table width="640" cellspacing="0" cellpadding="10" border="0">
+    <tbody><tr>
+      <td>
+
+<!--=======================================================================-->
+
+<h3>15.1 Introduction</h3>
+
+<p>In our discussion of Logic thus far, we have assumed that there is a one-to-one relationship between ground terms in our language and objects in the application area we are trying to describe.  For example, in talking about people, we have been assuming a unique name for each person.  In arithmetic, we have been assuming a unique term for each number.  This makes things conceptually simple, and it is a reasonable way to go in many circumstances.</p>
+
+<p>But not always.  In natural language, we often find it convenient to use more than one term to refer to the same real world object.  For example, we sometimes have multiple names for the same person - <i>Michael</i>, <i>Mike</i>, and so forth.  And, in Arithmetic, we frequently use different terms to refer to the same number - 2+2, 2*2, and 4.</p>
+
+<!--<p>An identity of two ground terms is true if and only if the terms are identical, but an identity is false when the terms are different.  So, to express equality of reference, we need another mechanism.  The equality relation is our way of stating that two (possibly distinct) terms refer to the same real world object.  For example, to express the co-referentiality of 2+2 and 4, we write <i>equal</i>(2+2,4) or 2+2=4 (by writing the <i>equal</i> relation with the infix operator =).  We can also distinguish terms by writing negated equations.   To say that two terms refer to different objects, we write &not;<i>equal</i>(2+3,4) or 2+3&ne;4.</p>-->
+
+<p>In Relational Logic, we can axiomatize the co-referentiality of terms in the form of equations.  For example, to express the co-referentiality of <i>f</i>(<i>a</i>) and <i>f</i>(<i>b</i>), we write <i>equal</i>(<i>f</i>(<i>a</i>),<i>f</i>(<i>b</i>)).  We can also distinguish terms by writing negated equations.   To say that <i>f</i>(<i>a</i>) and <i>f</i>(<i>b</i>) refer to different objects, we write ¬<i>equal</i>(<i>f</i>(<i>a</i>),<i>f</i>(<i>b</i>)).
+
+</p><p>Since equality is such a common relation, in what follows we write equations with the infix operator =,  for example writing (<i>f</i>(<i>a</i>)=<i>f</i>(<i>b</i>)) in place of <i>equal</i>(<i>f</i>(<i>a</i>),<i>f</i>(<i>b</i>)).  However, this is just syntactic sugar.  We must remember that, as far our logic is concerned, syntactically and semantically, an equation is a relational sentence involving a relation constant like any other.</p>
+
+<p>We start this chapter by axiomatizing the equality relation as an ordinary binary relation.  We then discuss the substitution of equals for equals in other expressions.  Finally, we look at how to expand our proof system to reason with equality.</p>
+
+<!--=======================================================================-->
+
+<h3>15.2 Properties of Equality</h3>
+
+<p>The semantics of Relational Logic does not, by itself, tell us which terms are equal and which are not.  In fact, it is possible for each and every term to refer to a different object, and it is possible for all terms to refer to the same object.</p>
+
+<p>Although the semantics of Relational Logic by itself does not constrain the equality relation, the idea of co-referentiality does impose some constraints.  For example, we cannot believe <i>a</i>=<i>b</i> and <i>b</i>=<i>c</i> and at the same time believe that <i>a</i>&#8800;<i>c</i>.</p>
+
+<p>First of all, the equality relation must be <i>reflexive</i>.  This means that the relation holds of every term in the language and itself.</p>
+
+<center>
+&#8704;<i>x</i>.<i>x</i>=<i>x</i>
+</center>
+
+<p>The relation must also be <i>symmetric</i>.  If two terms refer to the same thing, it does not matter which one we write first in an equation.</p>
+
+<center>
+&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>x</i>=<i>y</i> &#8658; <i>y</i>=<i>x</i>)
+</center>
+
+<p>Finally, the relation must be <i>transitive</i>.  If we believe that <i>a</i> and <i>b</i> refer to the same object and we believe that <i>b</i> and <i>c</i> refer to the same object, then <i>a</i> and <i>c</i> must refer to the same object as well.</p>
+
+<center>
+&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>x</i>=<i>y</i> &#8743; <i>y</i>=<i>z</i> &#8658; <i>x</i>=<i>z</i>)
+</center>
+
+<p>The three properties of reflexivity, symmetry, and transitivity are the defining conditions for what is know as an <i>equivalence relation</i>, and equality is the quintessential example.</p>
+
+<p>Let's see how we can use these properties to solve some problems of equality.  Suppose we know that <i>b</i>=a and we know that <i>b</i>=c.  The following is a proof that <i>a</i>=c.  As usual, we start with our premises; and, since we are working with equations, we also include the three axioms of equality.  We use two applications of Universal Elimination on our symmetry axiom to derive the sentence on line 6, substituting <i>b</i> for <i>x</i> and <i>a</i> for <i>y</i>.  We then use Implication Elimination to conclude <i>a</i>=<i>b</i>.  We then use Universal Elimination to instantiate the transitivity axiom, with <i>x</i> replaced by <i>a</i>, <i>y</i> replaced by <i>b</i>, and <i>z</i> replaced by <i>c</i>.  We conjoin the result on line 7 with the premise on line 2 to derive the conjunction on line 9.  Finally, we use Implication Elimination to derive our overall conclusion.</p>
+
+<center>
+  <table cellspacing="4">
+<tbody><tr><td>1.</td><td></td><td><i>b</i>=<i>a</i></td><td></td><td>Premise</td></tr>
+
+<tr><td>2.</td><td></td><td><i>b</i>=<i>c</i></td><td></td><td>Premise</td></tr>
+
+<tr><td>3.</td><td></td><td>&#8704;<i>x</i>.<i>x</i>=<i>x</i></td><td></td><td>Reflexivity</td></tr>
+
+<tr><td>4.</td><td></td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>x</i>=<i>y</i> &#8658; <i>y</i>=<i>x</i>)</td><td></td><td>Symmetry</td></tr>
+
+<tr><td>5.</td><td></td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>x</i>=<i>y</i> &#8743; <i>y</i>=<i>z</i> &#8658; <i>x</i>=<i>z</i>)</td><td></td><td>Transitivity</td></tr>
+
+<tr><td>6.</td><td></td><td><i>b</i>=<i>a</i> &#8658; <i>a</i>=<i>b</i></td><td></td><td>2×UE: 4</td></tr>
+
+<tr><td>7.</td><td></td><td><i>a</i>=<i>b</i></td><td></td><td>IE: 6, 1</td></tr>
+
+<tr><td>8.</td><td></td><td><i>a</i>=<i>b</i> &#8743; <i>b</i>=<i>c</i> &#8658; <i>a</i>=<i>c</i></td><td></td><td>3×UE: 5</td></tr>
+
+<tr><td>9.</td><td></td><td><i>a</i>=<i>b</i> &#8743; <i>b</i>=<i>c</i></td><td></td><td>And Introduction: 7, 2</td></tr>
+
+<tr><td>10.</td><td></td><td><i>a</i>=<i>c</i></td><td></td><td>IE: 8, 9</td></tr>
+
+  </tbody></table>
+</center>
+
+<p>This proof is a little lengthy, but the method works.  Later in the chapter, we show how to generate shorter proofs for simple results like this one.</p>
+
+<!--=======================================================================-->
+
+<h3>15.3 Substitution</h3>
+
+<p>The properties of equality seen thus far are only part of the story.  There is also substitution.  If two terms are equal (i.e. they refer to the same object), then every sentence that is true of the first term must be true of the second; and every sentence that is false of the first term must be false of the second.  In other words, it should be possible to substitute one term for an equal term without changing the truth value of any sentence.  We can express this notion of substitutability by writing substitution axioms, one for each relation constant and one for each function constant in our vocabulary.</p>
+
+<p>The sentence shown below is a substitution axiom for the unary relation constant <i>p</i>.  If <i>x</i>=<i>y</i> and <i>p</i>(<i>x</i>) is true, then <i>p</i>(<i>y</i>) must also be true.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>p</i>(<i>x</i>) &#8743; <i>x</i>=<i>y</i> &#8658; <i>p</i>(<i>y</i>))</td></tr>
+  </tbody></table>
+</center>
+
+<p>The following sentence is a substitution axiom for the binary relation constant <i>q</i>.  Note that we need to allow for equations for all of the arguments of relational sentences.</p>
+<p></p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#8704;<i>u</i>.&#8704;<i>v</i>.&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>q</i>(<i>u</i>,<i>v</i>) &#8743; <i>u</i>=<i>x</i> &#8743; <i>v</i>=<i>y</i> &#8658; <i>q</i>(<i>x</i>,<i>y</i>))</td></tr>
+  </tbody></table>
+</center>
+
+<p>The following is a substitution axiom for the unary function constant <i>f</i>.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>f</i>(<i>x</i>)=<i>z</i> &#8743; <i>x</i>=<i>y</i> &#8658; <i>f</i>(<i>y</i>)=<i>z</i>)</td></tr>
+  </tbody></table>
+</center>
+
+<!-- There probably needs to be a section in here on traditional rewriting.  Once we have dealt with that, we move to proofs. At the very least we should put at the end.  I wonder also whether we ought to talk about compatibility with resolution and unification rather than instantiation. Hmm. -->
+
+<p>Using the equality and substitution axioms, we can do proofs with equality.  We simply add these additional axioms to our premises and prove our conclusions as before.</p>
+
+<p>As an example, suppose that we believe <i>f</i>(<i>a</i>)=<i>b</i> and <i>f</i>(<i>b</i>)=<i>a</i>.  Let's prove that <i>f</i>(<i>f</i>(<i>a</i>))=<i>a</i>.  A proof of this conclusion using Fitch is shown below.  The first two lines are our premises.  The next four are our equality axioms and the substitution axiom for <i>f</i>.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="4" border="0">
+<tbody><tr><td>1.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>a</i>)=<i>b</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr><td>2.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>b</i>)=<i>a</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr><td>3.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>x</i>.<i>x</i>=<i>x</i></td><td>&nbsp;&nbsp;</td><td>Reflexivity</td></tr>
+<tr><td>4.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>x</i>=<i>y</i> &#8658; <i>y</i>=<i>x</i>)</td><td>&nbsp;&nbsp;</td><td>Symmetry</td></tr>
+<tr><td>5.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>x</i>=<i>y</i> &#8743; <i>y</i>=<i>z</i> &#8658; <i>x</i>=<i>z</i>)</td><td>&nbsp;&nbsp;</td><td>Transitivity</td></tr>
+<tr><td>6.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>f</i>(<i>x</i>)=<i>z</i> &#8743; <i>x</i>=<i>y</i> &#8658; <i>f</i>(<i>y</i>)=<i>z</i>)</td><td>&nbsp;&nbsp;</td><td>Substitution</td></tr>
+
+<tr><td>7.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>y</i>.(<i>f</i>(<i>a</i>)=<i>y</i> &#8658; <i>y</i>=<i>f</i>(<i>a</i>))</td><td>&nbsp;&nbsp;</td><td>Universal Elimination: 4</td></tr>
+<tr><td>8.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>a</i>)=<i>b</i> &#8658; <i>b</i>=<i>f</i>(<i>a</i>)</td><td>&nbsp;&nbsp;</td><td>Universal Elimination: 7</td></tr>
+<tr><td>9.</td><td>&nbsp;&nbsp;</td><td><i>b</i>=<i>f</i>(<i>a</i>)</td><td>&nbsp;&nbsp;</td><td>Implication Elimination: 8, 1</td></tr>
+
+<tr><td>10.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>b</i>)=<i>a</i> &#8743; <i>b</i>=<i>f</i>(<i>a</i>)</td><td>&nbsp;&nbsp;</td><td>And Introduction: 2, 9</td></tr>
+
+<tr><td>11.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>f</i>(<i>x</i>)=<i>z</i> &#8743; <i>x</i>=<i>y</i> &#8658; <i>f</i>(<i>y</i>)=<i>z</i>)</td><td>&nbsp;&nbsp;</td><td>Reiteration: 6</td></tr>
+<tr><td>12.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>f</i>(<i>b</i>)=<i>z</i> &#8743; <i>b</i>=<i>y</i> &#8658; <i>f</i>(<i>y</i>)=<i>z</i>)</td><td>&nbsp;&nbsp;</td><td>Universal Elimination: 11</td></tr>
+<tr><td>13.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>z</i>.(<i>f</i>(<i>b</i>)=<i>z</i> &#8743; <i>b</i>=<i>f</i>(<i>a</i>) &#8658; <i>f</i>(<i>f</i>(<i>a</i>))=<i>z</i>)</td><td>&nbsp;&nbsp;</td><td>Universal Elimination: 12</td></tr>
+<tr><td>14.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>b</i>)=<i>a</i> &#8743; <i>b</i>=<i>f</i>(<i>a</i>) &#8658; <i>f</i>(<i>f</i>(<i>a</i>))=<i>a</i></td><td>&nbsp;&nbsp;</td><td>Universal Elimination: 13</td></tr>
+<tr><td>15.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>f</i>(<i>a</i>))=<i>a</i></td><td>&nbsp;&nbsp;</td><td>Implication Elimination: 14, 10</td></tr>
+  </tbody></table>
+</center>
+
+
+<p>A bit messy, but it works.  The simpler approach is to use built-in rules of inference for equality, as described in the next section.</p>
+
+<!--=======================================================================-->
+
+<h3>15.4 Fitch With Equality</h3>
+
+<p>As we have seen, we can use Fitch to create proofs for theories with equality by adding the equality and substitution axioms to our premise set.  However, this is not the only way to go.  Since equality is such a pervasive and important relation, it makes sense to treat it specially in our proof system.  In this section we show how to extend Fitch to handle equations.  As it turns out, all we need is one axiom schema and one rule of inference.</p>
+
+<p>The Equality Introduction rule allows the insertion of an arbitrary instance of reflexivity.</p>
+
+<center>
+        <table>
+          <tbody><tr><th>Equality Introduction</th></tr>
+          <tr><td align="middle">&#963;=&#963;</td></tr>
+          <tr><td>where &#963; is any term</td></tr>
+        </tbody></table>
+</center>
+
+<p>For example, without any premises whatsoever, we can write down equations like (<i>a</i>=<i>a</i>) and (<i>f</i>(<i>a</i>)=<i>f</i>(<i>a</i>)) and (<i>f</i>(<i>x</i>)=<i>f</i>(<i>x</i>)).</p>
+
+<p>Our second rule of inference is called <i>Equality Elimination</i> (QE).  Equality Elimination tells us that, when we have an equation and a sentence containing one or more occurrences of one of the terms in the equation, then we can deduce a version of the sentence in which that term is replaced by the other term in the equation.</p>
+
+<center>
+        <table>
+          <tbody><tr><th>Equality Elimination</th></tr>
+          <tr><td>&#966;[&#964;<sub>1</sub>]</td></tr>
+          <tr><td>&#964;<sub>1</sub>=&#964;<sub>2</sub></td></tr>
+<tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+          <tr><td>&#966;[&#964;<sub>2</sub>]</td></tr>
+          <tr><td>where &#964;<sub>2</sub> is substitutable for &#964;<sub>1</sub> in &#966;</td></tr>
+        </tbody></table>
+</center>
+
+<p>In order to avoid the unintended capture of variables, QE requires that the replacement must be substitutable for the term being replaced in the sentence.  This is the same substitutability condition that adorns the Universal Elimination rule of inference.</p>
+
+<p>Note that the equation in the Equality Elimination rule can be used in either direction, i.e. an occurrence of &#964;<sub>1</sub> can be replaced by &#964;<sub>2</sub>  or an occurrence of &#964;<sub>2</sub>  can be replaced by &#964;<sub>1</sub>.</p>
+
+<p>The following is a proof of the result in Section 2 using these extensions in lieu of the equality axioms.  Note that with these rules we can do the proof in a single step.</p>
+
+<center>
+  <table id="proof" cellspacing="0" cellpadding="0" border="0">
+<tbody><tr height="30"><td>1.</td><td>&nbsp;&nbsp;</td><td><i>b</i>=<i>a</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>2.</td><td>&nbsp;&nbsp;</td><td><i>b</i>=<i>c</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>3.</td><td>&nbsp;&nbsp;</td><td><i>a</i>=<i>c</i></td><td>&nbsp;&nbsp;</td><td>Equality Elimination 2, 1</td></tr>
+  </tbody></table>
+</center>
+
+<p>The following is a proof of the result in Section 3 using these two extensions in lieu of the equality and substitution axioms.  Again, we can do the proof in a single step.  Clearly, building things into our proof system makes for much shorter proofs.</p>
+
+<center>
+  <table id="proof" cellspacing="0" cellpadding="0" border="0">
+<tbody><tr height="30"><td>1.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>a</i>)=<i>b</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>2.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>b</i>)=<i>a</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>3.</td><td>&nbsp;&nbsp;</td><td><i>f</i>(<i>f</i>(<i>a</i>))=<i>a</i></td><td>&nbsp;&nbsp;</td><td>Equality Elimination 2, 1</td></tr>
+  </tbody></table>
+</center>
+
+<p>Now, let's look at a couple of examples that illustrate how equational reasoning interacts with relational reasoning.  We know that Quincy is the father of Pat, and we know that fathers are older than their children.  Our job is to prove that Quincy is older than Pat.</p>
+
+<p>Our proof is shown below.  As usual, we start with our premises.  The father of Pat is Quincy, and fathers are older than their children.  Next, we use Universal Elimination to instantiate our quantified sentence.  The father of Pat is older than Pat.  Next we use Equality Elimination to replace <i>father</i>(<i>pat</i>) with <i>quincy</i> and thereby derive the conclusion that Quincy is older than Pat.</p>
+
+<center>
+  <table id="proof" cellspacing="0" cellpadding="0" border="0">
+<tbody><tr height="30"><td>1.</td><td>&nbsp;&nbsp;</td><td><i>father</i>(<i>pat</i>) = <i>quincy</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>2.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>x</i>.<i>older</i>(<i>father</i>(<i>x</i>),x)</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>3.</td><td>&nbsp;&nbsp;</td><td><i>older</i>(<i>father</i>(<i>pat</i>),<i>pat</i>)</td><td>&nbsp;&nbsp;</td><td>Universal Elimination 2</td></tr>
+<tr height="30"><td>4.</td><td>&nbsp;&nbsp;</td><td><i>older</i>(<i>quincy</i>,<i>pat</i>)</td><td>&nbsp;&nbsp;</td><td>Equality Elimination 3, 1</td></tr>
+  </tbody></table>
+</center>
+
+<p>Finally, let's work through an example involving a disjunction of equations.  We know that <i>p</i>(<i>a</i>) is true and <i>p</i>(<i>b</i>) is true, and we know that (<i>a</i>=<i>c</i> &#8744; <i>b</i>=<i>c</i>) is true.  Our job is to prove <i>p</i>(<i>c</i>).</p>
+
+<p>The proof follows.  As always we start with our premises.  On line 4 , we start a new subproof with the assumption that <i>a</i>=<i>c</i> is true.  From this assumption and our first premise, we conclude that <i>p</i>(<i>c</i>) must be true.  Of course, we are not done yet, since we have proved the result only under this assumption that <i>a</i>=<i>c</i>.  We make this clear with a use of Implication Introduction to derive the sentence (<i>a</i>=<i>c</i> &#8658; <i>p</i>(<i>c</i>)).  Now, we start another subproof, this time with the assumption <i>b</i>=<i>c</i>.  As before, we derive <i>p</i>(<i>c</i>); and, from this, we derive the implication (<i>b</i>=<i>c</i> &#8658; <i>p</i>(<i>c</i>)).  Finally, we use Or Elimination to combine our two partial results with our disjunction of equations.</p>
+<p></p>
+
+<center>
+  <table id="proof" cellspacing="0" cellpadding="0" border="0">
+<tbody><tr height="30"><td>1.</td><td>&nbsp;&nbsp;</td><td><i>p</i>(<i>a</i>)</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+
+<tr height="30"><td>2.</td><td>&nbsp;&nbsp;</td><td><i>p</i>(<i>b</i>)</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+
+<tr height="30"><td>3.</td><td>&nbsp;&nbsp;</td><td><i>a</i>=<i>c</i> &#8744; <i>b</i>=<i>c</i></td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+
+<tr height="4"><td></td><td></td><td></td><td></td></tr>
+
+<tr height="30"><td>4.</td><td>&nbsp;&nbsp;</td><td><table cellspacing="0"><tbody><tr><td height="30" style="border-left:2px solid #000000;padding:5px"><i>a</i>=<i>c</i></td></tr></tbody></table></td><td>&nbsp;&nbsp;</td><td>Assumption</td></tr>
+
+<tr height="30"><td>5.</td><td>&nbsp;&nbsp;</td><td><table cellspacing="0"><tbody><tr><td height="30" style="border-left:2px solid #000000;padding:5px"><i>p</i>(<i>c</i>)</td></tr></tbody></table></td><td>&nbsp;&nbsp;</td><td>Equality Elimination: 1, 4</td></tr>
+
+<tr height="4"><td></td><td></td><td></td><td></td></tr>
+
+<tr height="30"><td>6.</td><td>&nbsp;&nbsp;</td><td><i>a</i>=<i>c</i> &#8658; <i>p</i>(<i>c</i>)</td><td>&nbsp;&nbsp;</td><td>Implication Introduction: 5</td></tr>
+
+<tr height="4"><td></td><td></td><td></td><td></td></tr>
+
+<tr height="30"><td>7.</td><td>&nbsp;&nbsp;</td><td><table cellspacing="0"><tbody><tr><td height="30" style="border-left:2px solid #000000;padding:5px"><i>b</i>=<i>c</i></td></tr></tbody></table></td><td>&nbsp;&nbsp;</td><td>Assumption</td></tr>
+
+<tr height="30"><td>8.</td><td>&nbsp;&nbsp;</td><td><table cellspacing="0"><tbody><tr><td height="30" style="border-left:2px solid #000000;padding:5px"><i>p</i>(<i>c</i>)</td></tr></tbody></table></td><td>&nbsp;&nbsp;</td><td>Equality Elimination: 2, 7</td></tr>
+
+<tr height="4"><td></td><td></td><td></td><td></td></tr>
+
+<tr height="30"><td>9.</td><td>&nbsp;&nbsp;</td><td><i>b</i>=<i>c</i> &#8658; <i>p</i>(<i>c</i>)</td><td>&nbsp;&nbsp;</td><td>Implication Introduction: 8</td></tr>
+
+<tr height="30"><td>10.</td><td>&nbsp;&nbsp;</td><td><i>p</i>(<i>c</i>)</td><td>&nbsp;&nbsp;</td><td>Or Elimination: 3, 6, 9 </td></tr>
+  </tbody></table>
+</center>
+
+<!--=======================================================================-->
+
+<h3>15.5 Example - Group Theory</h3>
+
+<p>A group is an algebraic structure consisting of an arbitrary set of elements and a binary function on these elements such that the binary function is associative, there is a left and right identity for the function, and there is a left and right inverse for any element in the set.</p>
+
+<p>We can express the group axioms in Relational Logic as shown below.  Here, * is the binary function, <i>e</i> is the identity for *, and <i>inv</i> gives the inverse of any element.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>x</i>*<i>y</i>)*<i>z</i>=<i>x</i>*(<i>y</i>*<i>z</i>)</td></tr>
+    <tr><td>&#8704;<i>x</i>.<i>x</i>*<i>e</i>=<i>x</i></td></tr>
+    <tr><td>&#8704;<i>x</i>.<i>e</i>*<i>x</i>=<i>x</i></td></tr>
+    <tr><td>&#8704;<i>x</i>.<i>x</i>*<i>inv</i>(<i>x</i>)=<i>e</i></td></tr>
+    <tr><td>&#8704;<i>x</i>.<i>inv</i>(<i>x</i>)*<i>x</i>=<i>e</i></td></tr>
+  </tbody></table>
+</center>
+
+<p>Given these axioms, let's use Fitch with equality to prove that the inverse of the inverse of the element is equal to the original element, i.e &#8704;<i>x</i>.<i>inv</i>(<i>inv</i>(<i>x</i>))=<i>x</i>.  As usual, we start with our axioms.</p>
+
+<center>
+  <table id="1000000000000020" cellspacing="0" cellpadding="4" border="0">
+<tbody><tr><td width="20">1.</td><td>&nbsp;</td><td width="340">&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>x</i>*<i>y</i>)*<i>z</i>=<i>x</i>*(<i>y</i>*<i>z</i>)</td><td>&nbsp;</td><td width="200">Premise</td></tr>
+<tr><td>2.</td><td>&nbsp;</td><td>&#8704;<i>x</i>.<i>x</i>*<i>e</i>=<i>x</i></td><td>&nbsp;</td><td>Premise</td></tr>
+<tr><td>3.</td><td>&nbsp;</td><td>&#8704;<i>x</i>.<i>e</i>*<i>x</i>=<i>x</i></td><td>&nbsp;</td><td>Premise</td></tr>
+<tr><td>4.</td><td>&nbsp;</td><td>&#8704;<i>x</i>.<i>x</i>*<i>inv</i>(<i>x</i>)=<i>e</i></td><td>&nbsp;</td><td>Premise</td></tr>
+<tr><td>5.</td><td>&nbsp;</td><td>&#8704;<i>x</i>.<i>inv</i>(<i>x</i>)*<i>x</i>=<i>e</i></td><td>&nbsp;</td><td>Premise</td></tr>
+  </tbody></table>
+</center>
+
+<p>Next we instantiate the left inverse rule, substituting <i>inv</i>(<i>c</i>) for <i>x</i>.  We then use Equality Introduction to write down an equation saying that (<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>c</i> is equal to itself.  Then, we use our instantiated left inverse rule to substitute <i>e</i> for <i>inv</i>(<i>inv</i>(<i>c</i>)) on the right hand side of our equation.  We instantiate our left identity rule, and then we use that to simplify the right hand side of our equation to <i>c</i>.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="4" border="0">
+<tbody><tr><td width="20">6.</td><td>&nbsp;</td><td width="340"><i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>)=<i>e</i></td><td>&nbsp;</td><td width="200">Universal Elimination: 5</td></tr>
+
+<tr><td>7.</td><td>&nbsp;</td><td>(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>c</i>=(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>c</i></td><td>&nbsp;</td><td>Equality Introduction</td></tr>
+<tr><td>8.</td><td>&nbsp;</td><td>(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>c</i>=<i>e</i>*<i>c</i></td><td>&nbsp;</td><td>Equality Elimination: 7, 6</td></tr>
+<tr><td>9.</td><td>&nbsp;</td><td><i>e</i>*<i>c</i>=<i>c</i></td><td>&nbsp;</td><td>Universal Elimination: 3</td></tr>
+
+<tr><td>10.</td><td>&nbsp;</td><td>(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>c</i>=<i>c</i></td><td>&nbsp;</td><td>Equality Elimination: 9, 8</td></tr>
+  </tbody></table>
+</center>
+
+<p>We now instantiate the associativity rule three times, replacing <i>x</i> by <i>inv</i>(<i>inv</i>(<i>c</i>)), <i>y</i> by <i>inv</i>(<i>c</i>)), and <i>z</i> by <i>c</i>.  We then use Equality Elimination to re-associate the left hand side of the equation on line 10.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="4" border="0">
+<tbody><tr><td width="20">11.</td><td>&nbsp;</td><td width="340">&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>y</i>)*<i>z</i>=<i>inv</i>(<i>inv</i>(<i>c</i>))*(<i>y</i>*<i>z</i>)</td><td>&nbsp;</td><td width="200">Universal Elimination: 1</td></tr>
+<tr><td>12.</td><td>&nbsp;</td><td>&#8704;<i>z</i>.(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>z</i>=<i>inv</i>(<i>inv</i>(<i>c</i>))*(<i>inv</i>(<i>c</i>)*<i>z</i>)</td><td>&nbsp;</td><td>Universal Elimination: 11</td></tr>
+<tr><td>13.</td><td>&nbsp;</td><td>(<i>inv</i>(<i>inv</i>(<i>c</i>))*<i>inv</i>(<i>c</i>))*<i>c</i>=<i>inv</i>(<i>inv</i>(<i>c</i>))*(<i>inv</i>(<i>c</i>)*<i>c</i>)</td><td>&nbsp;</td><td>Universal Elimination: 12</td></tr>
+<tr><td>14.</td><td>&nbsp;</td><td><i>inv</i>(<i>inv</i>(<i>c</i>))*(<i>inv</i>(<i>c</i>)*<i>c</i>)=<i>c</i></td><td>&nbsp;</td><td>Equality Elimination: 10, 13</td></tr>
+  </tbody></table>
+</center>
+
+<p>We instantiate the left inverse rule again.  We apply this to our equation to simplify the left hand side.  We instantiate our right identity rule and apply the result to the simplified equation to produce <i>inv</i>(<i>inv</i>(<i>c</i>))=<i>c</i>.  Finally, we use Universal Introduction to produce the desired result.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="4" border="0">
+<tbody><tr><td width="20">15.</td><td>&nbsp;</td><td width="340"><i>inv</i>(<i>c</i>)*<i>c</i>=<i>e</i></td><td>&nbsp;</td><td width="200">Universal Elimination: 5</td></tr>
+<tr><td>16.</td><td>&nbsp;</td><td><i>inv</i>(<i>inv</i>(<i>c</i>))*<i>e</i>=<i>c</i></td><td>&nbsp;</td><td>Equality Elimination: 14, 15</td></tr>
+<tr><td>17.</td><td>&nbsp;</td><td><i>inv</i>(<i>inv</i>(<i>c</i>))*<i>e</i>=<i>inv</i>(<i>inv</i>(<i>c</i>))</td><td>&nbsp;</td><td>Universal Elimination: 2</td></tr>
+<tr><td>18.</td><td>&nbsp;</td><td><i>inv</i>(<i>inv</i>(<i>c</i>))=<i>c</i></td><td>&nbsp;</td><td>Equality Elimination: 16, 17</td></tr>
+<tr><td>19.</td><td>&nbsp;</td><td>&#8704;<i>x</i>.<i>inv</i>(<i>inv</i>(<i>x</i>))=<i>x</i></td><td>&nbsp;</td><td>Universal Introduction: 18</td></tr>
+  </tbody></table>
+</center>
+
+<p>Groups have many interesting properties.  They are interesting in and of themselves.  However, Group Theory is also an interesting domain for Logic, especially for theorem proving with equality.</p>
+
+<!--=======================================================================-->
+
+<h3>Recap</h3>
+
+<p>The <i>equality</i> relation is a way of stating that two terms refer to the same real world object.  This idea of co-referentiality imposes some constraints on the equality relation.  These include <i>reflexivity</i>, <i>symmetry</i>, <i>transitivity</i>, and <i>substitution</i> of equals for equals.  These properties can be assured in reasoning by adding a finite number of axioms to every premise set.  Alternatively, the same results can be obtained in Fitch by using <i>Equality Introduction</i> and <i>Equality Elimination</i>.</p>
+
+<!--=======================================================================-->
+
+<h3>Exercises</h3>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_15_01.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 15.1:</a> Given <i>a</i>=<i>b</i> and <i>b</i>=<i>c</i> and the axioms of equality, use the Fitch system to prove <i>a</i>=<i>c</i>.</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_15_02.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 15.2:</a> Given <i>a</i>=<i>b</i> and <i>p</i>(<i>a</i>) and the axioms of equality and the substitution axiom, use the Fitch system to prove <i>p</i>(<i>b</i>).</p>
+
+
+
+
+
+<!--<p><a href='../exercises/exercise_eq_03.html' style='color:#6666ff;cursor:pointer;text-decoration:none'>Exercise 3:</a> Given <i>a</i>=<i>b</i> and <i>b</i>=<i>c</i>, use the Fitch system with equality to prove <i>a</i>=<i>c</i>.</p>
+
+<p><a href='../exercises/exercise_eq_04.html' style='color:#6666ff;cursor:pointer;text-decoration:none'>Exercise 4:</a> Given <i>a</i>=<i>b</i> and <i>p</i>(<i>a</i>), use the Fitch system with equality to prove <i>p</i>(<i>b</i>).</p>
+
+<p><a href='../exercises/exercise_eq_05.html' style='color:#6666ff;cursor:pointer;text-decoration:none'>Exercise 5:</a> Starting with the group axioms from Section 5, prove the left cancellation law for groups, i.e. prove &forall;<i>x</i>.&forall;<i>y</i>.&forall;<i>z</i>.(<i>x</i>*<i>y</i>=<i>x</i>*<i>z</i> &rArr; <i>y</i>=<i>z</i>).  (Note that there is an analogous right cancellation law.)-->
+
+<!--=======================================================================-->
+
+      </td>
+    </tr>
+  </tbody></table>
+  <br>
+  <br>
+</center>
+
+<!--=======================================================================-->
+
+        </td>
+      </tr>
+    </tbody></table>
+  </center>
+
+
+
+
+
+
+</body><!--=======================================================================--></html>

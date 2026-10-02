@@ -68,6 +68,21 @@
 <p id="fitch-verdict" class="fitch-verdict"></p>
 
 <section class="fitch-board">
+  <div class="fitch-language">
+    <div class="fitch-lang-row">
+      <button type="button" class="fitch-lang-btn" id="fitch-objects-add">+</button>
+      <button type="button" class="fitch-lang-btn" id="fitch-objects-remove">&minus;</button>
+      <span class="fitch-lang-label">Objects:</span>
+      <span class="fitch-lang-list" id="fitch-objects"></span>
+    </div>
+    <div class="fitch-lang-row">
+      <button type="button" class="fitch-lang-btn" id="fitch-functions-add">+</button>
+      <button type="button" class="fitch-lang-btn" id="fitch-functions-remove">&minus;</button>
+      <span class="fitch-lang-label">Functions:</span>
+      <span class="fitch-lang-list" id="fitch-functions"></span>
+    </div>
+  </div>
+
   <div class="fitch-selectall">
     <input type="checkbox" id="fitch-select-all">
     <label for="fitch-select-all">Select all</label>
@@ -258,6 +273,118 @@ try {
   bad = proof(["AX: p(X)"], [["AX: p(X)", "premise", 0], ["p(Y)", "ue", 0, [1]]]);
   check("checkLine catches UE to a non-ground instance", bad.length === 1, bad.join(" | "));
 
+  /* ---- Chapter 13: the language, Domain Closure, and Induction ---- */
+  roundTrip("AY: plus(0,Y,Y)", "AY: plus(0,Y,Y)");          // numerals are names
+  roundTrip("(p & q) & r", "(p ∧ q) ∧ r");                   // nesting stays visible
+  roundTrip("p & q & r", "p ∧ q ∧ r");
+
+  const vocab = F.vocabulary(["purebred(rex)", "AX: (purebred(X) => purebred(f(X)) & purebred(g(X)))",
+                              "AX: AY: (p(X) | p(Y) => p(h(X,Y)))"].map(F.parse));
+  check("vocabulary reads objects and functions, not variables",
+        vocab.objects.join() === "rex" && vocab.functions.join() === "f,g,h" && vocab.arity.h === 2,
+        JSON.stringify(vocab));
+
+  const lang = (objects, functions, arity) =>
+    ({ objects: objects, functions: functions || [], arity: Object.assign(Object.create(null), arity || {}) });
+
+  // Domain Closure
+  F.state.language = lang(["a", "b"]);
+  check("DC asks for the conclusion", apply("dc", [line("q(a)", "premise")]).prompt !== undefined);
+  check("DC concludes from one instance per object",
+        shows(apply("dc", [line("p(b) => q(b)", "ii", 0, 2), line("p(a) => q(a)", "ii", 0, 1)], "AX: (p(X) => q(X))")) ===
+        "AX: (p(X) ⇒ q(X))");
+  check("DC cites the instances in the order of the objects",
+        apply("dc", [line("q(b)", "premise", 0, 2), line("q(a)", "premise", 0, 1)], "AX: q(X)").lines[0].refIds.join() === "1,2");
+  check("DC refuses a missing instance",
+        shows(apply("dc", [line("q(a)", "premise")], "AX: q(X)")).indexOf("base case for b") > 0);
+  F.state.language = lang(["a"], ["s"], { s: 1 });
+  check("DC refuses a language with function constants",
+        shows(apply("dc", [line("q(a)", "premise")], "AX: q(X)")).indexOf("Induction") > 0);
+  F.state.language = lang([], []);
+  check("DC refuses an empty language",
+        shows(apply("dc", [line("q(a)", "premise")], "AX: q(X)")).indexOf("no object constants") > 0);
+
+  // Induction: linear, with the inductive case's variable renamed
+  F.state.language = lang(["0"], ["s"], { s: 1 });
+  const base0 = line("plus(0,0,0)", "ue", 0, 1);
+  const step0 = line("AY: (plus(Y,0,Y) => plus(s(Y),0,s(Y)))", "ui", 0, 2);
+  check("Ind proposes the conclusion its inductive case points to",
+        apply("ind", [base0, step0]).seed === "AY: plus(Y,0,Y)", apply("ind", [base0, step0]).seed);
+  check("Ind: linear induction from base and step",
+        shows(apply("ind", [step0, base0], "AX: plus(X,0,X)")) === "AX: plus(X,0,X)");
+  check("Ind cites base cases first, then inductive cases",
+        apply("ind", [step0, base0], "AX: plus(X,0,X)").lines[0].refIds.join() === "1,2");
+  check("Ind refuses a missing base case",
+        shows(apply("ind", [step0], "AX: plus(X,0,X)")).indexOf("base case for 0") > 0);
+  check("Ind refuses a missing inductive case, and says what it is",
+        shows(apply("ind", [base0], "AX: plus(X,0,X)")).indexOf("AX: (plus(X,0,X) ⇒ plus(s(X),0,s(X)))") > 0,
+        shows(apply("ind", [base0], "AX: plus(X,0,X)")));
+  check("Ind refuses an inductive case that goes backwards",
+        shows(apply("ind", [base0, line("AX: (plus(s(X),0,s(X)) => plus(X,0,X))", "ui", 0, 3)], "AX: plus(X,0,X)")).indexOf("error") === 0);
+
+  // Tree: one inductive case per function
+  F.state.language = lang(["rex"], ["f", "g"], { f: 1, g: 1 });
+  const treeBase = line("purebred(rex)", "premise", 0, 1);
+  const treeF = line("AX: (purebred(X) => purebred(f(X)))", "ui", 0, 2);
+  const treeG = line("AX: (purebred(X) => purebred(g(X)))", "ui", 0, 3);
+  check("Ind: tree induction over f and g",
+        shows(apply("ind", [treeBase, treeF, treeG], "AX: purebred(X)")) === "AX: purebred(X)");
+  check("Ind: tree induction refuses to skip g",
+        shows(apply("ind", [treeBase, treeF], "AX: purebred(X)")).indexOf("inductive case for g") > 0);
+
+  // Structural: a binary function needs both hypotheses
+  F.state.language = lang(["a"], ["h"], { h: 2 });
+  const structStep = line("AX: AY: (p(X) & p(Y) => p(h(X,Y)))", "ui", 0, 2);
+  check("Ind: structural induction over a binary function",
+        shows(apply("ind", [line("p(a)", "premise", 0, 1), structStep], "AX: p(X)")) === "AX: p(X)");
+  check("Ind: structural guess",
+        apply("ind", [line("p(a)", "premise", 0, 1), structStep]).seed === "AX: p(X)");
+  check("Ind: a unary case does not cover a binary function",
+        shows(apply("ind", [line("p(a)", "premise", 0, 1),
+                            line("AX: (p(X) => p(h(X,X)))", "ui", 0, 2)], "AX: p(X)")).indexOf("error") === 0);
+  check("Ind: the arity the premises use is the one that counts",
+        shows(apply("ind", [line("p(a)", "premise", 0, 1),
+                            line("AX: (p(X) => p(h(X)))", "ui", 0, 2)], "AX: p(X)")).indexOf("error") === 0);
+  F.state.language = lang(["a"], []);
+  check("Ind refuses a language with no function constants",
+        shows(apply("ind", [line("p(a)", "premise")], "AX: p(X)")).indexOf("Domain Closure") > 0);
+
+  // checkLine re-checks against the language passed to it
+  function proofIn(language, premiseSrcs, steps) {
+    const lines = steps.map((st, i) => ({
+      id: i + 1, depth: st[2] || 0, rule: st[1], formula: F.parse(st[0]),
+      refIds: (st[3] || []).slice(), subRef: st[4] ? { fromId: st[4][0], toId: st[4][1] } : null,
+    }));
+    F.analyze(lines);
+    const premises = premiseSrcs.map(F.parse);
+    return lines.map((l, i) => {
+      const r = F.checkLine(l, lines, premises, language);
+      return r.ok ? null : (i + 1) + ": " + r.msg;
+    }).filter(Boolean);
+  }
+  const rightZero = [
+    ["AY: plus(0,Y,Y)", "premise", 0],
+    ["AX: AY: AZ: (plus(X,Y,Z) => plus(s(X),Y,s(Z)))", "premise", 0],
+    ["plus(0,0,0)", "ue", 0, [1]],
+    ["AY: AZ: (plus(c,Y,Z) => plus(s(c),Y,s(Z)))", "ue", 0, [2]],
+    ["AZ: (plus(c,0,Z) => plus(s(c),0,s(Z)))", "ue", 0, [4]],
+    ["plus(c,0,c) => plus(s(c),0,s(c))", "ue", 0, [5]],
+    ["AX: (plus(X,0,X) => plus(s(X),0,s(X)))", "ui", 0, [6]],
+    ["AX: plus(X,0,X)", "ind", 0, [3, 7]],
+  ];
+  bad = proofIn(lang(["0"], ["s"], { s: 1 }), [rightZero[0][0], rightZero[1][0]], rightZero);
+  check("the chapter's right-identity proof verifies", bad.length === 0, bad.join(" | "));
+  bad = proofIn(lang(["0", "b"], ["s"], { s: 1 }), [rightZero[0][0], rightZero[1][0]], rightZero);
+  check("checkLine catches an induction short of a base case once the language grows",
+        bad.length === 1 && bad[0].indexOf("8:") === 0, bad.join(" | "));
+
+  bad = proofIn(lang(["a", "b"]), ["q(a)", "q(b)"], [
+    ["q(a)", "premise", 0], ["q(b)", "premise", 0], ["AX: q(X)", "dc", 0, [1, 2]],
+  ]);
+  check("a Domain Closure line verifies", bad.length === 0, bad.join(" | "));
+
+  F.state.language = lang([], []);
+
   /* ---- every bundled problem parses ---- */
   F.PROBLEMS.forEach((p) => {
     let ok = true, why = "";
@@ -365,6 +492,92 @@ try {
   pick(2, 7); run("ee");
   check("EE refuses AX: (p(X) => q(X)) because X is free in the conclusion",
         message().indexOf("occurs free") > 0, message() + "\n" + proofText());
+
+  /* ---- Chapter 13: induction, through the buttons ---- */
+  const lang = () => F.state.language.objects.join(",") + " / " + F.state.language.functions.join(",");
+  const button = (label) => [...document.querySelectorAll(".fitch-rule-btn")].find((b) => b.textContent === label);
+  const inputSeed = () => document.getElementById("fitch-entry-input").value;
+
+  load("Zero is a right identity");
+  check("the language is read off the premises", lang() === "0 / s", lang());
+  check("Induction is enabled and Domain Closure greyed out",
+        !button("Induction").disabled && button("Domain Closure").disabled);
+  pick(1); run("ue", "0");
+  pick(2); run("ue", "c");
+  pick(4); run("ue", "0");
+  pick(5); run("ue", "c");
+  pick(6); run("ui", "AX: (plus(X,0,X) => plus(s(X),0,s(X)))");
+  pick(3, 7); F.runRule("ind");
+  check("Induction pre-fills the conclusion its inductive case points to",
+        inputSeed() === "AX: plus(X,0,X)", inputSeed());
+  document.getElementById("fitch-entry-ok").click();
+  check("0 is a right identity, by linear induction", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+  check("the induction line cites 3, 7 as Ind",
+        document.querySelectorAll("#fitch-lines .fitch-just")[7].textContent === "3, 7 Ind",
+        document.querySelectorAll("#fitch-lines .fitch-just")[7].textContent);
+  out.push("--- proof built by the buttons ---");
+  out.push(proofText());
+
+  // Growing the language strands the induction, and shrinking it back mends it.
+  document.getElementById("fitch-objects-add").click();
+  document.getElementById("fitch-entry-input").value = "b";
+  document.getElementById("fitch-entry-ok").click();
+  check("Objects + adds a constant", lang() === "0,b / s", lang());
+  check("the induction no longer covers the language",
+        verdict().indexOf("✓ Proved") === -1 && F.state.lines[7].result.msg.indexOf("base case for b") > 0,
+        verdict() + " | " + (F.state.lines[7].result.msg || ""));
+  document.getElementById("fitch-objects-remove").click();
+  document.getElementById("fitch-entry-input").value = "0";
+  document.getElementById("fitch-entry-ok").click();
+  check("Objects − refuses a constant the premises use", message().indexOf("stays in the language") > 0, message());
+  document.getElementById("fitch-entry-input").value = "b";
+  document.getElementById("fitch-entry-ok").click();
+  check("Objects − removes an added constant, and the proof holds again",
+        lang() === "0 / s" && verdict().indexOf("✓ Proved") === 0, lang() + " | " + verdict());
+
+  load("A purebred line");
+  pick(2); run("ue", "c");
+  run("assume", "purebred(c)");
+  pick(3, 4); run("ie");
+  pick(5); run("ae");                                    // 6: purebred(f(c)), 7: purebred(g(c))
+  pick(4, 6); run("ii");                                 // 8, closing the subproof
+  pick(4, 7); run("ii");                                 // 9, from the closed subproof
+  pick(8); run("ui", "AX: (purebred(X) => purebred(f(X)))");
+  pick(9); run("ui", "AX: (purebred(X) => purebred(g(X)))");
+  pick(1, 10, 11); run("ind", "AX: purebred(X)");
+  check("every ancestor is purebred, by tree induction", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  load("Structural induction over h");
+  run("assume", "p(c) & p(d)");
+  pick(3); run("ae");                                    // 4: p(c), 5: p(d)
+  pick(4); run("oi", "p(c) | p(d)");
+  pick(2); run("ue", "c");
+  pick(7); run("ue", "d");
+  pick(8, 6); run("ie");
+  pick(3, 9); run("ii");
+  pick(10); run("ui", "AY: (p(c) & p(Y) => p(h(c,Y)))");
+  pick(11); run("ui", "AX: AY: (p(X) & p(Y) => p(h(X,Y)))");
+  pick(1, 12); run("ind", "AX: p(X)");
+  check("every h-tree is p, by structural induction", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  load("Domain closure over a and b");
+  check("a finite language enables Domain Closure, not Induction",
+        !button("Domain Closure").disabled && button("Induction").disabled, lang());
+  run("assume", "p(a)");
+  pick(1); run("reit");
+  pick(3, 4); run("ii");
+  run("assume", "p(b)");
+  pick(2); run("reit");
+  pick(6, 7); run("ii");
+  pick(8, 5); run("dc", "AX: (p(X) => q(X))");
+  check("p implies q everywhere, by Domain Closure", verdict().indexOf("✓ Proved") === 0,
+        verdict() + "\n" + proofText() + "\n" + message());
+
+  load("Three clicks back to blank");
+  check("a language with no objects greys out both", button("Domain Closure").disabled && button("Induction").disabled);
 
   /* ---- the propositional rules still work, unchanged ---- */
   load("Peirce's law");

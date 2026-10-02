@@ -471,6 +471,31 @@ button:disabled { opacity: .6; cursor: default; }
   box-shadow: var(--shadow);
 }
 
+/* The language: Objects and Functions, each with its + and − buttons. */
+.fitch-language {
+  display: grid;
+  gap: .35rem;
+  padding-bottom: .6rem;
+  margin-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: .88rem;
+}
+.fitch-lang-row { display: flex; align-items: center; gap: .35rem; }
+.fitch-lang-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  width: 1.6rem;
+  height: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.fitch-lang-btn:hover { border-color: var(--blue); color: var(--blue); }
+.fitch-lang-label { font-weight: 600; margin-left: .35rem; min-width: 5.2rem; }
+.fitch-lang-list { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+
 .fitch-selectall {
   display: flex;
   align-items: center;
@@ -541,6 +566,7 @@ button:disabled { opacity: .6; cursor: default; }
 .fitch-entry-row input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(46, 126, 168, .18); }
 
 .fitch-palette { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.fitch-palette[hidden] { display: none; }
 .fitch-palette .hint { display: inline; margin: 0; }
 .fitch-sym {
   background: var(--bg-soft);
@@ -575,11 +601,112 @@ button:disabled { opacity: .6; cursor: default; }
   transition: border-color .12s, color .12s;
 }
 .fitch-rule-btn:hover { border-color: var(--blue); color: var(--blue); }
+/* Greyed out like the Stanford tool's: the language does not allow it yet. */
+.fitch-rule-btn:disabled,
+.fitch-rule-btn:disabled:hover { color: var(--muted); border-color: var(--border); opacity: .55; cursor: not-allowed; }
 .fitch-util { background: var(--bg-soft); border-style: dashed; }
 
 @media (max-width: 620px) {
   .fitch-row { grid-template-columns: 1.2rem 1.8rem auto 1fr; }
   .fitch-just { grid-column: 3 / -1; }
+}
+
+/* --- the level ladder ----------------------------------------------------
+ * One block per chapter, each holding three level cards. A card carries its
+ * band's own badge colour on its top edge — blue, orange, red, easy to hard —
+ * so the ladder reads as a climb rather than three identical tiles. A locked
+ * card keeps its layout and loses its colour: it should look like something
+ * waiting, not something broken. */
+
+.levels { margin-bottom: 2.5rem; }
+
+.level-chapter {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  padding: 1.2rem 1.3rem 1.4rem;
+  margin-bottom: 1.2rem;
+}
+.level-chapter.is-locked { background: var(--bg-tint); }
+
+.level-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.level-head h2 { margin: 0; font-size: 1.15rem; color: var(--red); }
+.level-chapter.is-locked .level-head h2 { color: var(--muted); }
+.level-flag { color: var(--muted); font-size: .82rem; }
+.level-flag.is-cleared { color: var(--success); font-weight: 600; }
+.level-flag.is-shut { color: var(--orange-deep); }
+
+.level-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.level-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .5rem;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--blue);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 1rem;
+}
+.level-row li:nth-child(2) { border-top-color: var(--orange); }
+.level-row li:nth-child(3) { border-top-color: var(--red); }
+.level-row li.level-card.is-locked { border-top-color: var(--border); background: var(--bg-soft); }
+.level-row li.level-card.is-cleared { border-color: rgba(14, 138, 111, .35); }
+
+.level-card-head { display: flex; align-items: center; gap: .5rem; width: 100%; }
+.level-card.is-locked .badge { color: var(--muted); background: var(--bg-tint); border-color: var(--border); }
+.level-tick { margin-left: auto; font-size: .95rem; }
+.level-card.is-cleared .level-tick { color: var(--success); }
+
+.level-count {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.level-of { color: var(--muted); font-size: 1rem; font-weight: 500; }
+.level-card.is-locked .level-count { color: var(--muted); }
+
+.level-meter {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.level-meter span { display: block; height: 100%; background: var(--blue); }
+.level-row li:nth-child(2) .level-meter span { background: var(--orange); }
+.level-row li:nth-child(3) .level-meter span { background: var(--red); }
+.level-row li.is-cleared .level-meter span { background: var(--success); }
+.level-row li.is-locked .level-meter span { background: var(--border); }
+
+.level-note { margin: 0; min-height: 2.4em; }
+.level-card .btn { margin-top: auto; padding: .4rem .9rem; font-size: .88rem; }
+/* Not a button — there is nothing to press — so it is styled flat and told
+   not to invite a click. */
+.level-card .is-disabled { color: var(--muted); cursor: default; background: var(--bg-tint); }
+.level-card .is-disabled:hover { border-color: var(--border); color: var(--muted); }
+
+@media (max-width: 720px) {
+  .level-row { grid-template-columns: 1fr; }
+  .level-note { min-height: 0; }
 }
 
 /* --- generated questions ------------------------------------------------- */
@@ -698,6 +825,16 @@ button:disabled { opacity: .6; cursor: default; }
 }
 .fitch-loaded .gen-statement { margin: .5rem 0 !important; }
 .hint.danger { color: var(--danger); }
+
+/* What the editor says after a finished proof was counted. Quiet by default;
+   it takes the success colour only when a level actually opened. */
+.level-report {
+  margin: .6rem 0 0;
+  font-size: .88rem;
+  color: var(--muted);
+}
+.level-report.is-unlock { color: var(--success); font-weight: 600; }
+
 
 /* --- the loading overlay ---
  *

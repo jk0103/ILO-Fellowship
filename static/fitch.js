@@ -1,10 +1,11 @@
 /* Fitch proof editor.
  *
- * The Stanford intro-logic Fitch system: the propositional rules of Chapter 5
- * and the quantifier rules of Chapter 10. You select lines with the checkboxes
- * and press a rule button; the rule is applied for you and the new lines are
- * appended. Nothing is typed except premises, assumptions, the target of Or
- * Introduction, and the term or sentence a quantifier rule needs.
+ * The Stanford intro-logic Fitch system: the propositional rules of Chapter 5,
+ * the quantifier rules of Chapter 10, and Domain Closure and Induction from
+ * Chapter 13. You select lines with the checkboxes and press a rule button; the
+ * rule is applied for you and the new lines are appended. Nothing is typed
+ * except premises, assumptions, the target of Or Introduction, the term or
+ * sentence a quantifier rule needs, and the conclusion of an induction.
  *
  * Quantifiers are written the way the Stanford tool writes them: AX: p(X) for
  * every X, EX: p(X) for some X. Variables are uppercase, so a lowercase name is
@@ -58,7 +59,8 @@
         i += quant[0].length;
         continue;
       }
-      const name = /^[A-Za-z][A-Za-z0-9_]*/.exec(src.slice(i));
+      // A numeral like 0 is a name too: Chapter 13's arithmetic counts from it.
+      const name = /^[A-Za-z0-9][A-Za-z0-9_]*/.exec(src.slice(i));
       if (name) { tokens.push({ kind: "atom", text: name[0] }); i += name[0].length; continue; }
       throw new Error('Unexpected character "' + ch + '".');
     }
@@ -170,7 +172,9 @@
         break;
       case "and":
       case "or":
-        out = f.args.map((a) => show(a, prec)).join(" " + SYM[f.t] + " ");
+        // A nested conjunction keeps its parentheses: (p ∧ q) ∧ r is a
+        // different line from p ∧ q ∧ r, and And Elimination treats it so.
+        out = f.args.map((a) => show(a, prec + 0.5)).join(" " + SYM[f.t] + " ");
         break;
       case "imp":
         // Right associative: the left side needs parens at equal precedence.
@@ -349,6 +353,156 @@
     return out;
   }
 
+  /* ---------------------------------------------------------------- induction
+   *
+   * Chapter 13. Domain Closure and Induction both conclude AX: φ from cases of
+   * φ, and both turn on the language — the object and function constants that
+   * exist. Domain Closure needs φ[σ] for every object constant σ, which covers
+   * every term only when there are no function constants. Induction needs that
+   * base case and, for every function constant π, the inductive case
+   *
+   *   AM: (φ[M] ⇒ φ[π(M)])                      π unary  (linear, tree)
+   *   AL: AM: (φ[L] ∧ φ[M] ⇒ φ[π(L,M)])         π binary (structural)
+   *
+   * and so on for higher arities. The inductive case may name its variables as
+   * it likes; they need not match the conclusion's.
+   */
+
+  // The object and function constants some sentences use, in order of first
+  // appearance, with the arity each function is applied at.
+  function vocabulary(formulas) {
+    const objects = [], functions = [], arity = Object.create(null);
+    function term(t) {
+      if (t.args.length) {
+        if (!(t.n in arity)) { arity[t.n] = t.args.length; functions.push(t.n); }
+        t.args.forEach(term);
+      } else if (!isVariable(t.n) && objects.indexOf(t.n) === -1) {
+        objects.push(t.n);
+      }
+    }
+    function walk(f) {
+      switch (f.t) {
+        case "atom": (f.args || []).forEach(term); break;
+        case "not":
+        case "all":
+        case "exists": walk(f.a); break;
+        case "and":
+        case "or": f.args.forEach(walk); break;
+        default: walk(f.a); walk(f.b);
+      }
+    }
+    formulas.forEach(walk);
+    return { objects: objects, functions: functions, arity: arity };
+  }
+
+  // φ[τ] for the conclusion AX: φ.
+  const caseOf = (conclusion, t) => substitute(conclusion.a, conclusion.v, t);
+  const constant = (name) => ({ n: name, args: [] });
+
+  // The inductive case of AX: φ for function constant fn, over these variables.
+  function inductiveCase(conclusion, fn, vars) {
+    const hyps = vars.map((v) => caseOf(conclusion, constant(v)));
+    const step = caseOf(conclusion, { n: fn, args: vars.map(constant) });
+    let out = imp(hyps.length === 1 ? hyps[0] : { t: "and", args: hyps }, step);
+    for (let i = vars.length - 1; i >= 0; i--) out = { t: "all", v: vars[i], a: out };
+    return out;
+  }
+
+  // The arity at which f is the inductive case of AX: φ for fn, or 0. The
+  // variables are read off f itself, which is what lets them be renamed.
+  function inductiveArity(f, conclusion, fn) {
+    const vars = [];
+    for (let node = f; node.t === "all"; node = node.a) {
+      vars.push(node.v);
+      if (new Set(vars).size !== vars.length) return 0;
+      try { if (same(f, inductiveCase(conclusion, fn, vars))) return vars.length; }
+      catch (e) { /* that variable would be captured; try a longer prefix */ }
+    }
+    return 0;
+  }
+
+  // For an error message: the inductive case written out, if it can be.
+  function describeInductive(conclusion, fn, arity) {
+    const pool = [conclusion.v, "X", "Y", "Z", "U", "V", "W"]
+      .filter((v, i, all) => all.indexOf(v) === i);
+    try { return show(inductiveCase(conclusion, fn, pool.slice(0, arity || 1))); }
+    catch (e) { return "the inductive case for " + fn; }
+  }
+
+  /* Which of `formulas` are the base cases of AX: φ, one per object constant.
+   * Returns { at: [indices] } in the order of the objects, or { error }. */
+  function baseCases(conclusion, objects, formulas) {
+    const at = [];
+    for (const name of objects) {
+      let want;
+      try { want = caseOf(conclusion, constant(name)); }
+      catch (e) { return { error: e.message }; }
+      const i = formulas.findIndex((f) => same(f, want));
+      if (i === -1) return { error: "Missing the base case for " + name + ": " + show(want) + "." };
+      at.push(i);
+    }
+    return { at: at };
+  }
+
+  /* The base cases and then the inductive cases of AX: φ among `formulas`, as
+   * indices, or { error }. A function the premises or goal use at some arity
+   * has to be covered at that arity — anything else leaves its terms out. */
+  function inductionCases(conclusion, language, formulas) {
+    const base = baseCases(conclusion, language.objects, formulas);
+    if (base.error) return base;
+    const at = base.at.slice();
+    for (const fn of language.functions) {
+      const known = language.arity[fn];
+      const i = formulas.findIndex((f) => {
+        const k = inductiveArity(f, conclusion, fn);
+        return k > 0 && (!known || k === known);
+      });
+      if (i === -1) {
+        return { error: "Missing the inductive case for " + fn + ": " +
+                        describeInductive(conclusion, fn, known) + "." };
+      }
+      at.push(i);
+    }
+    return { at: at };
+  }
+
+  /* Why the language rules out Domain Closure or Induction, or null when it
+   * does not. The same split as the Stanford tool: Domain Closure needs object
+   * constants and no function constants, Induction needs both. */
+  function languageFor(rule, language) {
+    if (!language.objects.length) {
+      return "The language has no object constants yet — add them with Objects +.";
+    }
+    if (rule === "dc" && language.functions.length) {
+      return "With function constants (" + language.functions.join(", ") +
+             ") there are infinitely many terms, so this needs Induction, not Domain Closure.";
+    }
+    if (rule === "ind" && !language.functions.length) {
+      return "With no function constants the language is finite: use Domain Closure.";
+    }
+    return null;
+  }
+
+  /* The conclusion an inductive case points to: AM: (φ[M] ⇒ …) is about φ.
+   * Used only to fill in the prompt, so a wrong guess costs nothing. */
+  function guessInduction(language, formulas) {
+    for (const f of formulas) {
+      const vars = [];
+      for (let node = f; node.t === "all"; node = node.a) {
+        vars.push(node.v);
+        const body = node.a;
+        if (body.t !== "imp") continue;
+        let phi = null;
+        if (vars.length === 1) phi = body.a;
+        else if (body.a.t === "and" && body.a.args.length === vars.length) phi = body.a.args[0];
+        if (!phi) continue;
+        const guess = { t: "all", v: vars[0], a: phi };
+        if (!inductionCases(guess, language, formulas).error) return guess;
+      }
+    }
+    return null;
+  }
+
   /* ------------------------------------------------------------------ rules */
 
   const RULES = [
@@ -369,6 +523,8 @@
     { id: "ui", label: "Universal Introduction", short: "UI" },
     { id: "ei", label: "Existential Introduction", short: "EI" },
     { id: "ee", label: "Existential Elimination", short: "EE" },
+    { id: "dc", label: "Domain Closure", short: "DC" },
+    { id: "ind", label: "Induction", short: "Ind" },
   ];
   const RULE_BY_ID = {};
   RULES.forEach((r) => { RULE_BY_ID[r.id] = r; });
@@ -459,8 +615,9 @@
     return { conclusion: universal.a.b, v: universal.v };
   }
 
-  function checkLine(line, lines, premises) {
+  function checkLine(line, lines, premises, language) {
     premises = premises || [];
+    language = language || state.language;
     if (line.error) return { ok: false, msg: line.error };
 
     const cited = [];
@@ -634,6 +791,24 @@
           return { ok: false, msg: pair.v + " occurs free in the conclusion, which Existential Elimination does not allow." };
         }
         return { ok: true };
+      }
+
+      // The language can change after the line is made, so these re-check
+      // against the one declared now.
+      case "dc": {
+        if (f.t !== "all") return { ok: false, msg: "Domain Closure concludes a universally quantified line." };
+        const why = languageFor("dc", language);
+        if (why) return { ok: false, msg: why };
+        const base = baseCases(f, language.objects, cited);
+        return base.error ? { ok: false, msg: base.error } : { ok: true };
+      }
+
+      case "ind": {
+        if (f.t !== "all") return { ok: false, msg: "Induction concludes a universally quantified line." };
+        const why = languageFor("ind", language);
+        if (why) return { ok: false, msg: why };
+        const cases = inductionCases(f, language, cited);
+        return cases.error ? { ok: false, msg: cases.error } : { ok: true };
       }
     }
     return { ok: false, msg: "Unknown rule." };
@@ -821,6 +996,45 @@
       const order = forward ? [x, y] : [y, x];
       return { lines: [{ formula: pair.conclusion, rule: "ee", refIds: citeIds(order) }] };
     },
+
+    /* Domain Closure and Induction ask for the sentence to conclude, as the
+     * Stanford tool does, and then find its cases among the checked lines. The
+     * citations come out in the chapter's order: base cases by object, then
+     * inductive cases by function. */
+    dc: function (sel, typed) {
+      const language = state.language;
+      const why = languageFor("dc", language);
+      if (why) return { error: why };
+      if (!sel.length) return { error: "Check the instances, one for each of " + language.objects.join(", ") + "." };
+      if (!typed) {
+        return { prompt: "Domain Closure — type the universally quantified sentence to conclude, e.g. AX: p(X). " +
+                         "The checked lines have to give its instance for each of " + language.objects.join(", ") + ".",
+                 seed: "AX: " };
+      }
+      if (typed.t !== "all") return { error: "Domain Closure concludes a universally quantified sentence; it should start AX:." };
+      const base = baseCases(typed, language.objects, sel.map((l) => l.formula));
+      if (base.error) return { error: base.error };
+      return { lines: [{ formula: typed, rule: "dc", refIds: base.at.map((i) => sel[i].id) }] };
+    },
+
+    ind: function (sel, typed) {
+      const language = state.language;
+      const why = languageFor("ind", language);
+      if (why) return { error: why };
+      if (!sel.length) return { error: "Check the base cases and the inductive cases." };
+      const formulas = sel.map((l) => l.formula);
+      if (!typed) {
+        const guess = guessInduction(language, formulas);
+        return { prompt: "Induction — type the universally quantified sentence to conclude, e.g. AX: p(X). " +
+                         "The checked lines need its base case for " + language.objects.join(", ") +
+                         " and its inductive case for " + language.functions.join(", ") + ".",
+                 seed: guess ? show(guess) : "AX: " };
+      }
+      if (typed.t !== "all") return { error: "Induction concludes a universally quantified sentence; it should start AX:." };
+      const cases = inductionCases(typed, language, formulas);
+      if (cases.error) return { error: cases.error };
+      return { lines: [{ formula: typed, rule: "ind", refIds: cases.at.map((i) => sel[i].id) }] };
+    },
   };
 
   /* ---------------------------------------------------------------- problems */
@@ -856,6 +1070,37 @@
     { id: "some-swap", title: "Swapping two existentials", premises: ["EX: EY: p(X,Y)"], goal: "EY: EX: p(X,Y)", tags: "EI, II, UI, EE" },
     { id: "some-all", title: "One for all, all have one", premises: ["EY: AX: p(X,Y)"], goal: "AX: EY: p(X,Y)", tags: "UE, EI, UI, II, EE" },
     { id: "no-p", title: "No p at all", premises: ["AX: ~p(X)"], goal: "~EX: p(X)", tags: "UE, NI, II, EE, R" },
+
+    // Chapter 12: the same rules over terms. c(X) is the state after a click.
+    { id: "clicks", title: "Three clicks back to blank",
+      premises: ["AX: (blank(X) => check(c(X)))", "AX: (check(X) => ex(c(X)))", "AX: (ex(X) => blank(c(X)))"],
+      goal: "AX: (blank(X) => blank(c(c(c(X)))))", tags: "UE, IE, II, UI" },
+
+    // Chapter 13: induction. The language — what Domain Closure and Induction
+    // range over — is read off the premises and the goal.
+    { id: "dc-two", title: "Domain closure over a and b", premises: ["q(a)", "q(b)"],
+      goal: "AX: (p(X) => q(X))", tags: "R, II, DC" },
+    { id: "right-zero", title: "Zero is a right identity",
+      premises: ["AY: plus(0,Y,Y)", "AX: AY: AZ: (plus(X,Y,Z) => plus(s(X),Y,s(Z)))"],
+      goal: "AX: plus(X,0,X)", tags: "UE, UI, Ind" },
+    { id: "lin-split", title: "Linear induction through a case split",
+      premises: ["r(a)", "AX: (p(X) => r(s(X)))", "AX: (q(X) => r(s(X)))", "AX: (r(X) => p(X) | q(X))"],
+      goal: "AX: r(X)", tags: "UE, IE, OE, II, UI, Ind" },
+    { id: "alternate", title: "Alternating p and q",
+      premises: ["p(a)", "AX: (p(X) => q(f(X)))", "AX: (q(X) => p(f(X)))"],
+      goal: "AX: (p(X) | q(X))", tags: "OI, UE, IE, OE, II, UI, Ind" },
+    { id: "purebred", title: "A purebred line",
+      premises: ["purebred(rex)", "AX: (purebred(X) => purebred(f(X)) & purebred(g(X)))"],
+      goal: "AX: purebred(X)", tags: "UE, IE, AE, II, UI, Ind" },
+    { id: "tree-fg", title: "Tree induction over f and g",
+      premises: ["p(a)", "AX: (p(X) => p(f(X)))", "AX: (p(f(X)) => p(g(X)))"],
+      goal: "AX: p(X)", tags: "UE, IE, II, UI, Ind" },
+    { id: "struct-h", title: "Structural induction over h",
+      premises: ["p(a)", "AX: AY: (p(X) | p(Y) => p(h(X,Y)))"],
+      goal: "AX: p(X)", tags: "AE, OI, UE, IE, II, UI, Ind" },
+    { id: "stronger", title: "Induction on a stronger claim",
+      premises: ["AX: (p(X) => p(s(s(X))))", "p(a)", "p(s(a))"],
+      goal: "AX: p(X)", tags: "AI, AE, UE, IE, II, UI, Ind" },
   ];
 
   /* --------------------------------------------------------------------- UI */
@@ -872,6 +1117,10 @@
     problem: null,
     pending: null,         // a rule waiting on a typed formula
     history: [],
+    // What Domain Closure and Induction range over, and the part of it the
+    // premises and goal use, which cannot be removed.
+    language: { objects: [], functions: [], arity: Object.create(null) },
+    vocab: { objects: [], functions: [] },
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -1021,8 +1270,10 @@
 
   /* ------------------------------------------------------------ typed input */
 
-  function openPrompt(ruleId, label, seed) {
-    state.pending = { rule: ruleId, label: label };
+  // `lang` marks a prompt for names to add to or remove from the language,
+  // rather than for a formula.
+  function openPrompt(ruleId, label, seed, lang) {
+    state.pending = { rule: ruleId, label: label, lang: lang || null };
     render();
     const input = $("#fitch-entry-input");
     input.value = seed || "";
@@ -1032,6 +1283,7 @@
 
   function submitPrompt() {
     const input = $("#fitch-entry-input");
+    if (state.pending.lang) return editLanguage(state.pending.lang, input.value);
     let formula;
     try { formula = parse(input.value); }
     catch (e) { return say(e.message); }
@@ -1046,6 +1298,65 @@
     input.value = input.value.slice(0, start) + text + input.value.slice(end);
     input.focus();
     input.setSelectionRange(start + text.length, start + text.length);
+  }
+
+  /* --------------------------------------------------------------- language
+   *
+   * The Objects and Functions lines at the top of the board. They start as the
+   * constants the premises and the goal use, plus any the problem lists, and
+   * can be extended with +. Only the extensions can be taken out again: a
+   * language that left out one of the problem's own names would let Induction
+   * conclude more than the premises support. */
+
+  const union = (a, b) => a.concat(b.filter((n, i) => a.indexOf(n) === -1 && b.indexOf(n) === i));
+
+  function resetLanguage(objects, functions) {
+    const own = vocabulary(state.premises.concat(state.goal ? [state.goal] : []));
+    state.vocab = { objects: own.objects, functions: own.functions };
+    state.language = {
+      objects: union(own.objects, objects || []),
+      functions: union(own.functions, functions || []),
+      arity: own.arity,
+    };
+  }
+
+  function editLanguage(lang, text) {
+    const kind = lang.kind;
+    const other = kind === "objects" ? "functions" : "objects";
+    const names = text.split(/[\s,]+/).filter(Boolean);
+    if (!names.length) return say("Type one or more names, separated by commas.");
+    for (const n of names) {
+      if (!/^[A-Za-z0-9][A-Za-z0-9_]*$/.test(n)) return say('"' + n + '" is not a name.');
+      if (isVariable(n)) return say(n + " starts with a capital letter, which makes it a variable, not a constant.");
+      if (lang.adding && state.language[other].indexOf(n) !== -1) {
+        return say(n + " is already one of the " + (other === "objects" ? "object" : "function") + " constants.");
+      }
+      if (!lang.adding && state.vocab[kind].indexOf(n) !== -1) {
+        return say(n + " occurs in the premises or the goal, so it stays in the language.");
+      }
+      if (!lang.adding && state.language[kind].indexOf(n) === -1) return say(n + " is not in the language.");
+    }
+    state.language[kind] = lang.adding
+      ? union(state.language[kind], names)
+      : state.language[kind].filter((n) => names.indexOf(n) === -1);
+    state.pending = null;
+    say("");
+    render();
+  }
+
+  function renderLanguage() {
+    const objects = $("#fitch-objects");
+    const functions = $("#fitch-functions");
+    if (objects) objects.textContent = state.language.objects.join(", ") || "none";
+    if (functions) functions.textContent = state.language.functions.join(", ") || "none";
+    // Greyed out the way the Stanford tool greys them, with the reason on hover.
+    ["dc", "ind"].forEach((id) => {
+      const button = ruleButtons[id];
+      if (!button) return;
+      const why = languageFor(id, state.language);
+      button.disabled = !!why;
+      button.title = why || "";
+    });
   }
 
   /* --------------------------------------------------------------- rendering */
@@ -1076,7 +1387,7 @@
 
     let allValid = true;
     lines.forEach((line) => {
-      const result = checkLine(line, lines, state.premises);
+      const result = checkLine(line, lines, state.premises, state.language);
       line.result = result;
       if (!result.ok) allValid = false;
 
@@ -1112,6 +1423,10 @@
     const entry = $("#fitch-entry");
     entry.hidden = !state.pending;
     if (state.pending) $("#fitch-entry-label").textContent = state.pending.label;
+    // Names for the language take no logical symbols.
+    const palette = entry.querySelector(".fitch-palette");
+    if (palette) palette.hidden = !!(state.pending && state.pending.lang);
+    renderLanguage();
 
     $("#fitch-premises").textContent = state.premises.length
       ? state.premises.map((p) => show(p)).join(",   ")
@@ -1127,6 +1442,7 @@
     } else if (reached && allValid) {
       banner.textContent = "✓ Proved. " + show(state.goal) + " follows from the premises.";
       banner.classList.add("verdict-done");
+      reportSolved();
     } else if (!allValid) {
       banner.textContent = "Some lines no longer hold up — a line they cite was deleted or fell out of scope.";
       banner.classList.add("verdict-error");
@@ -1155,6 +1471,51 @@
       : "Select lines with the checkboxes, then press a rule.";
   }
 
+  /* --------------------------------------------------------------- progress */
+
+  // A finished proof of a stored question counts towards its level. The server
+  // is told the id and nothing else: it knows the chapter and the band, and it
+  // holds the worked answer already. Reported once per page, because render()
+  // runs on every click and the proof stays finished.
+  let reported = false;
+
+  function reportSolved() {
+    const loaded = window.__ILO_QUESTION;
+    // Only for the question the page was opened on — not a built-in problem
+    // picked from the list afterwards — and only when someone is signed in.
+    if (reported || !loaded || !loaded.id) return;
+    if (!state.problem || state.problem.id !== "loaded") return;
+    reported = true;
+
+    fetch("/api/progress/solved", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question_id: loaded.id }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) sayProgress(data); })
+      // A lost report is not worth interrupting a finished proof over; the
+      // level count is recomputed from the records on the next page anyway.
+      .catch(() => {});
+  }
+
+  function sayProgress(data) {
+    const note = $("#fitch-progress");
+    if (!note) return;
+
+    const parts = [];
+    if (!data.first_solve) parts.push("You had already solved this one.");
+    else parts.push("Counted: " + data.solved + " of " + data.need + " at this level.");
+    (data.unlocked || []).forEach((level) => {
+      parts.push("Unlocked " + level.band + " in Chapter " + level.chapter + ".");
+    });
+    if (data.unlocked && data.unlocked.length) parts.push("See the dashboard.");
+
+    note.textContent = parts.join(" ");
+    note.classList.toggle("is-unlock", !!(data.unlocked && data.unlocked.length));
+    note.hidden = false;
+  }
+
   /* ------------------------------------------------------------------ setup */
 
   function loadProblem(problem) {
@@ -1162,6 +1523,7 @@
     state.premiseSrc = problem.premises.slice();
     state.goalSrc = problem.goal;
     reparseGoal();
+    resetLanguage(problem.objects, problem.functions);
     resetLines();
   }
 
@@ -1185,15 +1547,18 @@
     render();
   }
 
+  const ruleButtons = {};
+
   function buildButtons() {
     // Laid out in the columns of the Stanford tool: structural, And/Or,
-    // Implication/Biconditional, Negation.
+    // Implication/Biconditional, Negation, and the quantifiers with the two
+    // induction rules beneath them.
     const columns = [
       ["premise", "assume", "reit"],
       ["ai", "ae", "oi", "oe"],
       ["ii", "ie", "bi", "be"],
       ["ni", "ne"],
-      ["ue", "ui", "ei", "ee"],
+      ["ue", "ui", "ei", "ee", "dc", "ind"],
     ];
     const grid = $("#fitch-buttons");
     columns.forEach((ids) => {
@@ -1202,6 +1567,7 @@
         const b = el("button", "fitch-rule-btn", RULE_BY_ID[id].label);
         b.type = "button";
         b.addEventListener("click", () => runRule(id));
+        ruleButtons[id] = b;
         col.appendChild(b);
       });
       grid.appendChild(col);
@@ -1224,7 +1590,8 @@
     // is what the editor opens on.
     const loaded = window.__ILO_QUESTION
       ? { id: "loaded", title: window.__ILO_QUESTION.title, tags: "generated",
-          premises: window.__ILO_QUESTION.premises, goal: window.__ILO_QUESTION.goal }
+          premises: window.__ILO_QUESTION.premises, goal: window.__ILO_QUESTION.goal,
+          objects: window.__ILO_QUESTION.objects || [] }
       : null;
     const problems = loaded ? [loaded].concat(PROBLEMS) : PROBLEMS;
 
@@ -1243,8 +1610,21 @@
       reparseGoal();
       const bad = (state.premiseErrors || []).concat(state.goalError ? ["goal: " + state.goalError] : []);
       $("#fitch-custom-error").textContent = bad.join("  ·  ");
+      resetLanguage();
       resetLines();
     });
+
+    [["objects", "Objects", "object constants"], ["functions", "Functions", "function constants"]]
+      .forEach(([kind, label, noun]) => {
+        const add = $("#fitch-" + kind + "-add");
+        const remove = $("#fitch-" + kind + "-remove");
+        if (add) add.addEventListener("click", () => openPrompt("lang",
+          label + " — type the " + noun + " to add, separated by commas.", "",
+          { kind: kind, adding: true }));
+        if (remove) remove.addEventListener("click", () => openPrompt("lang",
+          label + " — type the " + noun + " to remove. The ones the premises or the goal use stay.", "",
+          { kind: kind, adding: false }));
+      });
 
     $("#fitch-select-all").addEventListener("change", (ev) => {
       state.selected.clear();
@@ -1272,6 +1652,7 @@
     runRule: runRule, state: state, PROBLEMS: PROBLEMS, RULES: RULES,
     APPLY: APPLY, substitute: substitute, instanceOf: instanceOf,
     freeNames: freeNames, isGround: isGround, showTerm: showTerm,
+    vocabulary: vocabulary,
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

@@ -10,6 +10,8 @@
   <p class="hint">Quantifiers are written <code>AX: p(X)</code> for &forall;x.p(x) and
      <code>EX: p(X)</code> for &exist;x.p(x). Variables are uppercase; a lowercase
      name is an object constant or a placeholder.</p>
+  <p class="hint">Domain Closure and Induction range over the language shown at
+     the top of the proof &mdash; the object and function constants that exist.</p>
 </section>
 
 {% if question %}
@@ -26,12 +28,20 @@
      see it on the
      <a href="{{ url_for('generate_page', chapter=question.get('chapter', 5)) }}">Generate</a>
      page.</p>
+  {# Filled in by fitch.js once the proof is finished and the server has
+     counted it towards the level. #}
+  <p class="level-report" id="fitch-progress" hidden></p>
 </section>
 <script>
   window.__ILO_QUESTION = {
+    // The id is what the editor reports back when the proof is finished; it is
+    // only there for a signed-in user, since nobody else has a ladder to climb.
+    id: {{ (question['id'] if current_user else None) | tojson }},
     title: "Generated question",
     premises: {{ question['premises'] | tojson }},
-    goal: {{ question['goal'] | tojson }}
+    goal: {{ question['goal'] | tojson }},
+    // A Chapter 10 exercise that fixes its language: what Domain Closure needs.
+    objects: {{ (question.get('constants') or []) | tojson }}
   };
 </script>
 {% endif %}
@@ -64,6 +74,21 @@
 <p id="fitch-verdict" class="fitch-verdict"></p>
 
 <section class="fitch-board">
+  <div class="fitch-language">
+    <div class="fitch-lang-row">
+      <button type="button" class="fitch-lang-btn" id="fitch-objects-add" title="Add object constants">+</button>
+      <button type="button" class="fitch-lang-btn" id="fitch-objects-remove" title="Remove object constants">&minus;</button>
+      <span class="fitch-lang-label">Objects:</span>
+      <span class="fitch-lang-list" id="fitch-objects"></span>
+    </div>
+    <div class="fitch-lang-row">
+      <button type="button" class="fitch-lang-btn" id="fitch-functions-add" title="Add function constants">+</button>
+      <button type="button" class="fitch-lang-btn" id="fitch-functions-remove" title="Remove function constants">&minus;</button>
+      <span class="fitch-lang-label">Functions:</span>
+      <span class="fitch-lang-list" id="fitch-functions"></span>
+    </div>
+  </div>
+
   <div class="fitch-selectall">
     <input type="checkbox" id="fitch-select-all">
     <label for="fitch-select-all">Select all</label>

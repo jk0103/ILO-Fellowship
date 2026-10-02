@@ -14,6 +14,18 @@ users/{uid}
     last_login    (server timestamp)
     stats         (map) solved / attempted / streak
 
+users/{uid}/progress/{question id}
+    chapter       (int)
+    difficulty    (str)  the band the question belongs to
+    attempts      (int)  how many times this user has opened it
+    solved        (bool) whether its proof has ever been completed
+    solved_at     (server timestamp, once)
+    updated_at    (server timestamp)
+
+    One document per question a user has met. `progress.py` turns these into
+    the level ladder: a band opens when enough *distinct* questions in the one
+    before it are solved, which is why this is per question and not a counter.
+
 usernames/{username_lower}
     uid           (str)
 
@@ -277,6 +289,9 @@ def delete_profile(uid):
     profile = get_profile(uid)
     if not profile:
         return
+    # Deleting a document does not delete what is under it, and orphaned
+    # progress records would be handed straight back to a recreated uid.
+    clear_progress(uid)
     username = profile.get("username")
     if username:
         db.collection(USERNAMES).document(username.lower()).delete()
@@ -549,3 +564,131 @@ def pool_counts(chapter=None):
 def delete_pooled(qid):
     """Remove one waiting question. Used by tests and cleanup."""
     get_client().collection(POOL).document(qid).delete()
+
+
+# --- progress ---------------------------------------------------------------
+#
+# One document per user per question, under the profile. It is what the level
+# ladder in `progress.py` is computed from, and keeping it per question is what
+# makes a level count *distinct* questions solved: re-proving the same exercise
+# does not move anyone up a level.
+#
+# `attempts` counts openings rather than wrong moves, because the editor checks
+# every line as it is written and never rejects a finished proof — there is no
+# "submit" to fail. That makes it a rough denominator for the accuracy gate
+# that is planned, not an exact one.
+
+PROGRESS = "progress"
+
+
+def _progress_ref(db, uid, qid):
+    return db.collection(USERS).document(uid).collection(PROGRESS).document(qid)
+
+
+def record_attempt(uid, qid, chapter, difficulty):
+    """Note that `uid` has opened question `qid`.
+
+    Creates the record on the first opening and increments `attempts` on every
+    one. Never clears `solved`, so revisiting a question already proved leaves
+    the level count where it was.
+    """
+    if not (uid and qid):
+        return
+    db = get_client()
+    _progress_ref(db, uid, qid).set({
+        "chapter": int(chapter or DEFAULT_CHAPTER),
+        "difficulty": difficulty,
+        "attempts": firestore.Increment(1),
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    }, merge=True)
+    db.collection(USERS).document(uid).update(
+        {"stats.attempted": firestore.Increment(1)})
+
+
+def record_solved(uid, qid, chapter, difficulty):
+    """Mark question `qid` as proved by `uid`. True if that is new.
+
+    Transactional, because the profile's `stats.solved` may only move on the
+    first solve and two tabs can report the same proof at once. `attempts` is
+    left alone: solving is not a separate attempt from the opening it ends.
+    """
+    if not (uid and qid):
+        return False
+    db = get_client()
+    ref = _progress_ref(db, uid, qid)
+    user_ref = db.collection(USERS).document(uid)
+
+    @firestore.transactional
+    def _txn(transaction):
+        snapshot = ref.get(transaction=transaction)
+        data = snapshot.to_dict() or {}
+        first = not data.get("solved")
+
+        payload = {
+            "chapter": int(chapter or DEFAULT_CHAPTER),
+            "difficulty": difficulty,
+            "solved": True,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+        }
+        if first:
+            payload["solved_at"] = firestore.SERVER_TIMESTAMP
+            # Reaching a question by a route that did not record the opening
+            # (a shared link, say) should still leave a sane denominator.
+            if not snapshot.exists:
+                payload["attempts"] = 1
+        transaction.set(ref, payload, merge=True)
+        if first:
+            transaction.update(user_ref, {"stats.solved": firestore.Increment(1)})
+        return first
+
+    return _txn(db.transaction())
+
+
+def list_progress(uid, chapter=None):
+    """This user's per-question records, optionally for one chapter."""
+    if not uid:
+        return []
+    out = []
+    for snapshot in get_client().collection(USERS).document(uid) \
+            .collection(PROGRESS).stream():
+        data = snapshot.to_dict() or {}
+        data["chapter"] = int(data.get("chapter") or DEFAULT_CHAPTER)
+        if chapter is not None and data["chapter"] != int(chapter):
+            continue
+        data["id"] = snapshot.id
+        data["solved"] = bool(data.get("solved"))
+        data["attempts"] = int(data.get("attempts") or 0)
+        out.append(data)
+    return out
+
+
+def progress_counts(uid):
+    """Per chapter and band: {"solved", "seen", "attempts"}.
+
+    `solved` and `seen` count distinct questions — the level ladder is built on
+    those. `attempts` totals the openings, and is here for the accuracy gate.
+    Bands the user has not touched are absent rather than zero; `progress.py`
+    treats a missing cell as empty.
+    """
+    counts = {}
+    for record in list_progress(uid):
+        band = record.get("difficulty")
+        if band not in ("easy", "medium", "hard"):
+            continue          # a question written before difficulty was stored
+        cell = counts.setdefault(record["chapter"], {}).setdefault(
+            band, {"solved": 0, "seen": 0, "attempts": 0})
+        cell["seen"] += 1
+        cell["attempts"] += record["attempts"]
+        if record["solved"]:
+            cell["solved"] += 1
+    return counts
+
+
+def clear_progress(uid):
+    """Drop every progress record for a user. Used by tests and cleanup."""
+    if not uid:
+        return
+    db = get_client()
+    for snapshot in db.collection(USERS).document(uid) \
+            .collection(PROGRESS).stream():
+        snapshot.reference.delete()

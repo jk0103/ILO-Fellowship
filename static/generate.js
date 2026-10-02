@@ -24,10 +24,6 @@
     dc: "Domain Closure",
   };
 
-  // Domain Closure is the one rule the practice editor has no button for, so a
-  // proof that needs it can be read here but not worked through there.
-  const NO_EDITOR_RULE = "dc";
-
   const CHAPTERS = window.__ILO_CHAPTERS || [];
 
   let band = "";
@@ -74,10 +70,6 @@
     return seen;
   }
 
-  function usesRule(proof, rule) {
-    return (proof || []).some((step) => step.rule === rule);
-  }
-
   function card(question) {
     const article = el("article", "card gen-card");
 
@@ -98,27 +90,15 @@
     }
     if (question.hint) article.appendChild(el("p", "hint", "Hint: " + question.hint));
 
-    // A Domain Closure proof has no path through the editor, so offer the
-    // worked answer instead of a link that would only strand the reader.
-    const workable = !usesRule(question.proof, NO_EDITOR_RULE);
-
     const actions = el("div", "gen-card-actions");
-    if (workable) {
-      const practise = el("a", "btn btn-primary", "Practise this");
-      practise.href = window.__ILO_FITCH_URL + "?q=" + encodeURIComponent(question.id);
-      actions.appendChild(practise);
-    }
+    const practice = el("a", "btn btn-primary", "Practice this");
+    practice.href = window.__ILO_FITCH_URL + "?q=" + encodeURIComponent(question.id);
+    actions.appendChild(practice);
 
     const toggle = el("button", "btn btn-ghost", "Show answer");
     toggle.type = "button";
     actions.appendChild(toggle);
     article.appendChild(actions);
-
-    if (!workable) {
-      article.appendChild(el("p", "hint", "This one is answered with Domain "
-        + "Closure, which the practice editor has no button for — read the "
-        + "worked proof instead."));
-    }
 
     const answer = el("div", "gen-answer");
     answer.hidden = true;

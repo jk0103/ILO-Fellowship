@@ -4,7 +4,7 @@ A practice site for International Logic Olympiad problems.
 
 - **Flask** backend
 - **Firebase Authentication** for sign-in (email/password + Google)
-- **Cloud Firestore** for everything else (profiles, and later problems and attempts)
+- **Cloud Firestore** for everything else (profiles, questions, and progress)
 - Plain HTML/CSS/JS frontend
 
 Project: `ilo-fellowship`
@@ -22,9 +22,10 @@ automatically; no environment variables are needed for local development.
 ## Fitch practice
 
 `/fitch` is a natural-deduction proof editor for the Stanford intro-logic Fitch
-system: the propositional rules of Chapter 5 and the quantifier rules of
-Chapter 10. It needs no account and no server: the parser, the scope analysis,
-the rules, and the checker all live in `static/fitch.js`.
+system: the propositional rules of Chapter 5, the quantifier rules of
+Chapter 10, and Domain Closure and Induction from Chapter 13. It needs no
+account and no server: the parser, the scope analysis, the rules, and the
+checker all live in `static/fitch.js`.
 
 It works the way the Stanford tool does. Tick the lines you want to work from,
 press a rule button, and the rule is *applied* — the resulting lines are
@@ -86,10 +87,43 @@ placeholder has to be arbitrary. Existential Introduction will not generalize a
 bound variable. Existential Elimination will not fire when its variable occurs
 free in the conclusion.
 
+### Induction
+
+Chapter 13's two rules conclude `AX: φ` from cases of φ, and both range over
+the **language** — the object and function constants that exist. It sits at the
+top of the proof as two lines, *Objects* and *Functions*, as in the Stanford
+tool. They start as the constants the premises and the goal use (plus any a
+stored question lists), and `+` adds more. `−` removes only what was added: a
+language missing one of the problem's own names would let Induction conclude
+more than the premises support. Numerals are names, so the chapter's arithmetic
+(`plus(0,Y,Y)`, `s(0)`) can be typed as written.
+
+| Rule | Enabled when | Select | Type |
+|---|---|---|---|
+| Domain Closure | objects, no functions | φ[σ] for every object σ | the `AX: φ` to conclude |
+| Induction | objects and functions | the base cases and the inductive cases | the `AX: φ` to conclude |
+
+The base cases are φ[σ] for every object constant. The inductive case for a
+unary function π is `AM: (φ[M] ⇒ φ[π(M)])`, which covers linear and tree
+induction. For a binary one it is `AL: AM: (φ[L] ∧ φ[M] ⇒ φ[π(L,M)])`, which is
+structural induction, and so on for higher arities. The inductive case may use
+any variable names. The arity has to be the one the premises use, so a unary
+case cannot stand in for a binary function. Induction pre-fills its prompt with
+the conclusion the selected inductive case points to, which is usually just
+Enter. A button the language rules out is greyed, and hovering says why.
+
+Changing the language re-checks the proof: add an object and an induction that
+has no base case for it turns red until you remove it again.
+
+The problem list carries Chapter 12's three-clicks example and the chapter's
+induction exercises — linear, tree, structural, Domain Closure, and the
+"stronger claim" pattern of Exercise 13.6.
+
 `static/fitch_tests.html` exercises all of this against the real script: run the
 app and open `/static/fitch_tests.html`. It checks the notation, each quantifier
-rule in isolation, and then drives the editor itself the way the buttons do,
-building the chapter's existential pattern end to end.
+and induction rule in isolation, and then drives the editor itself the way the
+buttons do, building the chapter's existential pattern and its linear, tree,
+structural and Domain Closure proofs end to end.
 
 Because rules are applied rather than typed, every line is correct when it is
 made. The checker still runs over the whole proof on every change, because
@@ -122,6 +156,50 @@ sides stay in step.
 | `POST /api/session` | ID token → session cookie; creates the profile on first sign-in |
 | `POST /api/logout` | Clear cookie and revoke refresh tokens |
 | `GET /api/username-available?u=` | Live check for the signup form |
+| `POST /api/progress/solved` | The editor reports a finished proof; the ladder moves |
+
+## Levels
+
+`/dashboard` is a ladder, not a list. The rule is one sentence:
+
+> Clear a level by solving **3** distinct questions in it. A band opens when the
+> band before it in the same chapter is cleared, and a chapter opens when every
+> band of the chapter before it is cleared.
+
+So a new account can practice Chapter 5 easy and nothing else. Three easy proofs
+open medium, three medium open hard, and clearing all three of Chapter 5's bands
+— nine questions — opens Chapter 10, which again starts at easy.
+
+Three is low on purpose: the bank is small, and the number is meant to become
+ten. It is the single constant `TO_CLEAR` in `progress.py`, and the tests read
+it rather than assuming it, so raising it breaks nothing. An accuracy gate is
+planned on top of the count; `progress_counts` already returns how many
+questions were opened alongside how many were solved, so the ratio is there
+waiting for it.
+
+`progress.py` is pure — it takes counts and answers questions about them,
+reading and writing nothing — which is why the whole rule can be tested offline.
+The counts come from `users/{uid}/progress`, one document per question the user
+has met. Levels count **distinct questions solved**, so re-proving the same
+exercise does not move anyone up.
+
+The ladder is enforced where a question is opened, not only where it is drawn:
+
+- **`/practice?chapter=&difficulty=`** is what the dashboard's level cards link
+  to. It checks the level is open, then deals out a question from that band,
+  preferring one the user has not solved. With nothing in the bank at that
+  level it sends them to `/generate` instead.
+- **`/fitch?q=`** turns a signed-in user away from a locked question and says
+  what would open it, whether the link came from the dashboard, the Generate
+  page or a friend. Opening an unlocked one records the attempt.
+- Signed-out visitors are not gated. `/fitch` needs no account, and there is no
+  progress to gate them against — the built-in problems belong to no level.
+
+When a proof is finished the editor posts the question id to
+`/api/progress/solved` and nothing else: the server reads the chapter and band
+from Firestore, so the browser cannot claim a hard Chapter 10 solve for an easy
+Chapter 5 one. The reply says whether the solve was new and what it opened, and
+the editor prints that under the question.
 
 ## Generating questions
 
@@ -287,6 +365,9 @@ recognized as Exercise 10.10 rewritten.
 
 ```bash
 python3 openai_vector_store.py "Introduction to Logic - Chapter 10.html"
+# Chapters 12 and 13 share one store:
+python3 openai_vector_store.py "Introduction to Logic - Chapter 12.html" --name "Introduction to Logic - Chapters 12-13"
+python3 openai_vector_store.py "Introduction to Logic - Chapter 13.html" --store vs_6abfa15d0bf481919398f91c55d28dc7
 python3 ch10_generator.py -n 4 --difficulty easy -o ch10_questions.json
 python3 ch10_generator.py -n 3 --difficulty medium -o ch10_questions.json -a
 ```
@@ -311,9 +392,9 @@ chapter selector. Two things differ from Chapter 5 once a question is on screen:
 - An exercise that fixes its language names its object constants, and the card
   and the practice editor both print them, since Domain Closure means nothing
   without them.
-- A proof answered by **Domain Closure** gets no *Practise this* link. The
-  editor has buttons for the other seventeen rules but not that one, so the card
-  offers the worked proof and says why.
+- That list of constants is handed to the practice editor as its language, so
+  a proof answered by **Domain Closure** can be worked through there like any
+  other.
 
 Where Chapter 5 repeats itself, `fitch_generator` catches it inside a single
 call. Chapter 10 draws on a much smaller stock of arguments, so the route hands
@@ -335,6 +416,14 @@ users/{uid}                        uid is the Firebase Auth uid
     last_login    timestamp
     stats         map              solved / attempted / streak
 
+users/{uid}/progress/{question id}
+    chapter       number
+    difficulty    string           the band the question belongs to
+    attempts      number           how many times this user has opened it
+    solved        boolean          whether its proof has ever been completed
+    solved_at     timestamp        set once, on the first solve
+    updated_at    timestamp
+
 usernames/{username_lower}
     uid           string
 
@@ -355,6 +444,14 @@ questions/{fingerprint}            id is sha256(premises + goal), truncated
 
 question_pool/{fingerprint}        the waiting area; same fields, no `source`
 ```
+
+One progress document per question a user has met, under the profile. That is
+what makes a level count *distinct* questions rather than proofs: re-solving an
+exercise updates its one document and the count stays put. `attempts` counts
+openings rather than wrong moves — the editor checks every line as it is
+written and there is no "submit" to fail — so it is a rough denominator for the
+planned accuracy gate, not an exact one. Deleting a profile clears the
+subcollection too, since Firestore does not delete what is under a document.
 
 A proof line is `{formula, rule, depth, refs, subref}`: `rule` is a rule id —
 one of the eleven propositional ones, or one of Chapter 10's five quantifier
@@ -422,6 +519,7 @@ Before deploying, add your production domain to the authorized domains list.
 | `FITCH_VECTOR_STORE_ID` | Vector store holding the chapter (has a default) |
 | `FITCH_MODEL` | Defaults to `gpt-6-astra`; both generators read it |
 | `CH10_VECTOR_STORE_ID` | Vector store holding Chapter 10 (has a default) |
+| `CH12_13_VECTOR_STORE_ID` | Vector store holding Chapters 12 and 13, `vs_6abfa15d0bf481919398f91c55d28dc7`; no generator reads it yet |
 | `PORT` | Defaults to 5001 (macOS uses 5000 for AirPlay) |
 
 ## Tests
@@ -440,6 +538,7 @@ own:
 ```bash
 python3 seed_questions.py --chapter all --dry-run
 python3 test_ch10_checker.py
+python3 test_progress.py
 ```
 
 The browser editor has its own suite, which needs a browser rather than Python:
@@ -448,6 +547,10 @@ start the app and open `/static/fitch_tests.html`.
 `test_ch10_checker.py` runs offline, with no key and no network. It verifies the
 proofs Chapter 10 works through in its own text and refuses the unsound
 patterns the chapter warns against.
+
+`test_progress.py` runs offline too. `progress.py` is pure, so the whole gating
+rule — what a new account can reach, what each solve opens, what a hand-typed
+URL cannot — is checked against hand-written counts.
 
 ## Look and feel
 
@@ -473,6 +576,11 @@ The three are kept deliberately apart, and the split matters in two places:
 The difficulty badges are filled tints rather than outlines — at that size a pill
 of colour separates the three bands far better than a hairline and a word.
 
+The dashboard's level cards borrow the same three, in the same order: blue for
+easy, orange for medium, red for hard, on the top edge and in the progress bar.
+A locked card keeps its layout and loses its colour, so it reads as something
+waiting rather than something broken, and a cleared one turns the success teal.
+
 Every page carries all three. The bar keeps ordinary links — colour arrives on
 hover, as an underline in each link's own accent, lightened because the body's
 orange and blue are too dark to register against the red. The main block on a
@@ -494,11 +602,12 @@ links inside cards included.
 |---|---|
 | `app.py` | Routes, session cookies, auth API |
 | `firestore_db.py` | Firestore data layer and Admin SDK setup |
+| `progress.py` | The level ladder — which chapters and bands are unlocked |
 | `fitch_checker.py` | Server-side proof checker, mirroring `static/fitch.js` |
 | `fitch_generator.py` | Writes exercises with the GPT API and verifies them |
 | `ch10_checker.py` | Proof checker for the relational system of Chapter 10 |
 | `ch10_generator.py` | Writes Chapter 10 exercises and verifies them |
-| `openai_vector_store.py` | Uploads a chapter and indexes it for `file_search` |
+| `openai_vector_store.py` | Uploads a chapter and indexes it for `file_search`, as UTF-8 even when the file is saved as Windows-1252 |
 | `load_env.py` | Reads `.env` into the environment, without a dependency |
 | `seed_questions.py` | Loads either chapter's starter questions into Firestore |
 | `seed_questions.json` | The five hand-written Chapter 5 starters and their proofs |
@@ -514,3 +623,4 @@ links inside cards included.
 | `firestore.rules` | Locks Firestore to Admin SDK access only |
 | `test_app.py` | End-to-end tests |
 | `test_ch10_checker.py` | Offline tests for the Chapter 10 checker |
+| `test_progress.py` | Offline tests for the level ladder |

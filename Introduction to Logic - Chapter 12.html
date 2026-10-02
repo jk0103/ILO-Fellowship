@@ -1,0 +1,204 @@
+
+<!-- saved from url=(0055)http://intrologic.stanford.edu/chapters/chapter_12.html -->
+<html><!--=======================================================================--><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Introduction to Logic - Chapter 12</title>
+  <style type="text/css">
+    @media print {table {page-break-inside:avoid}}
+  </style>
+</head>
+
+<!--=======================================================================-->
+
+<body style="background-color:#990000">
+  <center>
+    <table width="720" cellpadding="40" bgcolor="#ffffff">
+      <tbody><tr>
+        <td>
+
+<!--=======================================================================-->
+
+  <center>
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <tbody><tr><td><br></td></tr>
+      <tr>
+        <td height="40" align="center">
+          <span style="font-size:18pt; text-align:center">C H A P T E R&nbsp;&nbsp;12</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <table width="100%" height="60" cellspacing="1" cellpadding="0" bgcolor="#dddddd" border="1">
+      <tbody><tr>
+        <td height="30" align="center">
+          <span style="font-size:28pt;text-align:center">Fitch Proofs</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <br>
+  </center>
+
+<!--=======================================================================-->
+
+<h3>12.1 Introduction</h3>
+
+<p>Logical entailment for Term Logic is defined the same as for Propositional Logic and Relational Logic.  A set of premises logically entails a conclusion if and only if every truth assignment that satisfies the premises also satisfies the conclusions.  In the case of Propositional Logic and Relational Logic, we can check logical entailment by examining a truth table for the language.   With finitely many proposition constants, the truth table is large but finite.  For Term Logic, things are not so easy.  It is possible to have Herbrand bases of infinite size; and, in such cases, truth assignments are infinitely large and there are infinitely many of them, making it impossible to check logical entailment using truth tables.</p>
+
+<p>All is not lost.  As with Propositional Logic and Relational Logic, we can establish logical entailment in Term Logic by writing proofs.  In fact, it is possible to show that, with a few simple restrictions, a set of premises logically entails a conclusion if and only if there is a finite proof of the conclusion from the premises, even when the Herbrand base is infinite.  Moreover, it is possible to find such proofs in a finite time.  That said, things are not perfect.  If a set of sentences does <i>not</i> logically entail a conclusion, then the process of searching for a proof might go on forever.  Moreover, if we remove the restrictions mentioned above, we lose the guarantee of finite proofs.  Still, the relationship between logical entailment and finite provability, given those restrictions, is a very powerful result and has enormous practical benefits.</p> 
+
+<p>In this chapter, we look at an example of a proof in Term Logic using the Fitch proof system we saw previously.  In the next chapter, we look at an extension to Fitch, called Induction, that allows us to prove more results in Term Logic.  And, in the chapter after that, we talk about the non-compactness of Term Logic and the loss of completeness in our proof procedure.</p>
+
+<!--=======================================================================-->
+
+<h3>12.2 Example - Interactive Logic grids</h3>
+
+<p>In solving Relational Logic problems involving binary relations, we saw that it is valuable to use logic grids like the one shown below.  Here the relation holds of an object x and an object y if there is a check mark in the cell with row labeled x and column labeled y.</p>
+
+<center>
+  <table>
+    <tbody><tr><td align="center">
+      <table cellspacing="0" border="1" style="font-size:10pt">
+        <tbody><tr height="40" bgcolor="#dddddd">
+          <td width="40" align="center">&nbsp;</td>
+          <td width="40" align="center"><b>a</b></td>
+          <td width="40" align="center"><b>b</b></td>
+          <td width="40" align="center"><b>c</b></td>
+          <td width="40" align="center"><b>d</b></td>
+        </tr>
+        <tr height="40">
+          <td align="center" bgcolor="#dddddd"><b>a</b></td>
+          <td align="center">&nbsp;</td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/greencheck.jpg" height="16"></td>
+          <td align="center">&nbsp;</td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/redex.jpg" height="16"></td>
+        </tr>
+        <tr height="40">
+          <td align="center" bgcolor="#dddddd"><b>b</b></td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/greencheck.jpg" height="16"></td>
+          <td align="center">&nbsp;</td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/greencheck.jpg" height="16"></td>
+          <td align="center">&nbsp;</td>
+        </tr>
+        <tr height="40">
+          <td align="center" bgcolor="#dddddd"><b>c</b></td>
+          <td align="center">&nbsp;</td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/redex.jpg" height="16"></td>
+          <td align="center">&nbsp;</td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/redex.jpg" height="16"></td>
+        </tr>
+        <tr height="40">
+          <td align="center" bgcolor="#dddddd"><b>d</b></td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/redex.jpg" height="16"></td>
+          <td align="center">&nbsp;</td>
+          <td align="center"><img src="./Introduction to Logic - Chapter 12_files/greencheck.jpg" height="16"></td>
+          <td align="center">&nbsp;</td>
+        </tr>
+      </tbody></table><br>
+    </td></tr>
+  </tbody></table>
+</center>
+
+<p>An interactive logic grid allows us to edit the contents of cells by clicking on those cells.  When clicked, a blank cell goes to a check, a checked cell goes to an ex, and an exed cell goes to a blank.</p>
+
+<p>We can formalize this behavior by writing axioms like the ones shown below.  The first says that, if a cell is blank in state <i>x</i>, then it will contains a check in state <i>c</i>(<i>x</i>)), i.e. the state that results from clicking <i>x</i>.  The other axioms are analogous.</p>
+
+<center>
+&#8704;<i>x</i>.(<i>blank</i>(<i>x</i>) &#8658; <i>check</i>(<i>c</i>(<i>x</i>)))<br>
+&#8704;<i>x</i>.(<i>check</i>(<i>x</i>) &#8658; <i>ex</i>(<i>c</i>(<i>x</i>)))<br>
+&#8704;<i>x</i>.(<i>ex</i>(<i>x</i>) &#8658; <i>blank</i>(<i>c</i>(<i>x</i>)))<br>
+</center>
+
+<p>Our job in this example is to use these axioms to prove that clicking a blank cell three times returns the cell to it initial, blank state.  The proof is shown below.  Our premises appear on lines 1, 2, and 3.  On line 4, we assume that our cell is blank in state <i>d</i>.  We then use Universal Elimination to produce line 5; and we then use Implication Elimination to conclude that our cell contains a check in state <i>c</i>(<i>d</i>).  We repeat for <i>c</i>(<i>c</i>(<i>d</i>)) and <i>c</i>(<i>c</i>(<i>c</i>(<i>d</i>))).  We use Implication Introduction to exit our subproof.  Finally, we apply Universal Introduction to produce our conclusion on line 12.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+<tbody><tr height="30"><td width="24">1.</td><td width="300">&#8704;<i>x</i>.(<i>blank</i>(<i>x</i>) &#8658; <i>check</i>(<i>c</i>(<i>x</i>)))</td><td>Premise</td></tr>
+
+<tr height="30"><td>2.</td><td>&#8704;<i>x</i>.(<i>check</i>(<i>x</i>) &#8658; <i>ex</i>(<i>c</i>(<i>x</i>)))</td><td>Premise</td></tr>
+
+<tr height="30"><td>3.</td><td>&#8704;<i>x</i>.(<i>ex</i>(<i>x</i>) &#8658; <i>blank</i>(<i>c</i>(<i>x</i>)))</td><td>Premise</td></tr>
+
+<tr height="30"><td>4.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>blank</i>(<i>d</i>)</div></td><td>&nbsp;Assumption</td></tr>
+
+<tr height="30"><td>5.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>blank</i>(<i>d</i>) &#8658; <i>check</i>(<i>c</i>(<i>d</i>))</div></td><td>&nbsp;Universal Elimination: 1</td></tr>
+
+<tr height="30"><td>6.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>check</i>(<i>c</i>(<i>d</i>))</div></td><td>&nbsp;Implication Elimination: 5, 4</td></tr>
+
+<tr height="30"><td>7.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>check</i>(<i>c</i>(<i>d</i>)) &#8658; <i>ex</i>(<i>c</i>(<i>c</i>(<i>d</i>)))</div></td><td>&nbsp;Universal Elimination: 2</td></tr>
+
+<tr height="30"><td>8.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>ex</i>(<i>c</i>(<i>c</i>(<i>d</i>)))</div></td><td>&nbsp;Implication Elimination: 7,6</td></tr>
+
+<tr height="30"><td>9.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>ex</i>(<i>c</i>(<i>c</i>(<i>d</i>))) &#8658; <i>blank</i>(<i>c</i>(<i>c</i>(<i>c</i>(<i>d</i>))))</div></td><td>&nbsp;Universal Elimination: 3</td></tr>
+
+<tr height="30"><td>10.</td><td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>blank</i>(<i>c</i>(<i>c</i>(<i>c</i>(<i>d</i>))))</div></td><td>&nbsp;Implication Elimination: 9,8</td></tr>
+
+<tr height="30"><td width="20">11.</td><td><i>blank</i>(<i>d</i>) &#8658; <i>blank</i>(<i>c</i>(<i>c</i>(<i>c</i>(<i>d</i>))))</td><td>Implication Introduction: 4, 10</td></tr>
+
+<tr height="30"><td width="20">12.</td><td>&#8704;<i>x</i>.(<i>blank</i>(<i>x</i>) &#8658; <i>blank</i>(<i>c</i>(<i>c</i>(<i>c</i>(<i>x</i>)))))</td><td>Universal Introduction: 11</td></tr>
+
+  </tbody></table>
+</center>
+
+<p>This proof uses no more than the usual rules of inference in the Fitch system but applied to sentences in Term Logic.  The next chapter describes a new rule of inference that allows us to prove significantly more than we can prove with just the standard rules in the Fitch system.</p>
+
+<!--=======================================================================-->
+
+<h3>12.3 Non-Compactness and Incompleteness</h3>
+
+<p>Compactness says that if an infinite set of sentences is unsatisfiable, there is some finite subset that is unsatisfiable. It guarantees finite proofs.</p>
+
+<p>Non-Compactness Theorem: Term Logic is not compact.</p>
+
+<p>Proof. Consider the following infinite set of sentences.</p>
+
+<center>
+<i>p</i>(<i>a</i>), <i>p</i>(<i>f</i>(<i>a</i>)), <i>p</i>(<i>f</i>(<i>f</i>(<i>a</i>))), ...
+</center>
+
+<p>Assume the vocabulary is {<i>p</i>, <i>a</i>, <i>f</i>}.  Hence, the ground terms are <i>a</i>, <i>f</i>(<i>a</i>), <i>f</i>(<i>f</i>(<i>a</i>)), ....   This set of sentences entails &#8704;<i>x</i>.<i>p</i>(<i>x</i>).  Add in the sentence &#8707;<i>x</i>.¬<i>p</i>(<i>x</i>).  Clearly, this infinite set is unsatisfiable. However, every finite subset is satisfiable. (Every finite subset is missing either &#8707;<i>x</i>.¬<i>p</i>(<i>x</i>) or one of the sentences above. If it is the former, the set is satisfiable; and, if it is the latter, the set can be satisfied by making the missing sentence false.) Thus, compactness does not hold.</p>
+
+<p>Corollary (Infinite Proofs): In Term Logic, some entailed sentences have only infinite proofs.</p>
+
+<p>Proof. The above proof demonstrates a set of sentences that entail &#8704;<i>x</i>.<i>p</i>(<i>x</i>). The set of premises in any finite proof will be missing one of the above sentences; thus, those premises do not entail &#8704;<i>x</i>.<i>p</i>(<i>x</i>). Thus no finite proof can exist for &#8704;<i>x</i>.<i>p</i>(<i>x</i>).</p>
+
+<p>The statement in this Corollary was made earlier with the condition that checking whether a candidate proof actually proves a conjecture is decidable. There is no such condition on this theorem.</p>
+
+<!--=======================================================================-->
+
+<h3>12.4 Undecidability</h3>
+
+<p>The good news about Term Logic is that it is highly expressive.  We can formalize things in Term Logic that cannot be formalized (at least in finite form) in Relational Logic.  For example, we showed how to define addition and multiplication in finite form.  This is not possible with Relational Logic and in other logics (e.g. First-Order Logic).</p>
+
+<p>The bad news is that the questions of unsatisfiability and logical entailment for Term Logic are not effectively computable.  Explaining this in detail is beyond the scope of this course.  However, we can give a line of argument that suggests why it is true.  The argument reduces a problem that is generally accepted to be non-semidecidable to the question of unsatisfiability / logical entailment for Term Logic.  If our logic were semidecidable, then this other question would be semidecidable as well; and, since it is known not to be semidecidable, then Term Logic must not be semidecidable either.
+</p>
+
+<p>As we know, Diophantine equations can be readily expressed as sentences in Term Logic.   For example, we can represent the solvability of Diophantine equation 3<i>x</i><sup>2</sup>=1 with the sentence shown below.</p>
+
+<center>
+&#8707;<i>x</i>.&#8707;<i>y</i>.(<i>times</i>(<i>x</i>, <i>x</i>, <i>y</i>) &#8743; <i>times</i>(<i>s</i>(<i>s</i>(<i>s</i>(0))), <i>y</i>, <i>s</i>(0)))
+</center>
+
+<p>We can represent every Diophantine equation in an analogous way.  We can express the unsolvability of a Diophantine equation by negating the corresponding sentence.   We can then ask the question of whether the axioms of arithmetic logically entail this negation or, equivalently, whether the axioms of Arithmetic together with the unnegated sentence are unsatisfiable.</p>
+
+<p>The problem is that it is well known that determining whether Diophantine equations are unsolvable is not decidable.  If we could determine the unsatisfiability of our encoding of a Diophantine equation, we could decide whether it is unsolvable, contradicting the undecidability of that problem.</p>
+
+<p>Note that this does not mean Term Logic is useless.  In fact, it is great for expressing such information; and we can prove many results, even though, in general, we cannot prove everything that follows from arbitrary sets of sentences in Term Logic.  We discuss this issue further in later chapters.</p>
+
+<!--=======================================================================-->
+
+<h3>Exercises</h3>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_12_01.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 12.1:</a> Given &#8704;<i>z</i>.(<i>p</i>(<i>z</i>) &#8658; ¬<i>p</i>(<i>f</i>(<i>z</i>))) and &#8704;<i>z</i>.(¬<i>p</i>(<i>z</i>) &#8658; <i>p</i>(<i>f</i>(<i>z</i>))), prove &#8704;<i>z</i>.(<i>p</i>(<i>z</i>) &#8658; <i>p</i>(<i>f</i>(<i>f</i>(<i>z</i>)))).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_12_02.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 12.2:</a> Given &#8704;<i>z</i>.(<i>p</i>(<i>z</i>) &#8660; <i>q</i>(<i>f</i>(<i>z</i>))) and &#8704;<i>z</i>.(<i>p</i>(<i>z</i>) &#8660; <i>r</i>(<i>g</i>(<i>z</i>))), prove &#8704;<i>z</i>.(<i>q</i>(<i>f</i>(<i>z</i>)) &#8658; <i>r</i>(<i>g</i>(<i>z</i>))).</p>
+
+<!--=======================================================================-->
+
+        </td>
+      </tr>
+    </tbody></table>
+  </center>
+
+
+
+
+
+</body><!--=======================================================================--></html>

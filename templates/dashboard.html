@@ -5,8 +5,9 @@
 {% set stats = current_user.get('stats') or {} %}
 <section class="hero hero-compact">
   <h1>Hi, {{ current_user['username'] }}.</h1>
-  <p class="lede">Your practice sets will live here. Nothing to solve just yet &mdash;
-     the problem engine is the next piece to build.</p>
+  <p class="lede">Work down the ladder. Each level opens when you have solved
+     {{ to_clear }} questions in the one before it, and a chapter opens when
+     every level of the chapter before it is cleared.</p>
   <p class="hint">
     Signed in as {{ current_user['email'] }}
     {%- if current_user.get('providers') %} via
@@ -15,11 +16,62 @@
   </p>
 </section>
 
+{# The ladder. Each chapter is a row of three levels, easy first; a level is
+   either open (with the button that deals out a question), cleared, or shut
+   with the sentence that says what would open it. #}
+<section class="levels">
+  {% for chapter in ladder %}
+  <article class="level-chapter{% if not chapter.unlocked %} is-locked{% endif %}">
+    <header class="level-head">
+      <h2>{{ chapter.label }}</h2>
+      {% if chapter.cleared %}
+        <span class="level-flag is-cleared">Cleared</span>
+      {% elif not chapter.unlocked %}
+        <span class="level-flag is-shut">Locked &mdash; clear Chapter {{ chapter.requires }} to open</span>
+      {% else %}
+        <span class="level-flag">{{ chapter.solved }} solved</span>
+      {% endif %}
+    </header>
+
+    <ol class="level-row">
+      {% for level in chapter.levels %}
+      <li class="level-card{% if not level.unlocked %} is-locked{% endif %}{% if level.cleared %} is-cleared{% endif %}">
+        <div class="level-card-head">
+          <span class="badge badge-{{ level.band }}">{{ level.band }}</span>
+          {% if level.cleared %}<span class="level-tick" aria-hidden="true">&#10003;</span>
+          {% elif not level.unlocked %}<span class="level-tick" aria-hidden="true">&#128274;</span>{% endif %}
+        </div>
+
+        <p class="level-count">
+          {{ level.solved }}<span class="level-of">/{{ level.need }}</span>
+        </p>
+        {# Width is the one thing here that depends on a number, so it is the
+           one thing set inline. #}
+        <div class="level-meter" role="img"
+             aria-label="{{ level.solved }} of {{ level.need }} solved">
+          <span style="width: {{ level.percent }}%"></span>
+        </div>
+        <p class="hint level-note">{{ level.note }}</p>
+
+        {% if level.unlocked %}
+          <a class="btn {% if level.cleared %}btn-ghost{% else %}btn-primary{% endif %}"
+             href="{{ url_for('practice', chapter=level.chapter, difficulty=level.band) }}">
+            {% if level.cleared %}Practice more{% else %}Practice{% endif %}</a>
+        {% else %}
+          <span class="btn btn-ghost is-disabled" aria-disabled="true">Locked</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </article>
+  {% endfor %}
+</section>
+
 <section class="features">
   <article class="card">
     <div class="card-icon">&#8866;</div>
-    <h3><a href="{{ url_for('fitch') }}">Fitch practice</a></h3>
-    <p>Build natural-deduction proofs with live rule checking.</p>
+    <h3><a href="{{ url_for('fitch') }}">Free practice</a></h3>
+    <p>The built-in problems and your own, with no level attached.</p>
   </article>
   <article class="card">
     <h3>Problems solved</h3>

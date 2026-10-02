@@ -1,0 +1,1463 @@
+
+<!-- saved from url=(0055)http://intrologic.stanford.edu/chapters/chapter_13.html -->
+<html><!--=======================================================================--><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Introduction to Logic - Chapter 13</title>
+  <style type="text/css">
+    @media print {table {page-break-inside:avoid}}
+  </style>
+</head>
+
+<!--=======================================================================-->
+
+<body style="background-color:#990000">
+  <center>
+    <table width="720" cellpadding="40" bgcolor="#ffffff">
+      <tbody><tr>
+        <td>
+
+<!--=======================================================================-->
+
+  <center>
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <tbody><tr><td><br></td></tr>
+      <tr>
+        <td height="40" align="center">
+          <span style="font-size:18pt; text-align:center">C H A P T E R&nbsp;&nbsp;13</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <table width="100%" height="60" cellspacing="1" cellpadding="0" bgcolor="#dddddd" border="1">
+      <tbody><tr>
+        <td height="30" align="center">
+          <span style="font-size:28pt;text-align:center">Induction</span>
+        </td>
+      </tr>
+    </tbody></table>
+    <br>
+  </center>
+
+<!--=======================================================================-->
+
+<h3>13.1 Introduction</h3>
+
+<p>Induction is reasoning from the specific to the general.  If various instances of a schema are true and there are no counterexamples, we are tempted to conclude a universally quantified version of the schema.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td><i>p</i>(<i>a</i>) &#8658; <i>q</i>(<i>a</i>)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><i>p</i>(<i>b</i>) &#8658; <i>q</i>(<i>b</i>)
+      </td><td width="100" align="center">&#8594;</td>
+      <td>&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>))</td>
+      
+    </tr>
+    <tr>
+      <td><i>p</i>(<i>c</i>) &#8658; <i>q</i>(<i>c</i>)</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p><i>Incomplete induction</i> is induction where the set of instances is not exhaustive.  From a reasonable collection of instances, we sometimes leap to the conclusion that a schema is always true even though we have not seen all instances.  Consider, for example, the function <i>f</i> where <i>f</i>(1)=1, and <i>f</i>(<i>n</i>+1)=<i>f</i>(<i>n</i>) + 2<i>n</i> + 1.  If we look at some values of this function, we notice a certain regularity - the value of <i>f</i> always seems to be the square of its input.  From this sample, we are tempted to leap to the conclusion that <i>f</i>(<i>n</i>)=<i>n</i><sup>2</sup>.  Lucky guess.  In this case, the conclusion happens to be true; and we can prove it.</p>
+
+<center>
+  <table cellspacing="0">
+    <tbody><tr><th><i>n</i></th><th><i>f</i>(<i>n</i>)</th><th><i>n</i><sup>2</sup></th>
+    </tr><tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td width="80" align="center">1</td><td width="80" align="center">1</td><td width="80" align="center">1</td></tr>
+    <tr><td align="center">2</td><td align="center">4</td><td align="center">2<sup>2</sup></td></tr>
+    <tr><td align="center">3</td><td align="center">9</td><td align="center">3<sup>2</sup></td></tr>
+    <tr><td align="center">4</td><td align="center">16</td><td align="center">4<sup>2</sup></td></tr>
+    <tr><td align="center">5</td><td align="center">25</td><td align="center">5<sup>2</sup></td></tr>
+  </tbody></table>
+</center>
+
+<p>Here is another example.  This one is due to the mathematician Fermat (1601-1665).  He looked at values of the expression 2<sup>2<sup><i>n</i></sup></sup> + 1 for various values of <i>n</i> and noticed that they were all prime.  So, he concluded the value of the expression was prime number.  Unfortunately, this was not a lucky guess.  His conjecture was ultimately disproved, in fact with the very next number in the sequence.  (Mercifully, the counterexample was found after his death.)</p>
+
+<center>
+  <table cellspacing="0">
+    <tbody><tr><th><i>n</i></th><th>2<sup>2<sup><i>n</i></sup></sup>+1</th><th>Prime?</th>
+    </tr><tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td width="80" align="center">1</td><td width="80" align="center">5</td><td width="80" align="center">Yes</td></tr>
+    <tr><td align="center">2</td><td align="center">17</td><td align="center">Yes</td></tr>
+    <tr><td align="center">3</td><td align="center">257</td><td align="center">Yes</td></tr>
+    <tr><td align="center">4</td><td align="center">65537</td><td align="center">Yes</td></tr>
+  </tbody></table>
+</center>
+
+<p>For us, this is not so good.  In Logic, we are concerned with logical entailment.  We want to derive only conclusions that are guaranteed to be true when the premises are true.  Guesses like these are useful in suggesting possible conclusions, but they are not themselves proofs.  In order to be sure of universally quantified conclusions, we must be sure that <i>all</i> instances are true.  This is called <i>complete induction</i>.  When applied to numbers, it is usually called <i>mathematical induction</i>.</p>
+
+<p>The technique used for complete induction varies with the structure of the language to which it is applied.  We begin this chapter with a discussion of domain closure, a rule that applies when the Herbrand base of our language is finite.  We then move on to Linear Induction, i.e. the special case in which the ground terms in the language form a linear sequence.  We look at tree induction, i.e. the special case in which the ground terms of the language form a tree.  And we look at Structural Induction, which applies to all languages.  <!--Finally, we look at two special cases that make inductive reasoning more complicated - Multidimensional Induction and Embedded Induction.--></p>
+
+<!--=======================================================================-->
+
+<h3>13.2 Domain Closure</h3>
+
+<p>Induction for finite languages is trivial.  We simply use the Domain Closure rule of inference (DC).  For a language with object constants &#963;<sub>1</sub>, ... , &#963;<sub><i>n</i></sub>, the rule is written as shown below.  If we believe a schema is true for every instance, then we can infer a universally quantified version of that schema.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#966;[&#963;<sub>1</sub>]</td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;...</td></tr>
+    <tr><td>&#966;[&#963;<sub><i>n</i></sub>]</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+<p>Recall that, in our formalization of the Sorority World, we have just four constants - <i>abby</i>, <i>bess</i>, <i>cody</i>, and <i>dana</i>.  For this language, we would have the following Domain Closure rule.</p>
+
+<center>
+  <table>
+    <tbody><tr><th>Domain Closure (DC)</th></tr>
+    <tr><td>&#966;[<i>abby</i>]</td></tr>
+    <tr><td>&#966;[<i>bess</i>]</td></tr>
+    <tr><td>&#966;[<i>cody</i>]</td></tr>
+    <tr><td>&#966;[<i>dana</i>]</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+<p>The following proof shows how we can use this rule to derive an inductive conclusion.  Given the premises we considered earlier in this book, it is possible to infer that Abby likes someone, Bess likes someone, Cody likes someone, and Dana likes someone.  Taking these conclusions as premises and using our Domain Closure rule, we can then derive the inductive conclusion &#8704;<i>x</i>.&#8707;<i>y</i>.<i>likes</i>(<i>x</i>,<i>y</i>), i.e. everybody likes somebody.</p>
+
+<center>
+<table>
+<tbody><tr><td width="20">1.</td><td>&#8707;<i>y</i>.<i>likes</i>(<i>abby</i>,<i>y</i>)</td><td>&nbsp;</td><td>Premise</td></tr>
+
+<tr><td width="20">2.</td><td>&#8707;<i>y</i>.<i>likes</i>(<i>bess</i>,<i>y</i>)</td><td>&nbsp;</td><td>Premise</td></tr>
+
+<tr><td width="20">3.</td><td>&#8707;<i>y</i>.<i>likes</i>(<i>cody</i>,<i>y</i>)</td><td>&nbsp;</td><td>Premise</td></tr>
+
+<tr><td width="20">4.</td><td>&#8707;<i>y</i>.<i>likes</i>(<i>dana</i>,<i>y</i>)</td><td>&nbsp;</td><td>Premise</td></tr>
+
+<tr><td width="20">5.</td><td>&#8704;<i>x</i>.&#8707;<i>y</i>.<i>likes</i>(<i>x</i>,<i>y</i>)</td><td>&nbsp;</td><td>DC: 1, 2, 3, 4</td></tr>
+  </tbody></table>
+</center>
+
+<p>Unfortunately, this technique does not work when there are infinitely many ground terms.  Suppose, for example, we have a language with ground terms &#963;<sub>1</sub>, &#963;<sub><i>2</i></sub>, ...  A direct generalization of the Domain Closure rule is shown below.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#966;[&#963;<sub>1</sub>]</td></tr>
+    <tr><td>&#966;[&#963;<sub>2</sub>]</td></tr>
+    <tr><td>&nbsp;&nbsp;&nbsp;...</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+<p>This rule is sound in the sense that the conclusion of the rule is logically entailed by the premises of the rule.  However, it does not help us produce a proof of this conclusion.  To use the rule, we would need to prove all of the rule's premises.  Unfortunately, there are infinitely many premises.  So, the rule cannot be used in generating a finite proof.</p>
+
+<p>All is not lost.  It is sometimes possible to write rules that cover all instances without enumerating them individually.  The method depends on the structure of the language.  The next sections describe how this can be done for languages with different structures.</p>
+
+<!--=======================================================================-->
+
+<h3>13.3 Linear Induction</h3>
+
+<p>Imagine an infinite set of dominoes placed in a line so that, when one falls, the next domino in the line also falls.  If the first domino falls, then the second domino falls. If the second domino falls, then the third domino falls.  And so forth.  By continuing this chain of reasoning, it is easy for us to convince ourselves that every domino eventually falls.  This is the intuition behind a technique called Linear Induction.</p>
+
+<p>Consider a language with a single object constant <i>a</i> and a single unary function constant <i>s</i>.  There are infinitely many ground terms in this language, arranged in what resembles a straight line.  See below.  Starting from the object constant, we move to a term in which we apply the function constant to that constant, then to a term in which we apply the function constant to that term, and so forth.</p>
+
+<center>
+<i>a</i> &#8594; <i>s</i>(<i>a</i>) &#8594; <i>s</i>(<i>s</i>(<i>a</i>)) &#8594; <i>s</i>(<i>s</i>(<i>s</i>(<i>a</i>))) &#8594; ... 
+</center>
+
+<p>In this section, we concentrate on languages that have linear structure of this sort.  Hereafter, we call these <i>linear languages</i>.  In all cases, there is a single object constant and a single unary function constant.  In talking about a linear language, we call the object constant the <i>base element</i> of the language, and we call the unary function constant the <i>successor function</i>.</p>
+
+<p>Although there are infinitely many ground terms in any linear language, we can still generate finite proofs that are guaranteed to be correct.  The trick is to use the structure of the terms in the language in expressing the premises of an inductive rule of inference known as <i>Linear Induction</i>.  See below for a statement of the induction rule (Ind) for the language introduced above.  In general, if we know that a schema holds of our base element and if we know that, whenever the schema holds of an element, it also holds of the successor of that element, then we can conclude that the schema holds of all elements.</p><p>
+
+</p><center>
+  <table>
+    <tbody><tr><th>Linear Induction</th></tr>
+    <tr><td>&#966;[<i>a</i>]</td></tr>
+    <tr><td>&#8704;&#956;.(&#966;[&#956;] &#8658; &#966;[<i>s</i>(&#956;)])</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+<p>A bit of terminology before we go on.  The first premise in this rule is called the <i>base case</i> of the induction, because it refers to the base element of the language.  The second premise is called the <i>inductive case</i>.  The antecedent of the inductive case is called the <i>inductive hypothesis</i>, and the consequent is called, not surprisingly, the <i>inductive conclusion</i>.  The conclusion of the rule is sometimes called the <i>overall conclusion</i> to distinguish it from the inductive conclusion.</p>
+
+<p>For the language introduced above, our rule of inference is sound.  Suppose we know that a schema is true of <i>a</i> and suppose that we know that, whenever the schema is true of an arbitrary ground term &#964;, it is also true of the term <i>s</i>(&#964;).  Then, the schema must be true of everything, since there are no other terms in the language.</p>
+
+<p>The requirement that the signature consists of no other object constants or function constants is crucial.  If this were not the case, say there were another object constant <i>b</i>, then we would have trouble.  It would still be true that &#966; holds for every  element in the set {<i>a</i>, <i>s</i>(<i>a</i>), <i>s</i>(<i>s</i>(<i>a</i>)),...}.  However, because there are other elements in the Herbrand universe, e.g. <i>b</i> and <i>s</i>(<i>b</i>), &#8704;<i>x</i>.&#966;(<i>x</i>) would no longer be guaranteed.</p>
+
+<p>Here is an example of induction in action.  Recall the formalization of Arithmetic introduced in Chapter 9.  Using the object constant 0 and the unary function constant <i>s</i>, we represent each number <i>n</i> by applying the function constant to 0 exactly <i>n</i> times.  For the purposes of this example, let's assume we have just one ternary relation constant, viz. <i>plus</i>, which we use to represent the addition table.</p>
+
+<p>The following axioms describe <i>plus</i> in terms of 0 and <i>s</i>.  The first sentence here says that adding 0 to any element produces that element.  The second sentence states that adding the successor of a number to another number yields the successor of their sum.  The third sentence is a functionality axiom for <i>plus</i>.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#8704;<i>y</i>.<i>plus</i>(0,<i>y</i>,<i>y</i>)</td></tr>
+    <tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>plus</i>(<i>x</i>,<i>y</i>,<i>z</i>) &#8658;<i>plus</i>(<i>s</i>(<i>x</i>),<i>y</i>,<i>s</i>(<i>z</i>)))</td></tr>
+    <tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.&#8704;<i>w</i>.(<i>plus</i>(<i>x</i>,<i>y</i>,<i>z</i>) &#8743; ¬<i>same</i>(<i>z</i>,<i>w</i>) &#8658; ¬<i>plus</i>(<i>x</i>,<i>y</i>,<i>w</i>))</td></tr>
+  </tbody></table>
+</center>
+
+<p>It is easy to see that any table that satisfies these axioms includes all of the usual addition facts.  The first axiom ensures that all cases with 0 as first argument are included.  From this fact and the second axiom, we can see that all cases with <i>s</i>(0) as first argument are included.  And so forth.</p>
+
+<p>The first axiom above tells us that 0 is a <i>left identity</i> for addition - 0 added to any number produces that number as result.  As it turns out, given these definitions, 0 must also be a <i>right identity</i>, i.e it must be the case that &#8704;<i>x</i>.<i>plus</i>(<i>x</i>,0,<i>x</i>).</p>
+
+<p>We can use induction to prove this result as shown below.  We start with our premises.  (We do not need the third axiom here, but we include it for completeness.)  We use Universal Elimination on the first premise to derive the sentence on line 4.  This takes care of the base case of our induction.  We then use three applications of Universal Elimination on the second premise to get the sentence on line 7.  We use Universal Introduction to get the result on line 8.  Finally, we use Linear Induction on lines 4 and 8 to derive our overall conclusion.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+<tbody><tr height="30">
+  <td>1.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>y</i>.<i>plus</i>(0,<i>y</i>,<i>y</i>)</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Premise</td>
+</tr>
+
+<tr height="30">
+  <td>2.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>plus</i>(<i>x</i>,<i>y</i>,<i>z</i>) &#8658;<i>plus</i>(<i>s</i>(<i>x</i>),<i>y</i>,<i>s</i>(<i>z</i>)))</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Premise</td>
+</tr>
+
+<tr height="30">
+  <td>3.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>x</i>.&#8704;<i>y</i>.&#8704;<i>z</i>.&#8704;<i>w</i>.(<i>plus</i>(<i>x</i>,<i>y</i>,<i>z</i>) &#8743; ¬<i>same</i>(<i>z</i>,<i>w</i>) &#8658; ¬<i>plus</i>(<i>x</i>,<i>y</i>,<i>w</i>))</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Premise</td>
+</tr>
+
+<tr height="30">
+  <td>4.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td><i>plus</i>(0,0,0)</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Universal Elimination: 1</td>
+</tr>
+
+<tr height="30">
+  <td>5.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>y</i>.&#8704;<i>z</i>.(<i>plus</i>(<i>c</i>,<i>y</i>,<i>z</i>) &#8658;<i>plus</i>(<i>s</i>(<i>c</i>),<i>y</i>,<i>s</i>(<i>z</i>)))</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Universal Elimination: 2</td>
+</tr>
+
+<tr height="30">
+  <td>6.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>z</i>.(<i>plus</i>(<i>c</i>,0,<i>z</i>) &#8658;<i>plus</i>(<i>s</i>(<i>c</i>),0,<i>s</i>(<i>z</i>)))</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Universal Elimination: 5</td>
+</tr>
+
+<tr height="30">
+  <td>7.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td><i>plus</i>(<i>c</i>,0,<i>c</i>) &#8658;<i>plus</i>(<i>s</i>(<i>c</i>),0,<i>s</i>(<i>c</i>))</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Universal Elimination: 6</td>
+</tr>
+
+<tr height="30">
+  <td>8.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>x</i>.(<i>plus</i>(<i>x</i>,0,<i>x</i>) &#8658; <i>plus</i>(<i>s</i>(<i>x</i>),0,<i>s</i>(<i>x</i>)))</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Universal Introduction: 7</td>
+</tr>
+
+<tr height="30">
+  <td>9.</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>&#8704;<i>x</i>.<i>plus</i>(<i>x</i>,0,<i>x</i>)</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>Ind: 4, 8</td>
+</tr>
+  </tbody></table>
+</center>
+
+<p>Most inductive proofs have this simple structure.  We prove the base case.  We assume the inductive hypothesis; we prove the inductive conclusion; and, based on this proof, we have the inductive case.  From the base case and the inductive case, we infer the overall conclusion.</p>
+
+<!--=======================================================================-->
+
+<h3>13.4 Tree Induction</h3>
+
+<p>Tree languages are a superset of linear languages.  While in linear languages the terms in the language form a linear sequence, in tree languages the structure is more tree-like.  Consider a language with an object constant <i>a</i> and two unary function constants <i>f</i> and <i>g</i>.  Some of the terms in this language are shown below.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20" align="center"><i>a</i></td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td></tr>
+    <tr>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20" align="center">&#8601;</td>
+      <td width="20"></td>
+      <td width="20" align="center">&#8600;</td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td>
+    </tr>
+    <tr>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"><i>f</i>(<i>a</i>)</td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"></td>
+      <td width="20"><i>g</i>(<i>a</i>)</td>
+      <td width="20"></td>
+      <td width="20"></td>
+    </tr>
+    <tr>
+      <td width="20"></td>
+      <td width="20" align="right">&#8601;</td>
+      <td width="20"></td>
+      <td width="20" align="left">&#8600;</td>
+      <td width="20"></td>
+      <td width="20" align="right">&#8601;</td>
+      <td width="20"></td>
+      <td width="20" align="left">&#8600;</td>
+      <td width="20"></td>
+    </tr>
+    <tr>
+      <td width="20"></td>
+      <td width="20"><i>f</i>(<i>f</i>(<i>a</i>))</td>
+      <td width="20"></td>
+      <td width="20"><i>g</i>(<i>f</i>(<i>a</i>))</td>
+      <td width="20"></td>
+      <td width="20"><i>f</i>(<i>g</i>(<i>a</i>))</td>
+      <td width="20"></td>
+      <td width="20"><i>g</i>(<i>g</i>(<i>a</i>))</td>
+      <td width="20"></td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>As with linear languages, we can write an inductive rule of inference for tree languages.  The tree induction rule of inference for the language just described is shown below.  Suppose we know that a schema &#966; holds of <i>a</i>.  Suppose we know that, whenever the schema holds of any element, it holds of the term formed by applying <i>f</i> to that element.  And suppose we know that, whenever the schema holds of any element, it holds of the term formed by applying <i>g</i> to that element.  Then, we can conclude that the schema holds of every element.</p><p>
+
+</p><center>
+  <table>
+    <tbody><tr><th>Tree Induction</th></tr>
+    <tr><td>&#966;[<i>a</i>]</td></tr>
+    <tr><td>&#8704;&#956;.(&#966;[&#956;] &#8658; &#966;[<i>f</i>(&#956;)])</td></tr>
+    <tr><td>&#8704;&#956;.(&#966;[&#956;] &#8658; &#966;[<i>g</i>(&#956;)])</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+<p>In order to see an example of tree induction in action, consider the ancestry tree for a particular dog.  We use the object constant <i>rex</i> to refer to the dog; we use the unary function constant <i>f</i> to map an arbitrary dog to its father; and we use <i>g</i> map a dog to its mother.  Finally, we have a single unary relation constant <i>purebred</i> that is true of a dog if and only if it is purebred.</p>
+
+<p>Now, we write down the fundamental rule of dog breeding - we know that, if a dog is purebred, then both its father and its mother must be purebred as well.  See below.  (This is a bit oversimplified on several grounds.  Properly, the father and mother should be of the same breed.  Also, this formalization suggests that every dog has an ancestry tree that stretches back without end.  However, let's ignore these imperfections for the purposes of our example.)</p>
+
+<center>
+&#8704;<i>x</i>.(<i>purebred</i>(<i>x</i>) &#8658; <i>purebred</i>(<i>f</i>(<i>x</i>)) &#8743; <i>purebred</i>(<i>g</i>(<i>x</i>)))
+</center>
+
+<p>Suppose now that we discover the fact that our dog <i>rex</i> is purebred.  Then, we know that every dog in his ancestry tree must be purebred.  We can prove this by a simple application of tree induction.</p>
+
+<p>A proof of our conclusion is shown below.  We start with the premise that Rex is purebred.   We also have our constraint on purebred animals as a premise.  We use Universal Elimination to instantiate the second premise with placeholder <i>c</i>.  We then assume <i>purebred</i>(<i>c</i>).   We use Implication Elimination to derive the conjunction on line 5, and then we use And Elimination to pick out the first conjunct.  We use Implication Introduction to discharge our assumption, and we Universal Introduction to produce the inductive case for <i>f</i>.  We then repeat this process to produce an analogous result for <i>g</i> on line 13.  Finally, we use the tree induction rule on the sentences on lines 1, 8, and 13 and thereby derive the desired overall conclusion.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td>1.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><i>purebred</i>(<i>rex</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td>2.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>&#8704;<i>x</i>.(<i>purebred</i>(<i>x</i>) &#8658; <i>purebred</i>(<i>f</i>(<i>x</i>)) &#8743; <i>purebred</i>(<i>g</i>(<i>x</i>)))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Premise</td>
+    </tr>
+
+    <tr height="30">
+      <td>3.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><i>purebred</i>(<i>c</i>) &#8658; <i>purebred</i>(<i>f</i>(<i>c</i>)) &#8743; <i>purebred</i>(<i>g</i>(<i>c</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Universal Elimination: 2</td>
+    </tr>
+
+    <tr height="30">
+      <td>4.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>purebred</i>(<i>c</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td>5.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>purebred</i>(<i>f</i>(<i>c</i>)) &#8743; <i>purebred</i>(<i>g</i>(<i>c</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elimination: 3, 4</td>
+    </tr>
+
+    <tr height="30">
+      <td>6.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>purebred</i>(<i>f</i>(<i>c</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>And Elimination: 5</td>
+    </tr>
+
+    <tr height="30">
+      <td>7.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><i>purebred</i>(<i>c</i>) &#8658; <i>purebred</i>(<i>f</i>(<i>c</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 4, 6</td>
+    </tr>
+
+    <tr height="30">
+      <td>8.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>&#8704;<i>x</i>.(<i>purebred</i>(<i>x</i>) &#8658; <i>purebred</i>(<i>f</i>(<i>x</i>)))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Universal Introduction: 7</td>
+    </tr>
+
+    <tr height="30">
+      <td>9.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>purebred</i>(<i>c</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td>10.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>purebred</i>(<i>f</i>(<i>c</i>)) &#8743; <i>purebred</i>(<i>g</i>(<i>c</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Elimination: 3, 9</td>
+    </tr>
+
+    <tr height="30">
+      <td>11.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>purebred</i>(<i>g</i>(<i>c</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td>And Elimination: 10</td>
+    </tr>
+
+    <tr height="30">
+      <td>12.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td><i>purebred</i>(<i>c</i>) &#8658; <i>purebred</i>(<i>g</i>(<i>c</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Implication Introduction: 9, 11</td>
+    </tr>
+
+    <tr height="30">
+      <td>13.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>&#8704;<i>x</i>.(<i>purebred</i>(<i>x</i>) &#8658; <i>purebred</i>(<i>g</i>(<i>x</i>)))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Universal Introduction: 12</td>
+    </tr>
+
+    <tr height="30">
+      <td>14.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>&#8704;<i>x</i>.<i>purebred</i>(<i>x</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td>Ind: 1, 8, 13</td></tr>
+  </tbody></table>
+</center>
+
+<!-- successor and predecessor -->
+
+<!--=======================================================================-->
+
+<h3>13.5 Structural Induction</h3>
+
+<p>Structural Induction is the most general form of induction.  In Structural Induction, we can have multiple object constants, multiple function constants, and, unlike our other forms of induction, we can have function constants with multiple arguments.  Consider a language with two object constants <i>a</i> and <i>b</i> and a single binary function constant <i>h</i>.  See below for a list of some of the terms in the language.  We do not provide a graphical rendering in this case, as the structure is more complicated than a line or a tree.</p>
+
+<center>
+<i>a</i>, <i>b</i>, <i>h</i>(<i>a</i>,<i>a</i>), <i>h</i>(<i>a</i>,<i>b</i>), <i>h</i>(<i>b</i>,<i>a</i>), <i>h</i>(<i>b</i>,<i>b</i>), <i>h</i>(<i>a</i>,<i>h</i>(<i>a</i>,<i>a</i>)), <i>h</i>(<i>h</i>(<i>a</i>,<i>a</i>),<i>a</i>), <i>h</i>(<i>h</i>(<i>a</i>,<i>a</i>),<i>h</i>(<i>a</i>,<i>a</i>)), ...
+</center>
+
+<p>The Structural Induction rule for this language is shown below.  If we know that &#966; holds of our base elements <i>a</i> and <i>b</i> and if we know &#8704;&#956;.&#8704;&#957;.((&#966;[&#956;] &#8743; &#966;[&#957;]) &#8658; &#966;[<i>h</i>(&#956;,&#957;)]), then we can conclude &#8704;&#957;.&#966;[&#957;] in a single step.</p><p>
+
+</p><center>
+  <table>
+    <tbody><tr><th>Structural Induction</th></tr>
+    <tr><td>&#966;[<i>a</i>]</td></tr>
+    <tr><td>&#966;[<i>b</i>]</td></tr>
+    <tr><td>&#8704;&#955;.&#8704;&#956;.((&#966;[&#955;] &#8743; &#966;[&#956;]) &#8658; &#966;[<i>h</i>(&#955;,&#956;)])</td></tr>
+    <tr height="1"><td bgcolor="#333333" colspan="3" nowrap=""></td></tr>
+    <tr><td>&#8704;&#957;.&#966;[&#957;]</td></tr>
+  </tbody></table>
+</center>
+
+<p>As an example of a domain where Structural Induction is appropriate, recall the world of lists and trees introduced in Chapter 9.  Let's assume we have two object constants <i>a</i> and <i>b</i>, a binary function constant <i>h</i>, and two unary relation constants <i>p</i> and <i>q</i>.  Relation <i>p</i> is true of a structured object if and only if every fringe node is an <i>a</i>.  Relation <i>q</i> is true of a structured object if and only if at least one fringe node is an <i>a</i>.  The positive and negative axioms defining the relations are shown below.</p>
+
+<center>
+  <table>
+    <tbody><tr>
+      <td valign="top">
+        <i>p</i>(<i>a</i>)<br>
+        &#8704;<i>u</i>.&#8704;<i>v</i>.(<i>p</i>(<i>u</i>) &#8743; <i>p</i>(<i>v</i>) &#8658; <i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)))<br>
+        ¬<i>p</i>(<i>b</i>)<br>
+        &#8704;<i>u</i>.&#8704;<i>v</i>.(<i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>p</i>(<i>u</i>))<br>
+        &#8704;<i>u</i>.&#8704;<i>v</i>.(<i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>p</i>(<i>v</i>))
+      </td>
+      <td width="20">&nbsp;</td>
+      <td valign="top">
+        <i>q</i>(<i>a</i>)<br>
+        &#8704;<i>u</i>.&#8704;<i>v</i>.(<i>q</i>(<i>u</i>) &#8658; <i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>)))<br>
+        &#8704;<i>u</i>.&#8704;<i>v</i>.(<i>q</i>(<i>v</i>) &#8658; <i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>)))<br>
+        ¬<i>q</i>(<i>b</i>)<br>
+        &#8704;<i>u</i>.&#8704;<i>v</i>.(<i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>q</i>(<i>u</i>) &#8744; <i>q</i>(<i>v</i>))
+      </td>
+  </tr></tbody></table>
+</center>
+
+<p>Now, as an example of Structural Induction in action, let's prove that every object that satisfies <i>p</i> also satisfies <i>q</i>.  In other words, we want to prove the conclusion &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>)).  As usual, we start with our premises.</p>
+
+<center>
+  <table id="1000000000000021" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td width="20">1.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><i>p</i>(<i>a</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Premise</td>
+</tr><tr height="30"><td>2.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>u</i>.&#8704;<i>v</i>.(<i>p</i>(<i>u</i>) &#8743; <i>p</i>(<i>v</i>) &#8658; <i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)))</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>3.</td><td>&nbsp;&nbsp;</td><td>¬<i>p</i>(<i>b</i>)</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>4.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>u</i>.&#8704;<i>v</i>.(<i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>p</i>(<i>u</i>))</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>5.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>u</i>.&#8704;<i>v</i>.(<i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>p</i>(<i>v</i>))</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td width="20">6.</td><td>&nbsp;&nbsp;</td><td width="490"><i>q</i>(<i>a</i>)</td><td>&nbsp;&nbsp;</td><td width="100">Premise</td></tr>
+
+<tr height="30"><td>7.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>u</i>.&#8704;<i>v</i>.(<i>q</i>(<i>u</i>) &#8658; <i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>)))</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>8.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>u</i>.&#8704;<i>v</i>.(<i>q</i>(<i>v</i>) &#8658; <i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>)))</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>9.</td><td>&nbsp;&nbsp;</td><td>¬<i>q</i>(<i>b</i>)</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+<tr height="30"><td>10.</td><td>&nbsp;&nbsp;</td><td>&#8704;<i>u</i>.&#8704;<i>v</i>.(<i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>q</i>(<i>u</i>) &#8744; <i>q</i>(<i>v</i>))</td><td>&nbsp;&nbsp;</td><td>Premise</td></tr>
+  </tbody></table>
+</center>
+
+<p>To start the induction, we first prove the base cases for the conclusion.  In this world, with two object constants, we need to show the result twice - once for each object constant in the language.</p>
+
+<p>Let's start with <i>a</i>.  The derivation is simple in this case.  We assume <i>p</i>(<i>a</i>), reiterate <i>q</i>(<i>a</i>) from line 6, then use Implication Introduction to prove (<i>p</i>(<i>a</i>) &#8658; <i>q</i>(<i>a</i>)).</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">11.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>a</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Assumption</td>
+    </tr>
+    <tr height="28">
+      <td width="20">12.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>q</i>(<i>a</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Reiteration: 6</td>
+    </tr>
+    <tr height="28">
+      <td width="20">13.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><i>p</i>(<i>a</i>) &#8658; <i>q</i>(<i>a</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">II: 11, 12</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Now, let's do the case for <i>b</i>.  As before, we assume <i>p</i>(<i>b</i>), and our goal is to derive <i>q</i>(<i>b</i>).  This is a little strange.  We know that <i>q</i>(<i>b</i>) is false.  Still, we should be able to derive it since we have assumed <i>p</i>(<i>b</i>), which is also false.  The trick here is to generate contradictory conclusions from the assumption ¬<i>q</i>(<i>b</i>).  To this end, we assume ¬<i>q</i>(<i>b</i>) and first prove <i>p</i>(<i>b</i>).  Having done so, we use Implication Introduction to get one implication. Then, we assume ¬<i>q</i>(<i>b</i>) again and this time derive ¬<i>p</i>(<i>b</i>) and get an implication.  At this point, we can use Negation Introduction to derive ¬¬<i>q</i>(<i>b</i>) and Negation Elimination to get <i>q</i>(<i>b</i>).  Finally, we use Implication Introduction to prove (<i>p</i>(<i>b</i>) &#8658; <i>q</i>(<i>b</i>)).</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td width="20">14.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>b</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Assumption</td>
+    </tr>
+    <tr height="30">
+      <td width="20">15.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;¬<i>q</i>(<i>b</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Assumption</td>
+    </tr>
+    <tr height="30">
+      <td width="20">16.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>b</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Reiteration: 14</td>
+    </tr>
+    <tr height="30">
+      <td width="20">17.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;¬<i>q</i>(<i>b</i>) &#8658; <i>p</i>(<i>b</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">II: 14, 16</td>
+    </tr>
+    <tr height="30">
+      <td width="20">18.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;¬<i>q</i>(<i>b</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Assumption</td>
+    </tr>
+    <tr height="30">
+      <td width="20">19.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;¬<i>p</i>(<i>b</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Reiteration: 3</td>
+    </tr>
+    <tr height="30">
+      <td width="20">20.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;¬<i>q</i>(<i>b</i>) &#8658; ¬<i>p</i>(<i>b</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">II: 18, 19</td>
+    </tr>
+    <tr height="30">
+      <td width="20">21.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;¬¬<i>q</i>(<i>b</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">NI: 17, 20</td>
+    </tr>
+    <tr height="30">
+      <td width="20">22.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>q</i>(<i>b</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">NE: 21</td>
+    </tr>
+    <tr height="30">
+      <td width="20">23.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><i>p</i>(<i>b</i>) &#8658; <i>q</i>(<i>b</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">II: 17, 19</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Having dealt with the base cases, the next step is to prove the inductive case.  We need to show that, if our conclusion holds of <i>u</i> and <i>v</i>, then it also holds of <i>h</i>(<i>u</i>,<i>v</i>).  To this end, we assume the conjunction of our assumptions with placeholders <i>c</i> and <i>d</i>; and we then use And Elimination to split that conjunction into its two conjuncts.  Our inductive conclusion is also an implication; and, to prove it, we assume its antecedent <i>p</i>(<i>h</i>(<i>c</i>,<i>d</i>)).  From this, we derive <i>p</i>(<i>c</i>); from that, we derive <i>q</i>(<i>c</i>); and, from that, we derive <i>q</i>(<i>h</i>(<i>c</i>,<i>d</i>)).  We then use Implication Introduction to get the desired implication.  A final use of Implication Introduction and a couple of applications of Universal Introduction gives us the inductive case for the induction.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="30">
+      <td width="20">24.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;(<i>p</i>(<i>c</i>) &#8658; <i>q</i>(<i>c</i>)) &#8743; (<i>p</i>(<i>d</i>) &#8658; <i>q</i>(<i>d</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">25.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8658; <i>q</i>(<i>c</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">AE: 24</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">26.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>d</i>) &#8658; <i>q</i>(<i>d</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">AE: 24</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">27.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>h</i>(<i>c</i>,<i>d</i>))</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Assumption</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">28.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;&#8704;<i>v</i>.(<i>p</i>(<i>h</i>(<i>c</i>,<i>v</i>)) &#8658; <i>p</i>(<i>c</i>))</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">UE: 4</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">29.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>h</i>(<i>c</i>,<i>d</i>)) &#8658; <i>p</i>(<i>c</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">UE: 28</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">30.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">IE: 29, 27</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">31.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>)</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">IE: 25, 30</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">32.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;&#8704;<i>v</i>.(<i>q</i>(<i>c</i>) &#8658; <i>q</i>(<i>h</i>(<i>c</i>,<i>v</i>)))</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">UE: 7</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">33.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>q</i>(<i>c</i>) &#8658; <i>q</i>(<i>h</i>(<i>c</i>,<i>d</i>))</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">UE: 32</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">34.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="490"><div style="border-left:2px solid #000;height:30px;margin-left:18px"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>q</i>(<i>h</i>(<i>c</i>,<i>d</i>))</div></div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">IE: 33, 31</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">35.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480"><div style="border-left:2px solid #000;height:30px;margin-left:18px">&nbsp;<i>p</i>(<i>h</i>(<i>c</i>,<i>d</i>)) &#8658; <i>q</i>(<i>h</i>(<i>c</i>,<i>d</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">II: 27, 34</td>
+    </tr>
+
+    <tr height="20">
+      <td width="20">36.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480">&nbsp;(<i>p</i>(<i>c</i>) &#8658; <i>q</i>(<i>c</i>)) &#8743; (<i>p</i>(<i>d</i>) &#8658; <i>q</i>(<i>d</i>)) &#8658; (<i>p</i>(<i>h</i>(<i>c</i>,<i>d</i>)) &#8658; <i>q</i>(<i>h</i>(<i>c</i>,<i>d</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">II: 24, 35</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">37.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480">&#8704;<i>v</i>.((<i>p</i>(<i>c</i>) &#8658; <i>q</i>(<i>c</i>)) &#8743; (<i>p</i>(<i>v</i>) &#8658; <i>q</i>(<i>v</i>)) &#8658; (<i>p</i>(<i>h</i>(<i>c</i>,<i>v</i>))) &#8658; <i>q</i>(<i>h</i>(<i>c</i>,<i>v</i>)))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">UI: 36</td>
+    </tr>
+
+    <tr height="30">
+      <td width="20">38.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480">&#8704;<i>u</i>.&#8704;<i>v</i>.((<i>p</i>(<i>u</i>) &#8658; <i>q</i>(<i>u</i>)) &#8743; (<i>p</i>(<i>v</i>) &#8658; <i>q</i>(<i>v</i>)) &#8658; (<i>p</i>(<i>h</i>(<i>u</i>,<i>v</i>)) &#8658; <i>q</i>(<i>h</i>(<i>u</i>,<i>v</i>))))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">UI: 37</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Finally, using the base case on lines 13 and 23 and the inductive case on line 38, we use Structural Induction to give us the conclusion we set out to prove.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">39.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="480">&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="100">Ind: 13, 23, 38</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Although the proof in this case is longer than in the previous examples, the basic inductive structure is the same.  Importantly, using induction, we can prove this result where otherwise it would not be possible.</p>
+
+<!--=======================================================================-->
+
+<h3>13.6 Multidimensional Induction</h3>
+
+<p>In our look at induction thus far, we have been concentrating on examples in which the conclusion is a universally quantified sentence with just one variable.  In many situations, we want to use induction to prove a result with more than one universally quantified variable.  This is called <i>multidimensional induction</i> or, sometimes, <i>multivariate induction</i>.</p>
+
+<p>In principle, multidimensional induction is straightforward.  We simply use ordinary induction to prove the outermost universally quantified sentence.  Of course, in the case of multidimensional induction the base case and the inductive conclusion are themselves universally quantified sentences; and, if necessary we use induction to prove these subsidiary results.</p>
+
+As an example, consider a language with a single object constant <i>a</i>, a unary function constant <i>s</i>, and a binary relation constant <i>e</i>.  The axioms shown below define <i>e</i>.<p></p>
+
+<center>
+  <table>
+    <tbody><tr><td><i>e</i>(<i>a</i>,<i>a</i>)</td></tr>
+    <tr><td>&#8704;<i>x</i>.¬<i>e</i>(<i>a</i>,<i>s</i>(<i>x</i>))</td></tr>
+    <tr><td>&#8704;<i>x</i>.¬<i>e</i>(<i>s</i>(<i>x</i>),<i>a</i>)</td></tr>
+    <tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>e</i>(<i>x</i>,<i>y</i>) &#8658; <i>e</i>(<i>s</i>(<i>x</i>),<i>s</i>(<i>y</i>)))</td></tr>
+    <tr><td>&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>x</i>),<i>s</i>(<i>y</i>)) &#8658; <i>e</i>(<i>x</i>,<i>y</i>))</td></tr>
+  </tbody></table>
+</center>
+
+<p>The relation <i>e</i> is an equivalence relation - it is reflexive, symmetric, and transitive.  Proving reflexivity is easy.  Our goal here is to prove symmetry.</p>
+
+<center>
+Goal: &#8704;<i>x</i>.&#8704;<i>y</i>.(<i>e</i>(<i>x</i>,<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>x</i>)).
+</center>
+
+<p>In what follows, we use induction to prove the outer quantified formula and then use induction on each of the inner conclusions as well.  This means we have two immediate subgoals - the base case for the outer induction and the inductive case for the outer induction.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>Goal: &#8704;<i>y</i>.(<i>e</i>(<i>a</i>,<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>a</i>)).
+</td></tr>
+    <tr><td>Goal: &#8704;<i>x</i>.(&#8704;<i>y</i>.(<i>e</i>(<i>x</i>,<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>x</i>)) &#8658; &#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>x</i>),<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>s</i>(<i>x</i>)))).
+</td></tr>
+  </tbody></table>
+</center>
+
+<p>As usual, we start with our premises.  We then prove the base case of the inner induction.  This is easy.  We assume <i>e</i>(<i>a</i>,<i>a</i>) and then use Implication Introduction to prove the base case in one step.</p>
+
+<center>
+  <table id="1000000000000027" cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">1.</td>
+      <td></td>
+      <td width="360"><i>e</i>(<i>a</i>,<i>a</i>)</td>
+      <td></td>
+      <td width="200">Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">2.</td>
+      <td></td>
+      <td width="360">&#8704;<i>x</i>.¬<i>e</i>(<i>a</i>,<i>s</i>(<i>x</i>))</td>
+      <td></td>
+      <td width="200">Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">3.</td>
+      <td></td>
+      <td width="360">&#8704;<i>x</i>.¬<i>e</i>(<i>s</i>(<i>x</i>),<i>a</i>)</td>
+      <td></td>
+      <td width="200">Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">4.</td>
+      <td></td>
+      <td width="360">&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>e</i>(<i>x</i>,<i>y</i>) &#8658; <i>e</i>(<i>s</i>(<i>x</i>),<i>s</i>(<i>y</i>)))</td>
+      <td></td>
+      <td width="200">Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">5.</td>
+      <td></td>
+      <td width="360">&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>x</i>),<i>s</i>(<i>y</i>)) &#8658; <i>e</i>(<i>x</i>,<i>y</i>))</td>
+      <td></td>
+      <td width="200">Premise</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">6.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>a</i>,<i>a</i>)</div></td>
+      <td></td>
+      <td width="200">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">7.</td>
+      <td></td>
+      <td width="360"><i>e</i>(<i>a</i>,<i>a</i>) &#8658; <i>e</i>(<i>a</i>,<i>a</i>)</td>
+      <td></td>
+      <td width="200">Implication Introduction: 6, 6</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>The next step is to prove the inductive case for the inner induction.  To this end, we assume the inductive hypothesis and try to prove the inductive conclusion.  Since the conclusion is itself an implication, we assume its antecedent and prove the consequent.  As shown below, we do this by assuming the consequent is false and proving a sentence and its negation.  We then use Negation Introduction and Negation Elimination to derive the consequent.  We finish with two applications of Implication Introduction and an application of Universal Introduction.
+
+</p><center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">8.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>a</i>,<i>d</i>) &#8658; <i>e</i>(<i>d</i>,<i>a</i>))</div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">9.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>))</div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">10.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">11.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Reiteration: 9</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">12.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>) &#8658; <i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>))</div></div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 10, 11</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">13.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">14.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 2</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">15.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>) &#8658; ¬<i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>))</div></div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 13, 14</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">16.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬¬<i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>)</div></div></td>
+      <td></td>
+      <td width="210">Negation Introduction: 12, 15</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">17.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>)</div></div></td>
+      <td></td>
+      <td width="210">Negation Elimination: 16</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">18.</td>
+      <td></td>
+      <td width="350"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>)) &#8658; <i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>)</div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 9, 17</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">19.</td>
+      <td></td>
+      <td width="350">&nbsp;(<i>e</i>(<i>a</i>,<i>d</i>) &#8658; <i>e</i>(<i>d</i>,<i>a</i>)) &#8658; (<i>e</i>(<i>a</i>,<i>s</i>(<i>d</i>)) &#8658; <i>e</i>(<i>s</i>(<i>d</i>),<i>a</i>))</td>
+      <td></td>
+      <td width="210">Implication Introduction: 8, 18</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">20.</td>
+      <td></td>
+      <td width="350">&nbsp;&#8704;<i>y</i>.((<i>e</i>(<i>a</i>,<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>a</i>)) &#8658; (<i>e</i>(<i>a</i>,<i>s</i>(<i>y</i>)) &#8658; <i>e</i>(<i>s</i>(<i>y</i>),<i>a</i>)))</td>
+      <td></td>
+      <td width="210">Universal Introduction: 19</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">21.</td>
+      <td></td>
+      <td width="350">&nbsp;&#8704;<i>y</i>.(<i>e</i>(<i>a</i>,<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>a</i>))</td>
+      <td></td>
+      <td width="210">Induction: 7, 20</td>
+    </tr>
+
+  </tbody></table>
+</center>
+
+<p>That's a lot of work just to prove the base case of the outer induction.  The inductive case of the outer induction is even more complex, and it is easy to make mistakes.  The trick to avoiding these mistakes is to be methodical.</p>
+
+<p>In order to prove the inductive case for the outer induction, we assume the inductive hypothesis <nobr>&#8704;<i>y</i>.(<i>e</i>(<i>c</i>,<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>c</i>))</nobr>; and we then prove the inductive conclusion &#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>c</i>),<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>s</i>(<i>c</i>)))).  We prove this by induction on the variable <i>y</i>.</p>
+
+<p>We start by proving the base case for this induction.  We start with the inductive hypothesis.  We then assume the antecedent of the base case.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">22.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:28px;margin-left:15px">&nbsp;&#8704;<i>y</i>.(<i>e</i>(<i>c</i>,<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>c</i>))</div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">23.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:28px;margin-left:15px"><div style="border-left:2px solid #000;height:28px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>a</i>)</div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">24.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">25.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>a</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Reiteration: 23</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">26.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>))) &#8658; <i>e</i>(<i>s</i>(<i>c</i>),<i>a</i>)</div></div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 24, 25</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">27.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">28.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>s</i>(<i>c</i>),<i>a</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 3</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">29.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬<i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>))) &#8658; ¬<i>e</i>(<i>s</i>(<i>c</i>),<i>a</i>)</div></div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 27, 28</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">30.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;¬¬<i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>)))</div></div></td>
+      <td></td>
+      <td width="210">Negation Introduction: 26, 29</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">31.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>)))</div></div></td>
+      <td></td>
+      <td width="210">Negation Elimination: 30</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">32.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>a</i>) &#8658; <i>e</i>(<i>a</i>,<i>s</i>(<i>c</i>)))</div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 23, 31</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Next, we work on the inductive case.  We start by assuming the inductive hypothesis.  We then assume the antecedent of the inductive conclusion.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">33.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>d</i>) &#8658; <i>e</i>(<i>d</i>,<i>s</i>(<i>c</i>))</div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">34.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>s</i>(<i>d</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Assumption</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">35.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;&#8704;<i>d</i>.(<i>e</i>(<i>s</i>(<i>c</i>),<i>s</i>(<i>d</i>)) &#8658; <i>e</i>(<i>c</i>,<i>d</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 5</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">36.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>s</i>(<i>d</i>)) &#8658; <i>e</i>(<i>c</i>,<i>d</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 35</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">37.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>c</i>,<i>d</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Implication Elimination: 36, 34</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">38.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>c</i>,<i>d</i>) =&gt; <i>e</i>(<i>d</i>,<i>c</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 22</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">39.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>d</i>,<i>c</i>)</div></div></div></td>
+      <td></td>
+      <td width="210">Implication Elimination: 38, 37</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">40.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;&#8704;<i>d</i>.(<i>e</i>(<i>d</i>,<i>c</i>) &#8658; <i>e</i>(<i>s</i>(<i>d</i>),<i>s</i>(<i>c</i>)))</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 4</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">41.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>d</i>,<i>c</i>) &#8658; <i>e</i>(<i>s</i>(<i>d</i>),<i>s</i>(<i>c</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Universal Elimination: 40</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">42.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>d</i>),<i>s</i>(<i>c</i>))</div></div></div></td>
+      <td></td>
+      <td width="210">Implication Elimination: 41, 39</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">43.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;<i>e</i>(<i>s</i>(<i>c</i>),<i>s</i>(<i>d</i>)) &#8658; <i>e</i>(<i>s</i>(<i>d</i>),<i>s</i>(<i>c</i>))</div></div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 34, 42</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">44.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;(<i>e</i>(<i>s</i>(<i>c</i>),<i>d</i>) &#8658; <i>e</i>(<i>d</i>,<i>s</i>(<i>c</i>))) &#8658; (<i>e</i>(<i>s</i>(<i>c</i>),<i>s</i>(<i>d</i>)) &#8658; <i>e</i>(<i>s</i>(<i>d</i>),<i>s</i>(<i>c</i>)))</div></td>
+      <td></td>
+      <td width="210">Implication Introduction: 33, 43</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">45.</td>
+      <td></td>
+      <td width="370"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;&#8704;<i>y</i>.((<i>e</i>(<i>s</i>(<i>c</i>),<i>y</i>)&#8658;<i>e</i>(<i>y</i>,<i>s</i>(<i>c</i>)))&#8658;(<i>e</i>(<i>s</i>(<i>c</i>),<i>s</i>(<i>y</i>))&#8658;<i>e</i>(<i>s</i>(<i>y</i>),<i>s</i>(<i>c</i>))))</div></td>
+      <td></td>
+      <td width="210">Universal Introduction: 44</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>From the results on lines 32 and 45, we can conclude the inductive case for the outer induction.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">46.</td>
+      <td></td>
+      <td width="360"><div style="border-left:2px solid #000;height:30px;margin-left:15px">&nbsp;&#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>c</i>),<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>s</i>(<i>c</i>)))</div></td>
+      <td></td>
+      <td width="210">Induction: 32, 45</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">47.</td>
+      <td></td>
+      <td width="360">&nbsp;&#8704;<i>y</i>.(<i>e</i>(<i>c</i>,<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>c</i>)) &#8658; &#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>c</i>),<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>s</i>(<i>c</i>)))</td>
+      <td></td>
+      <td width="210">Implication Introduction: 22, 46</td>
+    </tr>
+
+    <tr height="28">
+      <td width="20">48.</td>
+      <td></td>
+      <td width="360">&nbsp;&#8704;<i>x</i>.(&#8704;<i>y</i>.(<i>e</i>(<i>x</i>,<i>y</i>) =&gt; <i>e</i>(<i>y</i>,<i>x</i>)) &#8658; &#8704;<i>y</i>.(<i>e</i>(<i>s</i>(<i>x</i>),<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>s</i>(<i>x</i>))))</td>
+      <td></td>
+      <td width="210">Universal Introduction: 47</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>Finally, from the base case for the outer induction and this inductive case, we can conclude our overall result.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">49.</td>
+      <td></td>
+      <td width="360">&#8704;<i>x</i>.&#8704;<i>y</i>.(<i>e</i>(<i>x</i>,<i>y</i>) &#8658; <i>e</i>(<i>y</i>,<i>x</i>))</td>
+      <td></td>
+      <td width="210">Induction: 21, 48</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>As this proof illustrates, the technique of using induction within induction works just fine.  Unfortunately, it is tedious and error-prone.   For this reason, many people prefer to use specialized forms of multidimensional induction.</p>
+
+<!--=======================================================================-->
+
+<h3>13.7 Embedded Induction</h3>
+
+<p>In the examples in this chapter thus far, induction is used to prove the overall result.  While this approach works nicely in many cases, it is not always successful.  In some cases, it is easier to use induction on parts of a problem or to prove alternative conclusions and then use these intermediate results to derive the overall conclusions (using non-inductive methods).</p>
+
+<p>As an example, consider a world characterized by a single object constant <i>a</i>, a single unary function constant <i>s</i>, and a single unary relation constant <i>p</i>.  Assume we have the set of axioms shown below.</p>
+
+<center>
+  <table>
+    <tbody><tr><td>&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>p</i>(<i>s</i>(<i>s</i>(<i>x</i>))))</td></tr>
+    <tr><td><i>p</i>(<i>a</i>)</td></tr>
+    <tr><td><i>p</i>(<i>s</i>(<i>a</i>))</td></tr>
+  </tbody></table>
+</center>
+
+<p>A little thought reveals that these axioms logically entail the universal conclusion &#8704;<i>x</i>.<i>p</i>(<i>x</i>).  Unfortunately, it is difficult to derive this conclusion directly using Linear Induction.  The base case <i>p</i>(<i>a</i>) is easy enough, but it is not so easy to derive the inductive case &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>p</i>(<i>s</i>(<i>x</i>))).</p>
+
+<p>The good news is that we can succeed by proving a slightly more complicated intermediate conclusion and then using that conclusion to prove the overall result.  One way to do this is shown below.  We start by using Linear Induction to prove &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>p</i>(<i>s</i>(<i>x</i>)).  It is easy to prove the base case <i>p</i>(<i>a</i>) &#8743; <i>p</i>(<i>s</i>(<i>a</i>)), since we are given the two conjuncts as axioms.  And the inductive case is straightforward.  We add a placeholder <i>c</i> and then assume <i>p</i>(<i>c</i>) &#8743; <i>p</i>(<i>s</i>(<i>c</i>)).  From this hypothesis, we use And Elimination to get <i>p</i>(<i>c</i>) and <i>p</i>(<i>s</i>(<i>c</i>)). We then use Universal Elimination and Implication Elimination to derive <i>p</i>(<i>s</i>(<i>s</i>(<i>c</i>))).  We then conjoin these results, use Implication Introduction and Universal Introduction to get the inductive case for our induction.  From the base case and the inductive case, we get our intermediate conclusion.  Finally, starting with this conclusion, we use Universal Elimination on our inductive conclusion, then And Elimination, and, finally, Universal Introduction to get the overall result.</p>
+
+<center>
+  <table cellspacing="0" cellpadding="0" border="0">
+    <tbody><tr height="28">
+      <td width="20">1.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280">&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>p</i>(<i>s</i>(<i>s</i>(<i>x</i>))))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Premise</td>
+    </tr>
+    <tr height="28">
+      <td width="20">2.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>a</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Premise</td>
+    </tr>
+    <tr height="28">
+      <td width="20">3.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>s</i>(<i>a</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Premise</td>
+    </tr>
+    <tr height="28">
+      <td width="20">4.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>a</i>) &#8743; <i>p</i>(<i>s</i>(<i>a</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">And Introduction: 2, 3</td>
+    </tr>
+    <tr height="28">
+      <td width="20">5.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8743; <i>p</i>(<i>s</i>(<i>c</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Assumption</td>
+    </tr>
+    <tr height="28">
+      <td width="20">6.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>)</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">And Elimination: 5</td>
+    </tr>
+    <tr height="28">
+      <td width="20">7.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>s</i>(<i>c</i>))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">And Elimination: 5</td>
+    </tr>
+    <tr height="28">
+      <td width="20">8.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>c</i>) &#8658; <i>p</i>(<i>s</i>(<i>s</i>(<i>c</i>)))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Universal Elimination: 1</td>
+    </tr>
+    <tr height="28">
+      <td width="20">9.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>s</i>(<i>s</i>(<i>c</i>)))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Implication Elimination: 8, 6</td>
+    </tr>
+    <tr height="28">
+      <td width="20">10.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><div style="border-left:2px solid #000;height:28px;margin-left:18px">&nbsp;<i>p</i>(<i>s</i>(<i>c</i>)) &#8743; <i>p</i>(<i>s</i>(<i>s</i>(<i>c</i>)))</div></td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">And Introduction: 7, 9</td>
+    </tr>
+    <tr height="28">
+      <td width="20">11.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>c</i>) &#8743; <i>p</i>(<i>s</i>(<i>c</i>)) &#8658; <i>p</i>(<i>s</i>(<i>c</i>)) &#8743; <i>p</i>(<i>s</i>(<i>s</i>(<i>c</i>)))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Implication Introduction: 5, 10</td>
+    </tr>
+    <tr height="28">
+      <td width="20">12.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280">&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>p</i>(<i>s</i>(<i>x</i>)) &#8658; <i>p</i>(<i>s</i>(<i>x</i>)) &#8743; <i>p</i>(<i>s</i>(<i>s</i>(<i>x</i>))))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Universal Introduction: 11</td>
+    </tr>
+    <tr height="28">
+      <td width="20">13.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280">&#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8743; <i>p</i>(<i>s</i>(<i>x</i>)))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Induction: 4, 12</td>
+    </tr>
+    <tr height="28">
+      <td width="20">14.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>c</i>) &#8743; <i>p</i>(<i>s</i>(<i>c</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Universal Elimination: 13</td>
+    </tr>
+    <tr height="28">
+      <td width="20">15.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>c</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">And Elimination: 14</td>
+    </tr>
+    <tr height="28">
+      <td width="20">16.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280"><i>p</i>(<i>s</i>(<i>c</i>))</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">And Elimination: 14</td>
+    </tr>
+    <tr height="28">
+      <td width="20">17.</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="280">&#8704;<i>x</i>.<i>p</i>(<i>x</i>)</td>
+      <td>&nbsp;&nbsp;</td>
+      <td width="200">Universal Introduction: 15</td>
+    </tr>
+  </tbody></table>
+</center>
+
+<p>In this case, we are lucky that there is a useful conclusion that we can prove with standard Linear Induction.  Things are not always so simple; and in some cases we need more complex forms of induction.  Unfortunately, there is no finite collection of approaches to induction that covers all cases.  If there were, we could build an algorithm for determining logical entailment for Herbrand Logic in all cases; and, as we discussed earlier, there is no such algorithm.</p>
+
+<!--=======================================================================-->
+
+<h3>Recap</h3>
+
+<p>Induction is reasoning from the specific to the general.  <i>Complete induction</i> is induction where the set of instances is exhaustive.  <i>Incomplete induction</i> is induction where the set of instances is not exhaustive.  <i>Linear Induction</i> is a type of complete induction for languages with a single object constants and a single unary function constant.  <i>Tree Induction</i> is a type of complete induction for languages with a single object constants and multiple unary function constants.  <i>Structural Induction</i> is a generalization of both Linear Induction and Tree Induction that works even in the presence of multiple object constants and multiple <i>n</i>-ary function constants.</p>
+
+<!--=======================================================================-->
+
+<h3>Exercises</h3>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_13_01.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 13.1:</a> Assume a language with the object constants <i>a</i> and <i>b</i> and no function constants. Given <i>q</i>(<i>a</i>) and <i>q</i>(<i>b</i>), use the Fitch system with domain closure to prove &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>x</i>)).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_13_02.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 13.2:</a> Assume a language with the object constant <i>a</i> and the function constant <i>s</i>. Given <i>r</i>(<i>a</i>), &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>r</i>(<i>s</i>(<i>x</i>))), &#8704;<i>x</i>.(<i>q</i>(<i>x</i>) &#8658; <i>r</i>(<i>s</i>(<i>x</i>))), and &#8704;<i>x</i>.(<i>r</i>(<i>x</i>) &#8658; <i>p</i>(<i>x</i>) &#8744; <i>q</i>(<i>x</i>)), use the Fitch system with Linear Induction to prove &#8704;<i>x</i>.<i>r</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_13_03.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 13.3:</a> Assume a language with object constant <i>a</i> and unary function constants <i>f</i> and <i>g</i>. Given <i>p</i>(<i>a</i>), &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>p</i>(<i>f</i>(<i>x</i>))), and &#8704;<i>x</i>.(<i>p</i>(<i>f</i>(<i>x</i>)) &#8658; <i>p</i>(<i>g</i>(<i>x</i>))), use the Fitch system with Tree Induction to prove &#8704;<i>x</i>.<i>p</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_13_04.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 13.4:</a> Consider a language with object constant <i>a</i>, binary function constant <i>h</i>, and unary relation constant <i>p</i>.  Given <i>p</i>(<i>a</i>) and &#8704;<i>x</i>.&#8704;<i>y</i>.(<i>p</i>(<i>x</i>) &#8744; <i>p</i>(<i>y</i>) &#8658; <i>p</i>(<i>h</i>(<i>x</i>,<i>y</i>))), prove &#8704;<i>x</i>.<i>p</i>(<i>x</i>).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_13_05.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 13.5:</a> Assume a language with object constant <i>a</i>, unary function constant <i>f</i>, and unary relation constants <i>p</i> and <i>q</i>.  Given <i>p</i>(<i>a</i>), &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>q</i>(<i>f</i>(<i>x</i>))), and &#8704;<i>x</i>.(<i>q</i>(<i>x</i>) &#8658; <i>p</i>(<i>f</i>(<i>x</i>))), use induction to prove &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8744; <i>q</i>(<i>x</i>)).</p>
+
+<p><a href="http://intrologic.stanford.edu/exercises/exercise_13_06.html" style="color:#6666ff;cursor:pointer;text-decoration:none">Exercise 13.6:</a> Assume a language with object constant <i>a</i>, unary function constant <i>s</i>, and unary relation constant <i>p</i>.  Given <i>p</i>(<i>a</i>), <i>p</i>(<i>s</i>(<i>a</i>)), and &#8704;<i>x</i>.(<i>p</i>(<i>x</i>) &#8658; <i>p</i>(<i>s</i>(<i>s</i>(<i>x</i>)))), prove &#8704;<i>x</i>.<i>p</i>(<i>x</i>).  Hint: Use induction to prove a conjunctive result and then use the result to prove the desired conclusion.</p>
+
+<!--=======================================================================-->
+
+        </td>
+      </tr>
+    </tbody></table>
+  </center>
+
+
+
+
+
+</body><!--=======================================================================--></html>

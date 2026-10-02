@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import random
 
 from flask import (
     Flask, flash, g, jsonify, redirect, render_template, request, url_for
@@ -13,6 +14,7 @@ import fitch_generator as generator
 import ch10_checker
 import ch10_generator
 import firestore_db as store
+import progress
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -176,7 +178,11 @@ def fitch():
     """Fitch proof practice. The checker runs entirely in the browser.
 
     With ?q=<id> the editor opens on a stored question instead of the built-in
-    list, which is how the Generate page hands a problem over.
+    list, which is how the Dashboard and the Generate page hand a problem over.
+    A stored question belongs to a level, so for a signed-in user this is also
+    where the ladder is enforced and where the opening is recorded. Signed-out
+    visitors keep the built-in problems and are not gated: there is no progress
+    to gate them against.
     """
     question = None
     qid = (request.args.get("q") or "").strip()
@@ -184,7 +190,51 @@ def fitch():
         question = store.get_question(qid)
         if question is None:
             flash("That question could not be found.", "error")
+        else:
+            user = current_user()
+            band = question.get("difficulty")
+            if user and band in progress.BANDS:
+                counts = store.progress_counts(user["uid"])
+                if not progress.is_unlocked(counts, question["chapter"], band):
+                    flash(progress.locked_message(
+                        counts, question["chapter"], band), "error")
+                    return redirect(url_for("dashboard"))
+                store.record_attempt(user["uid"], qid, question["chapter"], band)
     return render_template("fitch.html", question=question)
+
+
+@app.route("/practice")
+@login_required
+def practice():
+    """Open a question at one level of the ladder.
+
+    This is what the Dashboard's level cards link to: it picks the exercise
+    rather than making the user pick, preferring one they have not solved so
+    that clicking twice does not hand back the same proof. Everything already
+    solved is only reached once the level has nothing new left.
+    """
+    chapter = chapter_arg(request.args.get("chapter"))
+    band = (request.args.get("difficulty") or "").strip()
+    if chapter is None or band not in progress.BANDS:
+        flash("That is not a level you can practice.", "error")
+        return redirect(url_for("dashboard"))
+
+    uid = current_user()["uid"]
+    counts = store.progress_counts(uid)
+    if not progress.is_unlocked(counts, chapter, band):
+        flash(progress.locked_message(counts, chapter, band), "error")
+        return redirect(url_for("dashboard"))
+
+    questions = store.list_questions(chapter=chapter, difficulty=band, limit=200)
+    if not questions:
+        flash("No %s questions for Chapter %d yet — generate some first."
+              % (band, chapter), "error")
+        return redirect(url_for("generate_page", chapter=chapter))
+
+    done = {r["id"] for r in store.list_progress(uid, chapter=chapter)
+            if r["solved"]}
+    fresh = [q for q in questions if q["id"] not in done]
+    return redirect(url_for("fitch", q=random.choice(fresh or questions)["id"]))
 
 
 @app.route("/generate")
@@ -208,7 +258,14 @@ def generate_page():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    """The level map: what is open, what is cleared, what is still shut."""
+    counts = store.progress_counts(current_user()["uid"])
+    labels = {n: CHAPTERS[n]["label"] for n in CHAPTERS}
+    return render_template(
+        "dashboard.html",
+        ladder=progress.ladder(counts, labels),
+        to_clear=progress.TO_CLEAR,
+    )
 
 
 # --- auth API (called by the Firebase JS SDK in the browser) ----------------
@@ -435,6 +492,52 @@ def api_list_questions():
         question["created"] = stamp.isoformat() if hasattr(stamp, "isoformat") else None
     return jsonify(questions=questions, chapter=chapter,
                    counts=store.question_counts(chapter=chapter))
+
+
+# --- progress API -----------------------------------------------------------
+
+@app.post("/api/progress/solved")
+@login_required
+def api_record_solved():
+    """The editor reports a finished proof; the ladder moves.
+
+    Only the question id is taken. Which chapter and band it counts for is read
+    from Firestore, so the browser cannot claim a hard Chapter 10 solve for an
+    easy Chapter 5 one, and the proof itself is not sent: it was checked line
+    by line in the editor by the same rules this server would apply, and the
+    worked answer is on file here anyway.
+    """
+    payload = request.get_json(silent=True) or {}
+    qid = (payload.get("question_id") or "").strip()
+    question = store.get_question(qid)
+    if question is None:
+        return jsonify(error="Unknown question."), 404
+
+    band = question.get("difficulty")
+    if band not in progress.BANDS:
+        return jsonify(error="That question is not on the ladder."), 400
+
+    uid = current_user()["uid"]
+    before = store.progress_counts(uid)
+    first = store.record_solved(uid, qid, question["chapter"], band)
+    after = store.progress_counts(uid) if first else before
+
+    # What this proof just opened, if anything, so the editor can say so.
+    opened = [
+        {"chapter": level["chapter"], "band": level["band"]}
+        for entry in progress.ladder(after)
+        for level in entry["levels"]
+        if level["unlocked"]
+        and not progress.is_unlocked(before, level["chapter"], level["band"])
+    ]
+
+    return jsonify(
+        ok=True,
+        first_solve=first,
+        solved=progress.solved(after, question["chapter"], band),
+        need=progress.TO_CLEAR,
+        unlocked=opened,
+    )
 
 
 @app.get("/api/username-available")

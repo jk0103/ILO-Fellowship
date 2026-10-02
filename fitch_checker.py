@@ -520,8 +520,8 @@ def check_proof(premises, goal, steps):
 
 # --- difficulty -------------------------------------------------------------
 
-EASY_MAX = 9        # under 10 lines
-MEDIUM_MAX = 19     # under 20 lines
+EASY_MAX = 8        # at most 8 lines
+MEDIUM_MAX = 16     # at most 16 lines
 
 
 def difficulty(steps):
@@ -537,9 +537,9 @@ def difficulty(steps):
 DIFFICULTIES = ("easy", "medium", "hard")
 
 TARGET_LINES = {
-    "easy": "at most 9 lines",
-    "medium": "between 10 and 19 lines",
-    "hard": "20 lines or more",
+    "easy": "at most 8 lines",
+    "medium": "between 9 and 16 lines",
+    "hard": "17 lines or more",
 }
 
 

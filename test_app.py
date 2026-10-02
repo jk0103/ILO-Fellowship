@@ -15,6 +15,7 @@ import requests
 from firebase_admin import auth as fb_auth
 
 import firestore_db as store
+import progress
 import app as m
 
 CONFIG = json.load(open("firebase_web_config.json"))
@@ -92,7 +93,48 @@ try:
     r = c.get("/dashboard")
     check("dashboard reachable with cookie", r.status_code == 200)
     check("dashboard greets user", USERNAME.encode() in r.data)
+    check("dashboard draws the ladder", b"level-card" in r.data)
     check("login redirects when signed in", c.get("/login").status_code == 302)
+
+    # --- the level ladder ---------------------------------------------------
+    # The rule itself is tested offline in test_progress.py; what is checked
+    # here is the round trip through Firestore and the routes that enforce it.
+    check("a new account has no progress", store.progress_counts(uid) == {})
+    r = c.get("/practice?chapter=10&difficulty=easy")
+    check("practice at a locked chapter bounces", r.status_code == 302
+          and r.headers["Location"].endswith("/dashboard"))
+    r = c.get("/practice?chapter=5&difficulty=hard")
+    check("practice at a locked band bounces", r.status_code == 302
+          and r.headers["Location"].endswith("/dashboard"))
+
+    # Two openings and a solve of the same question: one document, one solve.
+    store.record_attempt(uid, "test_progress_1", 5, "easy")
+    store.record_attempt(uid, "test_progress_1", 5, "easy")
+    first = store.record_solved(uid, "test_progress_1", 5, "easy")
+    again = store.record_solved(uid, "test_progress_1", 5, "easy")
+    cell = store.progress_counts(uid)[5]["easy"]
+    check("openings counted", cell["attempts"] == 2)
+    check("one question, one solve", cell["solved"] == 1 and cell["seen"] == 1)
+    check("first solve reported as first", first is True)
+    check("re-solving is not a new solve", again is False)
+    profile = store.get_profile(uid)
+    check("profile solved count moved", profile["stats"]["solved"] == 1)
+    check("profile attempted count moved", profile["stats"]["attempted"] == 2)
+
+    # Enough distinct solves to clear the band, and medium opens.
+    for n in range(2, progress.TO_CLEAR + 1):
+        store.record_solved(uid, "test_progress_%d" % n, 5, "easy")
+    counts = store.progress_counts(uid)
+    check("clearing easy opens medium", progress.is_unlocked(counts, 5, "medium"))
+    check("clearing easy leaves hard shut",
+          not progress.is_unlocked(counts, 5, "hard"))
+    check("clearing easy leaves chapter 10 shut",
+          not progress.is_unlocked(counts, 10))
+    r = c.get("/dashboard")
+    check("dashboard says the level is cleared", b"Cleared" in r.data)
+
+    store.clear_progress(uid)
+    check("progress can be cleared", store.progress_counts(uid) == {})
 
     # --- username collision -------------------------------------------------
     r = c.get("/api/username-available?u=" + USERNAME)

@@ -802,5 +802,2521 @@
         ]
       }
     ]
+  },
+  {
+    "premises": [
+      "(p ∧ q) ⇒ r"
+    ],
+    "goal": "p ⇒ (q ⇒ r)",
+    "hint": "Open two nested conditional proofs. Combine their assumptions before applying the premise, then discharge the inner subproof first.",
+    "proof": [
+      {
+        "formula": "(p ∧ q) ⇒ r",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 2,
+        "refs": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          1,
+          4
+        ]
+      },
+      {
+        "formula": "q ⇒ r",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          5
+        ]
+      },
+      {
+        "formula": "p ⇒ (q ⇒ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          6
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ∨ q"
+    ],
+    "goal": "q ∨ p",
+    "hint": "Build one implication for each disjunct, both concluding q ∨ p. Then apply Or Elimination.",
+    "proof": [
+      {
+        "formula": "p ∨ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∨ p",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "p ⇒ (q ∨ p)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∨ p",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "q ⇒ (q ∨ p)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          5,
+          6
+        ]
+      },
+      {
+        "formula": "q ∨ p",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          1,
+          4,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "p ⇔ (p ∧ p)",
+    "hint": "Prove both directions separately. And Introduction may use the same available line for both conjuncts.",
+    "proof": [
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ∧ p",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          1,
+          1
+        ]
+      },
+      {
+        "formula": "p ⇒ (p ∧ p)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          2
+        ]
+      },
+      {
+        "formula": "p ∧ p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          4
+        ]
+      },
+      {
+        "formula": "(p ∧ p) ⇒ p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          4,
+          5
+        ]
+      },
+      {
+        "formula": "p ⇔ (p ∧ p)",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          3,
+          6
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "(p ∨ q) ⇒ ¬p"
+    ],
+    "goal": "¬p",
+    "hint": "Derive p ⇒ ¬p using Or Introduction. In a separate one-line subproof, assume p and discharge it to obtain p ⇒ p. Apply Negation Introduction to the two implications.",
+    "proof": [
+      {
+        "formula": "(p ∨ q) ⇒ ¬p",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ∨ q",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          1,
+          3
+        ]
+      },
+      {
+        "formula": "p ⇒ ¬p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          4
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ⇒ p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          6,
+          6
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          7,
+          5
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "(p ⇒ q) ⇒ ((r ⇒ s) ⇒ ((p ∧ r) ⇒ (q ∧ s)))",
+    "hint": "Use three nested conditional proofs. Extract both conjuncts, apply the assumed implications, and combine the results before discharging the assumptions.",
+    "proof": [
+      {
+        "formula": "p ⇒ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "r ⇒ s",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ie",
+        "depth": 3,
+        "refs": [
+          1,
+          4
+        ]
+      },
+      {
+        "formula": "s",
+        "rule": "ie",
+        "depth": 3,
+        "refs": [
+          2,
+          5
+        ]
+      },
+      {
+        "formula": "q ∧ s",
+        "rule": "ai",
+        "depth": 3,
+        "refs": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "(p ∧ r) ⇒ (q ∧ s)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          3,
+          8
+        ]
+      },
+      {
+        "formula": "(r ⇒ s) ⇒ ((p ∧ r) ⇒ (q ∧ s))",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          2,
+          9
+        ]
+      },
+      {
+        "formula": "(p ⇒ q) ⇒ ((r ⇒ s) ⇒ ((p ∧ r) ⇒ (q ∧ s)))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          10
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ⇔ q"
+    ],
+    "goal": "(p ∧ r) ⇔ (q ∧ r)",
+    "hint": "Prove each direction separately. In each subproof, preserve r and use the appropriate direction of the premise to replace the other conjunct.",
+    "proof": [
+      {
+        "formula": "p ⇔ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "be",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          5,
+          3
+        ]
+      },
+      {
+        "formula": "q ∧ r",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          6,
+          4
+        ]
+      },
+      {
+        "formula": "(p ∧ r) ⇒ (q ∧ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          7
+        ]
+      },
+      {
+        "formula": "q ∧ r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          9
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          9
+        ]
+      },
+      {
+        "formula": "q ⇒ p",
+        "rule": "be",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          12,
+          10
+        ]
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          13,
+          11
+        ]
+      },
+      {
+        "formula": "(q ∧ r) ⇒ (p ∧ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          9,
+          14
+        ]
+      },
+      {
+        "formula": "(p ∧ r) ⇔ (q ∧ r)",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          8,
+          15
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ⇒ r"
+    ],
+    "goal": "(p ∨ q) ⇒ (r ∨ q)",
+    "hint": "Assume the antecedent disjunction. Build an implication from each disjunct to r ∨ q, then use Or Elimination.",
+    "proof": [
+      {
+        "formula": "p ⇒ r",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ∨ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "r",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          1,
+          3
+        ]
+      },
+      {
+        "formula": "r ∨ q",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          4
+        ]
+      },
+      {
+        "formula": "p ⇒ (r ∨ q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          5
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "r ∨ q",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          7
+        ]
+      },
+      {
+        "formula": "q ⇒ (r ∨ q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          7,
+          8
+        ]
+      },
+      {
+        "formula": "r ∨ q",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          2,
+          6,
+          9
+        ]
+      },
+      {
+        "formula": "(p ∨ q) ⇒ (r ∨ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          10
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ⇒ q",
+      "r ⇒ ¬q"
+    ],
+    "goal": "¬(p ∧ r)",
+    "hint": "In separate subproofs, derive q and ¬q from p ∧ r. Apply Negation Introduction to the two discharged implications.",
+    "proof": [
+      {
+        "formula": "p ⇒ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "r ⇒ ¬q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          1,
+          4
+        ]
+      },
+      {
+        "formula": "(p ∧ r) ⇒ q",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          3,
+          5
+        ]
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          7
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          2,
+          8
+        ]
+      },
+      {
+        "formula": "(p ∧ r) ⇒ ¬q",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          7,
+          9
+        ]
+      },
+      {
+        "formula": "¬(p ∧ r)",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          6,
+          10
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "¬p ⇒ (q ∧ r)",
+      "q ⇒ ¬r"
+    ],
+    "goal": "p",
+    "hint": "Build ¬p ⇒ r and ¬p ⇒ ¬r in separate subproofs. Negation Introduction gives ¬¬p; finish with Negation Elimination.",
+    "proof": [
+      {
+        "formula": "¬p ⇒ (q ∧ r)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "q ⇒ ¬r",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∧ r",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          1,
+          3
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          4
+        ]
+      },
+      {
+        "formula": "¬p ⇒ r",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          3,
+          5
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∧ r",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          1,
+          7
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          8
+        ]
+      },
+      {
+        "formula": "¬r",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          2,
+          9
+        ]
+      },
+      {
+        "formula": "¬p ⇒ ¬r",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          7,
+          10
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          6,
+          11
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 0,
+        "refs": [
+          12
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "¬(p ∧ q) ⇔ (p ⇒ ¬q)",
+    "hint": "Prove both directions separately, then use Biconditional Introduction. For each negation, build two implications with the same antecedent and contradictory consequents, as in the chapter’s Negation Introduction strategy.",
+    "proof": [
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 3,
+        "refs": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "q ⇒ (p ∧ q)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          3,
+          4
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "q ⇒ ¬(p ∧ q)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          5,
+          8
+        ]
+      },
+      {
+        "formula": "p ⇒ ¬q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          2,
+          9
+        ]
+      },
+      {
+        "formula": "¬(p ∧ q) ⇒ (p ⇒ ¬q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          10
+        ]
+      },
+      {
+        "formula": "p ⇒ ¬q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          13
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          13,
+          14
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          16
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          12,
+          17
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ ¬q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          16,
+          18
+        ]
+      },
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "ni",
+        "depth": 1,
+        "refs": [
+          15,
+          19
+        ]
+      },
+      {
+        "formula": "(p ⇒ ¬q) ⇒ ¬(p ∧ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          12,
+          20
+        ]
+      },
+      {
+        "formula": "¬(p ∧ q) ⇔ (p ⇒ ¬q)",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          11,
+          21
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "(p ⇒ (q ⇒ r)) ⇒ ((p ∧ q) ⇒ r)",
+    "hint": "Use two nested conditional proofs. Extract both conjuncts, then apply Implication Elimination twice. Close the inner subproof before the outer one.",
+    "proof": [
+      {
+        "formula": "p ⇒ (q ⇒ r)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "q ⇒ r",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          1,
+          3
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          5,
+          4
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ r",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          2,
+          6
+        ]
+      },
+      {
+        "formula": "(p ⇒ (q ⇒ r)) ⇒ ((p ∧ q) ⇒ r)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ∨ q"
+    ],
+    "goal": "q ∨ p",
+    "hint": "Build a separate implication from each disjunct to the reversed disjunction, then use Or Elimination.",
+    "proof": [
+      {
+        "formula": "p ∨ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∨ p",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "p ⇒ (q ∨ p)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ∨ p",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "q ⇒ (q ∨ p)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          5,
+          6
+        ]
+      },
+      {
+        "formula": "q ∨ p",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          1,
+          4,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p"
+    ],
+    "goal": "q ⇔ (p ∧ q)",
+    "hint": "Prove the two directions separately. Use the premise to build the conjunction in one direction, and And Elimination in the other.",
+    "proof": [
+      {
+        "formula": "p",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          1,
+          2
+        ]
+      },
+      {
+        "formula": "q ⇒ (p ∧ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ q",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          5,
+          6
+        ]
+      },
+      {
+        "formula": "q ⇔ (p ∧ q)",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          4,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "¬p"
+    ],
+    "goal": "¬(p ∧ q)",
+    "hint": "In separate subproofs, derive implications from p ∧ q to p and to ¬p. Combine those implications with Negation Introduction.",
+    "proof": [
+      {
+        "formula": "¬p",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬p",
+        "rule": "reit",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ ¬p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          5,
+          6
+        ]
+      },
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          4,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "(p ⇒ r) ⇒ ((q ⇒ s) ⇒ ((p ∧ q) ⇒ (r ∧ s)))",
+    "hint": "Open three nested subproofs, assuming each antecedent in turn. Extract p and q, derive r and s, and conjoin them. Then discharge the assumptions from innermost to outermost using the chapter’s conditional-proof method.",
+    "proof": [
+      {
+        "formula": "p ⇒ r",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q ⇒ s",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ie",
+        "depth": 3,
+        "refs": [
+          1,
+          4
+        ]
+      },
+      {
+        "formula": "s",
+        "rule": "ie",
+        "depth": 3,
+        "refs": [
+          2,
+          5
+        ]
+      },
+      {
+        "formula": "r ∧ s",
+        "rule": "ai",
+        "depth": 3,
+        "refs": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ (r ∧ s)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          3,
+          8
+        ]
+      },
+      {
+        "formula": "(q ⇒ s) ⇒ ((p ∧ q) ⇒ (r ∧ s))",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          2,
+          9
+        ]
+      },
+      {
+        "formula": "(p ⇒ r) ⇒ ((q ⇒ s) ⇒ ((p ∧ q) ⇒ (r ∧ s)))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          10
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ⇒ q"
+    ],
+    "goal": "p ⇔ (p ∧ q)",
+    "hint": "Prove both directions separately. Starting from p, use the premise to obtain the missing conjunct. Starting from p ∧ q, extract p.",
+    "proof": [
+      {
+        "formula": "p ⇒ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "q",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          1,
+          2
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          2,
+          3
+        ]
+      },
+      {
+        "formula": "p ⇒ (p ∧ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          4
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          6
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "p ⇔ (p ∧ q)",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          5,
+          8
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ⇒ r"
+    ],
+    "goal": "(p ∨ q) ⇒ (r ∨ q)",
+    "hint": "Assume p ∨ q. Within that subproof, prove two implications with consequent r ∨ q: one starting from p and one starting from q. Apply Disjunction Elimination before discharging the outer assumption.",
+    "proof": [
+      {
+        "formula": "p ⇒ r",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ∨ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "r",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          1,
+          3
+        ]
+      },
+      {
+        "formula": "r ∨ q",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          4
+        ]
+      },
+      {
+        "formula": "p ⇒ (r ∨ q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          5
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "r ∨ q",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          7
+        ]
+      },
+      {
+        "formula": "q ⇒ (r ∨ q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          7,
+          8
+        ]
+      },
+      {
+        "formula": "r ∨ q",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          2,
+          6,
+          9
+        ]
+      },
+      {
+        "formula": "(p ∨ q) ⇒ (r ∨ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          10
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ∧ ¬q"
+    ],
+    "goal": "¬(p ⇔ q)",
+    "hint": "Assume p ⇔ q in two separate subproofs. In the first, derive q using p and the forward direction of the biconditional. In the second, extract ¬q from the premise. Discharge both subproofs and apply Negation Introduction, as described in the chapter.",
+    "proof": [
+      {
+        "formula": "p ∧ ¬q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ⇔ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "be",
+        "depth": 1,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          4,
+          3
+        ]
+      },
+      {
+        "formula": "(p ⇔ q) ⇒ q",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          5
+        ]
+      },
+      {
+        "formula": "p ⇔ q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬q",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "(p ⇔ q) ⇒ ¬q",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          7,
+          8
+        ]
+      },
+      {
+        "formula": "¬(p ⇔ q)",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          6,
+          9
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "(p ∧ (q ∨ r)) ⇔ ((p ∧ q) ∨ (p ∧ r))",
+    "hint": "Prove the two directions separately. In each direction, eliminate the disjunction by constructing an implication for each disjunct. Keep the branches separate: only their discharged implications remain available afterward.",
+    "proof": [
+      {
+        "formula": "p ∧ (q ∨ r)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 2,
+        "refs": [
+          2,
+          4
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ∨ (p ∧ r)",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "q ⇒ ((p ∧ q) ∨ (p ∧ r))",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          4,
+          6
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "ai",
+        "depth": 2,
+        "refs": [
+          2,
+          8
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ∨ (p ∧ r)",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          9
+        ]
+      },
+      {
+        "formula": "r ⇒ ((p ∧ q) ∨ (p ∧ r))",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          8,
+          10
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ∨ (p ∧ r)",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          3,
+          7,
+          11
+        ]
+      },
+      {
+        "formula": "(p ∧ (q ∨ r)) ⇒ ((p ∧ q) ∨ (p ∧ r))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          12
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ∨ (p ∧ r)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          15
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          15
+        ]
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          17
+        ]
+      },
+      {
+        "formula": "p ∧ (q ∨ r)",
+        "rule": "ai",
+        "depth": 2,
+        "refs": [
+          16,
+          18
+        ]
+      },
+      {
+        "formula": "(p ∧ q) ⇒ (p ∧ (q ∨ r))",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          15,
+          19
+        ]
+      },
+      {
+        "formula": "p ∧ r",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          21
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 2,
+        "refs": [
+          21
+        ]
+      },
+      {
+        "formula": "q ∨ r",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          23
+        ]
+      },
+      {
+        "formula": "p ∧ (q ∨ r)",
+        "rule": "ai",
+        "depth": 2,
+        "refs": [
+          22,
+          24
+        ]
+      },
+      {
+        "formula": "(p ∧ r) ⇒ (p ∧ (q ∨ r))",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          21,
+          25
+        ]
+      },
+      {
+        "formula": "p ∧ (q ∨ r)",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          14,
+          20,
+          26
+        ]
+      },
+      {
+        "formula": "((p ∧ q) ∨ (p ∧ r)) ⇒ (p ∧ (q ∨ r))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          14,
+          27
+        ]
+      },
+      {
+        "formula": "(p ∧ (q ∨ r)) ⇔ ((p ∧ q) ∨ (p ∧ r))",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          13,
+          28
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "¬(p ⇒ q)"
+    ],
+    "goal": "p ∧ ¬q",
+    "hint": "First prove p by reductio: under ¬p, construct p ⇒ q using a nested reductio for q. Then prove ¬q by showing that q would also yield p ⇒ q. Finish with And Introduction.",
+    "proof": [
+      {
+        "formula": "¬(p ⇒ q)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "p",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "¬q ⇒ p",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          4,
+          5
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬p",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "¬q ⇒ ¬p",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          7,
+          8
+        ]
+      },
+      {
+        "formula": "¬¬q",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          6,
+          9
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ne",
+        "depth": 2,
+        "refs": [
+          10
+        ]
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          3,
+          11
+        ]
+      },
+      {
+        "formula": "¬p ⇒ (p ⇒ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          2,
+          12
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬(p ⇒ q)",
+        "rule": "reit",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "¬p ⇒ ¬(p ⇒ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          14,
+          15
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          13,
+          16
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 0,
+        "refs": [
+          17
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "q",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          19
+        ]
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          20,
+          21
+        ]
+      },
+      {
+        "formula": "q ⇒ (p ⇒ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          19,
+          22
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬(p ⇒ q)",
+        "rule": "reit",
+        "depth": 1,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "q ⇒ ¬(p ⇒ q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          24,
+          25
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "ni",
+        "depth": 0,
+        "refs": [
+          23,
+          26
+        ]
+      },
+      {
+        "formula": "p ∧ ¬q",
+        "rule": "ai",
+        "depth": 0,
+        "refs": [
+          18,
+          27
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "p ∨ q",
+      "p ⇒ (r ∧ s)",
+      "q ⇒ (r ∧ m)"
+    ],
+    "goal": "r ∧ (s ∨ m)",
+    "hint": "Use cases on p ∨ q. In each case, extract both conjuncts supplied by the corresponding premise, introduce s ∨ m, and assemble the entire goal before discharging the case.",
+    "proof": [
+      {
+        "formula": "p ∨ q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p ⇒ (r ∧ s)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "q ⇒ (r ∧ m)",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "r ∧ s",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          2,
+          4
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "s",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ]
+      },
+      {
+        "formula": "s ∨ m",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          7
+        ]
+      },
+      {
+        "formula": "r ∧ (s ∨ m)",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          6,
+          8
+        ]
+      },
+      {
+        "formula": "p ⇒ (r ∧ (s ∨ m))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          4,
+          9
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "r ∧ m",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          3,
+          11
+        ]
+      },
+      {
+        "formula": "r",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          12
+        ]
+      },
+      {
+        "formula": "m",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          12
+        ]
+      },
+      {
+        "formula": "s ∨ m",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          14
+        ]
+      },
+      {
+        "formula": "r ∧ (s ∨ m)",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          13,
+          15
+        ]
+      },
+      {
+        "formula": "q ⇒ (r ∧ (s ∨ m))",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          11,
+          16
+        ]
+      },
+      {
+        "formula": "r ∧ (s ∨ m)",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          1,
+          10,
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [
+      "¬p ⇔ ¬q"
+    ],
+    "goal": "p ⇔ q",
+    "hint": "Extract both implications from the premise. To prove p ⇒ q, assume p and construct ¬q ⇒ p; pair it with ¬q ⇒ ¬p to obtain ¬¬q. Reverse the roles of p and q for the other direction.",
+    "proof": [
+      {
+        "formula": "¬p ⇔ ¬q",
+        "rule": "premise",
+        "depth": 0
+      },
+      {
+        "formula": "¬p ⇒ ¬q",
+        "rule": "be",
+        "depth": 0,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "¬q ⇒ ¬p",
+        "rule": "be",
+        "depth": 0,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "p",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          4
+        ]
+      },
+      {
+        "formula": "¬q ⇒ p",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          5,
+          6
+        ]
+      },
+      {
+        "formula": "¬¬q",
+        "rule": "ni",
+        "depth": 1,
+        "refs": [
+          7,
+          3
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ne",
+        "depth": 1,
+        "refs": [
+          8
+        ]
+      },
+      {
+        "formula": "p ⇒ q",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          4,
+          9
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "q",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          11
+        ]
+      },
+      {
+        "formula": "¬p ⇒ q",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          12,
+          13
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 1,
+        "refs": [
+          14,
+          2
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 1,
+        "refs": [
+          15
+        ]
+      },
+      {
+        "formula": "q ⇒ p",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          11,
+          16
+        ]
+      },
+      {
+        "formula": "p ⇔ q",
+        "rule": "bi",
+        "depth": 0,
+        "refs": [
+          10,
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "premises": [],
+    "goal": "¬(p ∧ q) ⇒ (¬p ∨ ¬q)",
+    "hint": "Assume ¬(p ∧ q), then assume the negation of the desired disjunction. Under that second assumption, prove p and q separately by reductio. Use p ∧ q and its negation as the contradictory consequents of two implications, following the chapter’s Negation Introduction pattern.",
+    "proof": [
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "assume",
+        "depth": 1
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬p ∨ ¬q",
+        "rule": "oi",
+        "depth": 3,
+        "refs": [
+          3
+        ]
+      },
+      {
+        "formula": "¬p ⇒ (¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          3,
+          4
+        ]
+      },
+      {
+        "formula": "¬p",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "¬p ⇒ ¬(¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          6,
+          7
+        ]
+      },
+      {
+        "formula": "¬¬p",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          5,
+          8
+        ]
+      },
+      {
+        "formula": "p",
+        "rule": "ne",
+        "depth": 2,
+        "refs": [
+          9
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬p ∨ ¬q",
+        "rule": "oi",
+        "depth": 3,
+        "refs": [
+          11
+        ]
+      },
+      {
+        "formula": "¬q ⇒ (¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          11,
+          12
+        ]
+      },
+      {
+        "formula": "¬q",
+        "rule": "assume",
+        "depth": 3
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "reit",
+        "depth": 3,
+        "refs": [
+          2
+        ]
+      },
+      {
+        "formula": "¬q ⇒ ¬(¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 2,
+        "subref": [
+          14,
+          15
+        ]
+      },
+      {
+        "formula": "¬¬q",
+        "rule": "ni",
+        "depth": 2,
+        "refs": [
+          13,
+          16
+        ]
+      },
+      {
+        "formula": "q",
+        "rule": "ne",
+        "depth": 2,
+        "refs": [
+          17
+        ]
+      },
+      {
+        "formula": "p ∧ q",
+        "rule": "ai",
+        "depth": 2,
+        "refs": [
+          10,
+          18
+        ]
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q) ⇒ (p ∧ q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          2,
+          19
+        ]
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q)",
+        "rule": "assume",
+        "depth": 2
+      },
+      {
+        "formula": "¬(p ∧ q)",
+        "rule": "reit",
+        "depth": 2,
+        "refs": [
+          1
+        ]
+      },
+      {
+        "formula": "¬(¬p ∨ ¬q) ⇒ ¬(p ∧ q)",
+        "rule": "ii",
+        "depth": 1,
+        "subref": [
+          21,
+          22
+        ]
+      },
+      {
+        "formula": "¬¬(¬p ∨ ¬q)",
+        "rule": "ni",
+        "depth": 1,
+        "refs": [
+          20,
+          23
+        ]
+      },
+      {
+        "formula": "¬p ∨ ¬q",
+        "rule": "ne",
+        "depth": 1,
+        "refs": [
+          24
+        ]
+      },
+      {
+        "formula": "¬(p ∧ q) ⇒ (¬p ∨ ¬q)",
+        "rule": "ii",
+        "depth": 0,
+        "subref": [
+          1,
+          25
+        ]
+      }
+    ]
   }
 ]
