@@ -1,0 +1,237 @@
+[
+  {
+    "id": "contrapositive",
+    "topic": "connectives",
+    "chapter": 5,
+    "difficulty": "easy",
+    "prompt": "Which sentence is the contrapositive of p ⇒ q?",
+    "choices": ["q ⇒ p", "¬q ⇒ ¬p", "¬p ⇒ ¬q", "¬(p ⇒ q)"],
+    "answer": 1,
+    "explanation": "The contrapositive swaps and negates both sides, and it is equivalent to the original."
+  },
+  {
+    "id": "truth-of-implication",
+    "topic": "connectives",
+    "chapter": 5,
+    "difficulty": "easy",
+    "prompt": "p is true and q is false. Which sentence is true?",
+    "choices": ["p ∧ q", "p ⇒ q", "p ⇔ q", "q ⇒ p"],
+    "answer": 3,
+    "explanation": "An implication with a false antecedent is true, so q ⇒ p holds."
+  },
+  {
+    "id": "and-elimination",
+    "topic": "fitch-rules",
+    "chapter": 5,
+    "difficulty": "easy",
+    "prompt": "From the line p ∧ q, which rule gives you q in one step?",
+    "choices": ["And Introduction", "Or Elimination", "And Elimination", "Implication Elimination"],
+    "answer": 2,
+    "explanation": "And Elimination takes a conjunction apart into its conjuncts."
+  },
+  {
+    "id": "implication-elimination",
+    "topic": "fitch-rules",
+    "chapter": 5,
+    "difficulty": "easy",
+    "prompt": "The lines p and p ⇒ q are on the board. Which rule concludes q?",
+    "choices": ["Implication Elimination", "Implication Introduction", "Biconditional Elimination", "Negation Elimination"],
+    "answer": 0,
+    "explanation": "Implication Elimination (modus ponens) takes p and p ⇒ q to q."
+  },
+  {
+    "id": "entails-disjunction",
+    "topic": "entailment",
+    "chapter": 5,
+    "difficulty": "easy",
+    "prompt": "Which sentence does p ∧ q logically entail?",
+    "choices": ["¬p", "p ∨ r", "p ⇒ ¬q", "r"],
+    "answer": 1,
+    "explanation": "Whenever p ∧ q is true, p is true, and so is any disjunction containing p."
+  },
+  {
+    "id": "reading-universal",
+    "topic": "quantifiers",
+    "chapter": 10,
+    "difficulty": "easy",
+    "prompt": "Which sentence says \"everything is p\"?",
+    "choices": ["∃X.p(X)", "¬∀X.p(X)", "∀X.¬p(X)", "∀X.p(X)"],
+    "answer": 3,
+    "explanation": "∀X.p(X) says p holds of every object."
+  },
+  {
+    "id": "universal-elimination",
+    "topic": "quantifier-rules",
+    "chapter": 10,
+    "difficulty": "easy",
+    "prompt": "From ∀X.p(X), what can Universal Elimination give you?",
+    "choices": ["∃X.¬p(X)", "∀X.q(X)", "p(a)", "¬p(a)"],
+    "answer": 2,
+    "explanation": "Universal Elimination substitutes a ground term for the variable."
+  },
+  {
+    "id": "de-morgan",
+    "topic": "entailment",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "Which sentence is equivalent to ¬(p ∧ q)?",
+    "choices": ["¬p ∨ ¬q", "¬p ∧ ¬q", "p ∨ q", "¬p ⇒ ¬q"],
+    "answer": 0,
+    "explanation": "De Morgan's law: a conjunction is false exactly when one of its conjuncts is."
+  },
+  {
+    "id": "tautology",
+    "topic": "connectives",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "Which sentence is true under every truth assignment?",
+    "choices": ["(p ⇒ q) ⇒ p", "p ⇒ (q ⇒ p)", "p ∧ ¬p", "(p ∨ q) ⇒ p"],
+    "answer": 1,
+    "explanation": "If p is true, q ⇒ p is true; if p is false, the whole implication is true."
+  },
+  {
+    "id": "implication-introduction",
+    "topic": "fitch-rules",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "What is the usual way to prove p ⇒ q in Fitch?",
+    "choices": [
+      "Assume q, derive p, then apply Implication Introduction",
+      "Prove p and q separately, then apply And Introduction",
+      "Prove ¬p, then apply Negation Elimination",
+      "Assume p, derive q, then apply Implication Introduction"
+    ],
+    "answer": 3,
+    "explanation": "Implication Introduction discharges the assumption p once q is reached inside the subproof."
+  },
+  {
+    "id": "disjunctive-syllogism",
+    "topic": "entailment",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "The premises are p ∨ q and ¬p. Which sentence follows?",
+    "choices": ["p", "¬q", "q", "p ∧ q"],
+    "answer": 2,
+    "explanation": "One of p, q is true and it is not p, so it is q."
+  },
+  {
+    "id": "or-elimination",
+    "topic": "fitch-rules",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "Or Elimination concludes r from p ∨ q and which two other lines?",
+    "choices": ["p ⇒ r and q ⇒ r", "p and q", "r ⇒ p and r ⇒ q", "¬p and ¬q"],
+    "answer": 0,
+    "explanation": "If each disjunct leads to r, then r follows from the disjunction."
+  },
+  {
+    "id": "negated-universal",
+    "topic": "quantifiers",
+    "chapter": 10,
+    "difficulty": "medium",
+    "prompt": "Which sentence is equivalent to ¬∀X.p(X)?",
+    "choices": ["∀X.¬p(X)", "∃X.¬p(X)", "¬∃X.p(X)", "∃X.p(X)"],
+    "answer": 1,
+    "explanation": "Not everything is p exactly when something is not p."
+  },
+  {
+    "id": "universal-introduction",
+    "topic": "quantifier-rules",
+    "chapter": 10,
+    "difficulty": "medium",
+    "prompt": "When may Universal Introduction generalize p(c) to ∀X.p(X)?",
+    "choices": [
+      "When c appears in one of the premises",
+      "When p(c) is itself a premise",
+      "Whenever p(c) is on the board",
+      "When c is arbitrary: it appears in no premise and no open assumption"
+    ],
+    "answer": 3,
+    "explanation": "Only a name nothing has pinned down can stand for every object."
+  },
+  {
+    "id": "domain-closure",
+    "topic": "quantifier-rules",
+    "chapter": 10,
+    "difficulty": "medium",
+    "prompt": "The language has exactly the object constants a and b, and no functions. Which lines let Domain Closure conclude ∀X.p(X)?",
+    "choices": ["p(a)", "∃X.p(X)", "p(a) and p(b)", "p(a) ∨ p(b)"],
+    "answer": 2,
+    "explanation": "Domain Closure needs the instance for every object constant in the language."
+  },
+  {
+    "id": "proof-by-cases",
+    "topic": "entailment",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "Which set of premises entails r?",
+    "choices": ["{p ⇒ r, q ⇒ r, p ∨ q}", "{p ⇒ r, q ⇒ r}", "{p ∨ q, p ⇒ r}", "{r ⇒ p, p}"],
+    "answer": 0,
+    "explanation": "Each case of p ∨ q leads to r. The others each have an assignment where r is false."
+  },
+  {
+    "id": "negation-introduction",
+    "topic": "fitch-rules",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "In this Fitch system there is no rule for false. How is ¬p proved?",
+    "choices": [
+      "Assume p, derive p, then apply Negation Elimination",
+      "Derive p ⇒ q and p ⇒ ¬q for some q, then apply Negation Introduction",
+      "Derive ¬¬p, then apply Negation Elimination",
+      "Assume ¬p, derive ¬p, then apply Implication Introduction"
+    ],
+    "answer": 1,
+    "explanation": "Negation Introduction takes two implications from p to a sentence and its negation."
+  },
+  {
+    "id": "biconditional",
+    "topic": "connectives",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "Which sentence is equivalent to p ⇔ q?",
+    "choices": ["(p ∨ q) ∧ ¬(p ∧ q)", "(p ⇒ q) ∨ (q ⇒ p)", "p ∧ q", "(p ∧ q) ∨ (¬p ∧ ¬q)"],
+    "answer": 3,
+    "explanation": "p ⇔ q holds when p and q agree: both true or both false."
+  },
+  {
+    "id": "quantifier-order",
+    "topic": "quantifiers",
+    "chapter": 10,
+    "difficulty": "hard",
+    "prompt": "Which sentence is valid?",
+    "choices": [
+      "∀Y.∃X.r(X,Y) ⇒ ∃X.∀Y.r(X,Y)",
+      "∃X.p(X) ⇒ ∀X.p(X)",
+      "∃X.∀Y.r(X,Y) ⇒ ∀Y.∃X.r(X,Y)",
+      "∀X.(p(X) ∨ q(X)) ⇒ ∀X.p(X) ∨ ∀X.q(X)"
+    ],
+    "answer": 2,
+    "explanation": "One X related to every Y gives every Y some X. The converse fails: each Y may need a different X."
+  },
+  {
+    "id": "existential-elimination",
+    "topic": "quantifier-rules",
+    "chapter": 10,
+    "difficulty": "hard",
+    "prompt": "Existential Elimination takes ∃X.p(X) and ∀X.(p(X) ⇒ q) to q. Why does it refuse when the second line is ∀X.(p(X) ⇒ q(X)) instead?",
+    "choices": [
+      "X would occur free in the conclusion",
+      "It needs two existential lines",
+      "p(X) has to be a premise",
+      "Universal Elimination has to be applied first"
+    ],
+    "answer": 0,
+    "explanation": "The conclusion ψ may not mention the variable, or it would claim q of an unknown object."
+  },
+  {
+    "id": "counting-models",
+    "topic": "connectives",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "Of the four truth assignments to p and q, how many make (p ⇒ q) ∧ (q ⇒ p) ∧ (p ∨ q) true?",
+    "choices": ["0", "1", "2", "3"],
+    "answer": 1,
+    "explanation": "The first two conjuncts make p and q agree; p ∨ q rules out both false. Only both true is left."
+  }
+]

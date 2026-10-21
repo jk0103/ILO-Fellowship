@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Level test &middot; ILO Bank{% endblock %}
+{% block main_class %}test-main{% endblock %}
+
+{% block content %}
+{# Three screens on one card — intro, question, result — switched by
+   level_test.js. Only prompts and choices are on the page; the answers arrive
+   with the result, after the test is submitted. #}
+<div class="auth-card test-card">
+  <div class="auth-error" id="test-error" hidden></div>
+
+  <section id="test-intro">
+    <p class="eyebrow">Welcome to ILO Bank</p>
+    <h1>Find your starting level</h1>
+    {% if questions %}
+      <p class="auth-sub">
+        A short test decides where you start on the ladder, so you don't have
+        to work through questions that are too easy for you.
+      </p>
+      <ul class="test-facts">
+        <li><strong>{{ questions | length }} questions</strong>, multiple choice, one at a time</li>
+        <li>Mostly easy and medium, with {{ questions | selectattr('difficulty', 'equalto', 'hard') | list | length or 'no' }} hard</li>
+        <li>About a minute each. You can go back before you submit</li>
+        <li>You take it once. A higher score unlocks harder levels</li>
+      </ul>
+      <div class="test-actions">
+        <button type="button" class="btn btn-primary btn-lg" id="test-start">Start the test</button>
+        <button type="button" class="btn btn-ghost" id="test-skip">Skip for now</button>
+      </div>
+      <p class="hint">If you skip, you start at Chapter 5 easy. You can take the test later from your dashboard.</p>
+    {% else %}
+      <p class="auth-sub">
+        The level test isn't available yet. You'll start at Chapter 5 easy,
+        and can take the test from your dashboard once it is.
+      </p>
+      <div class="test-actions">
+        <a class="btn btn-primary" href="{{ url_for('dashboard') }}">Go to your dashboard</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <section id="test-question" hidden>
+    <div class="test-progress">
+      <span id="test-count">Question 1 of {{ questions | length }}</span>
+      <span class="badge" id="test-band"></span>
+    </div>
+    <div class="test-meter" role="progressbar" aria-labelledby="test-count"
+         aria-valuemin="0" aria-valuemax="{{ questions | length }}" id="test-meter">
+      <span id="test-meter-fill"></span>
+    </div>
+
+    <fieldset class="test-fieldset">
+      <legend class="test-prompt" id="test-prompt"></legend>
+      <div class="test-choices" id="test-choices"></div>
+    </fieldset>
+
+    <div class="test-nav">
+      <button type="button" class="btn btn-ghost" id="test-back">Back</button>
+      <button type="button" class="btn btn-primary" id="test-next" disabled>Next</button>
+    </div>
+  </section>
+
+  <section id="test-result" hidden>
+    <p class="eyebrow">Your level</p>
+    <h1 id="result-level" tabindex="-1"></h1>
+    <p class="auth-sub" id="result-score"></p>
+
+    <h2 class="test-subhead">Unlocked for you</h2>
+    <ul class="test-unlocked" id="result-unlocked"></ul>
+
+    <details class="test-review">
+      <summary>Review your answers</summary>
+      <ol id="result-review"></ol>
+    </details>
+
+    <div class="test-actions">
+      <a class="btn btn-primary btn-lg" id="result-continue" href="{{ url_for('dashboard') }}">Go to your dashboard</a>
+    </div>
+  </section>
+</div>
+
+<script>
+  window.__ILO_TEST = { questions: {{ questions | tojson }} };
+</script>
+<script src="{{ url_for('static', filename='level_test.js') }}"></script>
+{% endblock %}

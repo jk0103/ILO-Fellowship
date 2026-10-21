@@ -88,6 +88,18 @@ try:
           .get().to_dict()["uid"] == uid)
     check("no password stored in firestore",
           not any("pass" in k for k in profile.keys()))
+    check("a new account is sent to the level test",
+          (body.get("redirect") or "").endswith("/level-test"))
+
+    # --- the level test -----------------------------------------------------
+    # Dealing, marking and placing are tested offline in test_level_test.py;
+    # what is checked here is that the page opens and skipping is stored.
+    check("level test page opens", c.get("/level-test").status_code == 200)
+    r = c.post("/api/level-test/skip")
+    check("level test can be skipped", r.status_code == 200
+          and (r.get_json() or {}).get("redirect", "").endswith("/dashboard"))
+    check("skipping is stored", (store.get_profile(uid).get("level_test") or {})
+          .get("status") == "skipped")
 
     # --- authenticated browsing --------------------------------------------
     r = c.get("/dashboard")

@@ -14,6 +14,7 @@ import fitch_generator as generator
 import ch10_checker
 import ch10_generator
 import firestore_db as store
+import level_test
 import progress
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -83,6 +84,11 @@ if os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("TRUST_PROXY"):
 SESSION_COOKIE = "__session"
 SESSION_DURATION = datetime.timedelta(days=5)
 
+# Firebase stamps tokens with Google's clock and rejects one "used too early"
+# by this machine's. A local clock a couple of seconds slow would otherwise
+# turn away every fresh sign-in, so allow a few seconds either way.
+CLOCK_SKEW_SECONDS = 5
+
 with open(os.path.join(BASE_DIR, "firebase_web_config.json")) as fh:
     # Public config: it identifies the project, it does not grant access.
     FIREBASE_WEB_CONFIG = json.load(fh)
@@ -104,7 +110,9 @@ def current_user():
     if cookie:
         store.ensure_app()
         try:
-            claims = fb_auth.verify_session_cookie(cookie, check_revoked=True)
+            claims = fb_auth.verify_session_cookie(
+                cookie, check_revoked=True,
+                clock_skew_seconds=CLOCK_SKEW_SECONDS)
         except store.ConfigError:
             raise
         except Exception:
@@ -120,6 +128,12 @@ def inject_globals():
         "current_user": current_user(),
         "firebase_config": FIREBASE_WEB_CONFIG,
     }
+
+
+def standing(user):
+    """What the ladder is worked out from: the user's solve counts, and the
+    start level their level test earned (None if they skipped it)."""
+    return store.progress_counts(user["uid"]), level_test.start_of(user)
 
 
 def login_required(view):
@@ -194,10 +208,11 @@ def fitch():
             user = current_user()
             band = question.get("difficulty")
             if user and band in progress.BANDS:
-                counts = store.progress_counts(user["uid"])
-                if not progress.is_unlocked(counts, question["chapter"], band):
+                counts, start = standing(user)
+                if not progress.is_unlocked(counts, question["chapter"], band,
+                                            start):
                     flash(progress.locked_message(
-                        counts, question["chapter"], band), "error")
+                        counts, question["chapter"], band, start), "error")
                     return redirect(url_for("dashboard"))
                 store.record_attempt(user["uid"], qid, question["chapter"], band)
     return render_template("fitch.html", question=question)
@@ -220,9 +235,9 @@ def practice():
         return redirect(url_for("dashboard"))
 
     uid = current_user()["uid"]
-    counts = store.progress_counts(uid)
-    if not progress.is_unlocked(counts, chapter, band):
-        flash(progress.locked_message(counts, chapter, band), "error")
+    counts, start = standing(current_user())
+    if not progress.is_unlocked(counts, chapter, band, start):
+        flash(progress.locked_message(counts, chapter, band, start), "error")
         return redirect(url_for("dashboard"))
 
     questions = store.list_questions(chapter=chapter, difficulty=band, limit=200)
@@ -259,12 +274,45 @@ def generate_page():
 @login_required
 def dashboard():
     """The level map: what is open, what is cleared, what is still shut."""
-    counts = store.progress_counts(current_user()["uid"])
+    user = current_user()
+    counts, start = standing(user)
     labels = {n: CHAPTERS[n]["label"] for n in CHAPTERS}
     return render_template(
         "dashboard.html",
-        ladder=progress.ladder(counts, labels),
+        ladder=progress.ladder(counts, labels, start),
         to_clear=progress.TO_CLEAR,
+        level_test=user.get("level_test") or {},
+    )
+
+
+@app.route("/level-test")
+@login_required
+def level_test_page():
+    """The level test: intro, one question at a time, then the result.
+
+    New accounts are sent here straight from sign-up. The questions are dealt
+    once and kept on the profile, so reloading the page, or skipping and coming
+    back, hands back the same test rather than a fresh draw. Only the prompts
+    and choices reach the browser; the answers stay here until it is submitted.
+    """
+    user = current_user()
+    test = user.get("level_test") or {}
+    if test.get("status") == "done":
+        flash("You have already taken the level test: %s." % test.get("level"),
+              "success")
+        return redirect(url_for("dashboard"))
+
+    dealt = test.get("questions") or []
+    questions = store.get_level_test_questions(dealt) if dealt else []
+    if len(questions) != len(dealt) or not questions:
+        # Never dealt, or a question has since been deleted: deal afresh.
+        questions = level_test.select(store.list_level_test_questions())
+        if questions:
+            store.deal_level_test(user["uid"], [q["id"] for q in questions])
+
+    return render_template(
+        "level_test.html",
+        questions=[level_test.public(q) for q in questions],
     )
 
 
@@ -289,7 +337,9 @@ def create_session():
     try:
         # A short max_age means a freshly-minted token, which is what we want
         # in exchange for a five-day cookie.
-        decoded = fb_auth.verify_id_token(id_token, check_revoked=True)
+        decoded = fb_auth.verify_id_token(
+            id_token, check_revoked=True,
+            clock_skew_seconds=CLOCK_SKEW_SECONDS)
     except store.ConfigError:
         raise
     except Exception as exc:
@@ -327,7 +377,8 @@ def create_session():
         ok=True,
         created=created,
         username=profile.get("username"),
-        redirect=url_for("dashboard"),
+        # A new account takes the level test first; it can skip it from there.
+        redirect=url_for("level_test_page" if created else "dashboard"),
     )
     response.set_cookie(
         SESSION_COOKIE,
@@ -347,7 +398,8 @@ def api_logout():
     if cookie:
         store.ensure_app()
         try:
-            claims = fb_auth.verify_session_cookie(cookie)
+            claims = fb_auth.verify_session_cookie(
+                cookie, clock_skew_seconds=CLOCK_SKEW_SECONDS)
             fb_auth.revoke_refresh_tokens(claims["sub"])
         except Exception:
             pass  # Already invalid; clearing the cookie is enough.
@@ -518,17 +570,18 @@ def api_record_solved():
         return jsonify(error="That question is not on the ladder."), 400
 
     uid = current_user()["uid"]
-    before = store.progress_counts(uid)
+    before, start = standing(current_user())
     first = store.record_solved(uid, qid, question["chapter"], band)
     after = store.progress_counts(uid) if first else before
 
     # What this proof just opened, if anything, so the editor can say so.
     opened = [
         {"chapter": level["chapter"], "band": level["band"]}
-        for entry in progress.ladder(after)
+        for entry in progress.ladder(after, start=start)
         for level in entry["levels"]
         if level["unlocked"]
-        and not progress.is_unlocked(before, level["chapter"], level["band"])
+        and not progress.is_unlocked(before, level["chapter"], level["band"],
+                                     start)
     ]
 
     return jsonify(
@@ -537,6 +590,80 @@ def api_record_solved():
         solved=progress.solved(after, question["chapter"], band),
         need=progress.TO_CLEAR,
         unlocked=opened,
+    )
+
+
+# --- level test API ---------------------------------------------------------
+
+@app.post("/api/level-test/skip")
+@login_required
+def api_skip_level_test():
+    """Put the level test off. The dashboard keeps offering it."""
+    user = current_user()
+    if (user.get("level_test") or {}).get("status") != "done":
+        store.skip_level_test(user["uid"])
+    return jsonify(ok=True, redirect=url_for("dashboard"))
+
+
+@app.post("/api/level-test/submit")
+@login_required
+def api_submit_level_test():
+    """Mark the level test and set the level it earns.
+
+    Only the answers are taken. Which questions they answer is read from the
+    profile, where they were stored when the test was dealt, so the browser
+    cannot swap in questions of its own choosing. A test is marked once.
+    """
+    user = current_user()
+    test = user.get("level_test") or {}
+    if test.get("status") == "done":
+        return jsonify(error="You have already taken the level test."), 409
+
+    questions = store.get_level_test_questions(test.get("questions") or [])
+    if not questions:
+        return jsonify(error="There is no level test to submit. "
+                             "Reload the page to start one."), 400
+
+    payload = request.get_json(silent=True) or {}
+    answers = payload.get("answers")
+    marking = level_test.score(questions,
+                               answers if isinstance(answers, dict) else {})
+    name, start = level_test.place(marking["earned"], marking["possible"])
+
+    finished = store.finish_level_test(user["uid"], {
+        "answers": {m["id"]: m["chosen"] for m in marking["marked"]
+                    if m["chosen"] is not None},
+        "earned": marking["earned"],
+        "possible": marking["possible"],
+        "right": marking["right"],
+        "total": marking["total"],
+        "level": name,
+        "placement": {"chapter": start[0], "band": start[1]},
+    })
+    if not finished:
+        return jsonify(error="You have already taken the level test."), 409
+
+    # The test is over, so the answers can go to the browser now.
+    by_id = {q["id"]: q for q in questions}
+    review = [{
+        "id": m["id"],
+        "correct": m["correct"],
+        "chosen": m["chosen"],
+        "answer": by_id[m["id"]]["answer"],
+        "explanation": by_id[m["id"]].get("explanation", ""),
+    } for m in marking["marked"]]
+
+    return jsonify(
+        ok=True,
+        level=name,
+        earned=marking["earned"],
+        possible=marking["possible"],
+        right=marking["right"],
+        total=marking["total"],
+        unlocked=[{"chapter": c, "band": b}
+                  for c, b in level_test.opened_by(start)],
+        review=review,
+        redirect=url_for("dashboard"),
     )
 
 

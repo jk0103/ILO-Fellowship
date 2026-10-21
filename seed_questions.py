@@ -10,6 +10,12 @@ goal, so a second run updates the same documents instead of adding more.
     python seed_questions.py --chapter 10      # Chapter 10
     python seed_questions.py --chapter all     # both
     python seed_questions.py --dry-run         # verify only
+    python seed_questions.py --level-test      # the level test's own bank
+
+The level test's questions are multiple choice, not proofs, so they come from
+`level_test_questions.json` and are checked for shape instead: a known band, a
+prompt, at least two choices, an answer that is one of them, and an id no other
+question uses. The id is the document id, so re-running updates in place.
 """
 
 import argparse
@@ -21,6 +27,7 @@ import fitch_checker as fc
 import fitch_generator as gen
 import ch10_checker as cc
 import firestore_db as store
+import level_test
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -78,6 +85,35 @@ def prepare(chapter):
     return questions, failed
 
 
+def prepare_level_test():
+    """Return (questions, failed) for the level test's bank."""
+    path = os.path.join(BASE_DIR, "level_test_questions.json")
+    with open(path, encoding="utf-8") as fh:
+        raw = json.load(fh)
+
+    print("Level test  (level_test_questions.json)")
+    questions, failed, seen = [], False, set()
+    for i, question in enumerate(raw, 1):
+        qid = question.get("id")
+        if not qid or qid in seen:
+            print(f"  question {i}: missing or repeated id {qid!r}",
+                  file=sys.stderr)
+            failed = True
+            continue
+        seen.add(qid)
+        if not level_test.usable(question) or not question.get("topic"):
+            print(f"  question {i} ({qid}): needs a topic, a known difficulty, "
+                  f"a prompt, two or more choices and an answer among them",
+                  file=sys.stderr)
+            failed = True
+            continue
+        questions.append(question)
+        flag = "" if level_test.is_active(question) else "  (inactive)"
+        print(f"  {i:2}. [{question['difficulty']:6} {question['topic']:16}] "
+              f"{question['prompt'][:52]}{flag}")
+    return questions, failed
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--chapter", default="5", choices=["5", "10", "all"],
@@ -85,7 +121,24 @@ def main(argv=None):
                              "(default: 5)")
     parser.add_argument("--dry-run", action="store_true",
                         help="check the proofs without writing to Firestore")
+    parser.add_argument("--level-test", action="store_true",
+                        help="load the level test's bank instead of proofs")
     args = parser.parse_args(argv)
+
+    if args.level_test:
+        questions, failed = prepare_level_test()
+        print()
+        if failed:
+            print("Some questions are malformed; nothing was written.",
+                  file=sys.stderr)
+            return 1
+        if args.dry_run:
+            print(f"{len(questions)} checked. Nothing written (--dry-run).")
+            return 0
+        for question in questions:
+            store.save_level_test_question(question)
+        print(f"{len(questions)} level-test questions written.")
+        return 0
 
     wanted = sorted(CHAPTERS) if args.chapter == "all" else [int(args.chapter)]
 

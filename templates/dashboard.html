@@ -7,6 +7,17 @@
   <h1>Hi, {{ current_user['username'] }}.</h1>
 </section>
 
+{% if level_test.get('status') == 'done' %}
+  <p class="test-placed">Your level test placed you at
+    <strong>{{ level_test.get('level') }}</strong>.</p>
+{% else %}
+  <aside class="test-callout">
+    <p><strong>Start at your level.</strong> A short multiple-choice test can unlock
+      harder questions straight away.</p>
+    <a class="btn btn-primary" href="{{ url_for('level_test_page') }}">Take the level test</a>
+  </aside>
+{% endif %}
+
 {# The ladder. Each chapter is a row of three levels, easy first; a level is
    either open (with the button that deals out a question), cleared, or shut
    with the sentence that says what would open it. #}

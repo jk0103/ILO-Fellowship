@@ -914,3 +914,120 @@ body.is-loading > .footer {
   .loading { gap: 1.2rem; }
   .loading-card { padding: 1.6rem 1.4rem; }
 }
+
+/* --- the level test -------------------------------------------------------
+ * One card, three screens: intro, a question at a time, the result. It wears
+ * the auth card's stripe because it is the step straight after sign-up. The
+ * choices are whole-row targets, and the chosen one takes the blue of every
+ * other selection on the site. */
+
+.test-main { max-width: 640px; }
+.test-card h1 { font-size: 1.6rem; }
+.test-card h1:focus { outline: none; }
+.test-card .eyebrow { margin-bottom: .4rem; }
+
+.test-facts { margin: 0 0 1.6rem; padding-left: 1.2rem; color: var(--text); font-size: .95rem; }
+.test-facts li { margin-bottom: .35rem; }
+.test-facts li::marker { color: var(--orange-deep); }
+
+.test-actions { display: flex; gap: .7rem; flex-wrap: wrap; align-items: center; margin: 1.4rem 0 .4rem; }
+
+.test-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  color: var(--muted);
+  font-size: .85rem;
+  font-weight: 600;
+}
+.test-meter {
+  height: 6px;
+  margin: .5rem 0 1.4rem;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.test-meter span { display: block; height: 100%; width: 0; background: var(--blue); transition: width .2s; }
+
+.test-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.test-prompt { padding: 0; margin-bottom: 1rem; font-size: 1.08rem; font-weight: 600; line-height: 1.5; }
+.test-choices { display: flex; flex-direction: column; gap: .55rem; }
+
+.test-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: 0;
+  padding: .7rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-weight: 500;
+  font-size: .97rem;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.test-choice:hover { border-color: var(--blue); }
+.test-choice:has(input:checked) { border-color: var(--blue); background: var(--tint-blue); }
+.test-choice:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(46, 126, 168, .25); }
+/* The letter is the radio button, so the native one is hidden but still
+   reachable from the keyboard. */
+.test-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.test-letter {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 700;
+}
+.test-choice:has(input:checked) .test-letter { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.test-nav { display: flex; justify-content: space-between; margin-top: 1.6rem; }
+
+.test-subhead { font-size: .95rem; margin: 0 0 .6rem; }
+.test-unlocked { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0 0 1.4rem; }
+.test-unlocked li {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .7rem .3rem .4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: .88rem;
+  font-weight: 600;
+}
+
+.test-review { border-top: 1px solid var(--border); padding-top: .9rem; }
+.test-review summary { cursor: pointer; color: var(--link); font-weight: 600; font-size: .92rem; }
+.test-review ol { padding-left: 1.2rem; margin: .8rem 0 0; }
+.test-review li { margin-bottom: .9rem; }
+.test-review .hint { margin-top: .15rem; }
+.test-review-prompt { margin: 0; font-weight: 600; font-size: .92rem; }
+.test-review .is-right .test-review-prompt { color: var(--success); }
+.test-review .is-wrong .test-review-prompt { color: #8d1220; }
+
+/* On the dashboard: the invitation to take the test, or what it placed you at. */
+.test-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: -0.8rem 0 1.6rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid #f0cf9e;
+  border-left: 4px solid var(--orange);
+  border-radius: var(--radius);
+  background: var(--tint-orange);
+}
+.test-callout p { margin: 0; }
+.test-callout strong { color: var(--text); }
+.test-placed { margin: -1.4rem 0 1.6rem; color: var(--muted); font-size: .92rem; }

@@ -13,6 +13,15 @@ users/{uid}
     created_at    (server timestamp)
     last_login    (server timestamp)
     stats         (map) solved / attempted / streak
+    level_test    (map, absent until the test is first opened)
+        status      "pending" | "skipped" | "done"
+        questions   (list[str])  ids of the questions dealt, in order
+        started_at  (server timestamp)
+        answers     (map)  question id -> chosen index, once done
+        earned / possible / right / total   the marking, once done
+        level       (str)  the placement's name, e.g. "Intermediate"
+        placement   (map)  {chapter, band}: the start level it earned
+        taken_at    (server timestamp, once done)
 
 users/{uid}/progress/{question id}
     chapter       (int)
@@ -43,6 +52,20 @@ questions/{fingerprint}
     source        (str)  "generated" or "seed"
     created_by    (str or None)  uid of whoever generated it
     created_at    (server timestamp)
+
+level_test_questions/{slug}
+    topic         (str)  e.g. "connectives", "quantifier-rules"
+    chapter       (int)  the chapter the topic belongs to
+    difficulty    (str)  "easy" | "medium" | "hard"
+    prompt        (str)
+    choices       (list[str])
+    answer        (int)  index into choices; never sent to the browser
+                         before the test is submitted
+    explanation   (str)
+    active        (bool) an inactive question is never dealt
+
+    The level test's own bank, multiple choice, loaded from
+    `level_test_questions.json` by `seed_questions.py --level-test`.
 
 question_pool/{fingerprint}
     The waiting area. Same fields as `questions`, minus `source`. A generator
@@ -78,6 +101,7 @@ USERS = "users"
 USERNAMES = "usernames"
 QUESTIONS = "questions"
 POOL = "question_pool"
+LEVEL_TEST = "level_test_questions"
 
 # How many spare exercises to hold per chapter. The pool is drained by ordinary
 # use, so this only matters for a band nobody asks for: without a cap those
@@ -692,3 +716,88 @@ def clear_progress(uid):
     for snapshot in db.collection(USERS).document(uid) \
             .collection(PROGRESS).stream():
         snapshot.reference.delete()
+
+
+# --- the level test ---------------------------------------------------------
+#
+# Its bank is a collection of its own, because its questions are multiple
+# choice rather than proofs. The test a user is dealt lives on the profile, so
+# reloading the page hands back the same questions instead of a fresh draw to
+# fish for easier ones, and so `current_user()` already carries the placement
+# every gated route needs.
+
+def save_level_test_question(question):
+    """Write one level-test question under its slug. Safe to re-run."""
+    payload = {key: question[key] for key in (
+        "topic", "chapter", "difficulty", "prompt", "choices", "answer")}
+    payload["explanation"] = question.get("explanation", "")
+    payload["active"] = question.get("active", True) is not False
+    get_client().collection(LEVEL_TEST).document(question["id"]).set(payload)
+    return question["id"]
+
+
+def list_level_test_questions():
+    """The whole bank, active or not; `level_test.select` filters it."""
+    out = []
+    for snapshot in get_client().collection(LEVEL_TEST).stream():
+        data = snapshot.to_dict() or {}
+        data["id"] = snapshot.id
+        out.append(data)
+    return out
+
+
+def get_level_test_questions(ids):
+    """The named questions, in the order named; missing ones are skipped.
+
+    A question deactivated after it was dealt is still returned, so a test in
+    progress can still be marked.
+    """
+    db = get_client()
+    refs = [db.collection(LEVEL_TEST).document(qid) for qid in ids]
+    found = {s.id: s for s in db.get_all(refs) if s.exists}
+    out = []
+    for qid in ids:
+        if qid in found:
+            data = found[qid].to_dict() or {}
+            data["id"] = qid
+            out.append(data)
+    return out
+
+
+def deal_level_test(uid, question_ids):
+    """Record the questions this user has been dealt; the test is pending."""
+    get_client().collection(USERS).document(uid).update({"level_test": {
+        "status": "pending",
+        "questions": list(question_ids),
+        "started_at": firestore.SERVER_TIMESTAMP,
+    }})
+
+
+def skip_level_test(uid):
+    """Put the test off. The questions dealt are kept for when they return."""
+    get_client().collection(USERS).document(uid).update(
+        {"level_test.status": "skipped"})
+
+
+def finish_level_test(uid, result):
+    """Store a marked test. False if this user's test was already finished.
+
+    Transactional, because two tabs can submit the same test and only the
+    first may set the placement.
+    """
+    db = get_client()
+    ref = db.collection(USERS).document(uid)
+
+    @firestore.transactional
+    def _txn(transaction):
+        snapshot = ref.get(transaction=transaction)
+        test = (snapshot.to_dict() or {}).get("level_test") or {}
+        if test.get("status") == "done":
+            return False
+        updates = {"level_test.%s" % key: value for key, value in result.items()}
+        updates["level_test.status"] = "done"
+        updates["level_test.taken_at"] = firestore.SERVER_TIMESTAMP
+        transaction.update(ref, updates)
+        return True
+
+    return _txn(db.transaction())

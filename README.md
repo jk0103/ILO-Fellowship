@@ -201,6 +201,8 @@ sides stay in step.
 | `POST /api/logout` | Clear cookie and revoke refresh tokens |
 | `GET /api/username-available?u=` | Live check for the signup form |
 | `POST /api/progress/solved` | The editor reports a finished proof; the ladder moves |
+| `POST /api/level-test/skip` | Put the level test off; the dashboard keeps offering it |
+| `POST /api/level-test/submit` | Mark the level test and set the starting level |
 
 ## Levels
 
@@ -244,6 +246,59 @@ When a proof is finished the editor posts the question id to
 from Firestore, so the browser cannot claim a hard Chapter 10 solve for an easy
 Chapter 5 one. The reply says whether the solve was new and what it opened, and
 the editor prints that under the question.
+
+## The level test
+
+A new account doesn't have to start at the bottom. Sign-up sends it to
+`/level-test` instead of the dashboard: an intro says how many questions there
+are and offers **Skip for now**, then the questions come one at a time with a
+progress bar and Back/Next, and Submit marks them and shows the level, what it
+unlocked, and a review of the answers.
+
+A Fitch proof is the wrong thing to place people with, since a hard one runs to
+twenty lines. So the test has its own bank of multiple-choice questions on the
+same material (which rule, which sentence is equivalent, which premises entail
+what) in `level_test_questions.json`. Each is tagged with a **topic** and a
+**difficulty** and can be switched off with `"active": false`; an inactive
+question is never dealt. Load it with:
+
+```bash
+python3 seed_questions.py --level-test --dry-run   # check the bank
+python3 seed_questions.py --level-test             # write it to Firestore
+```
+
+Until it is loaded, the page says the test isn't available and sends the user on.
+
+`level_test.py` is pure, like `progress.py`:
+
+- **Dealing.** A test is 5 questions: 2 easy, 2 medium, 1 hard (`MIX`), spread
+  over as many topics as the bank allows and ordered easiest first. A short
+  band is made up from the others, and a bank with fewer than 3 active
+  questions deals no test at all.
+- **Marking.** A right answer is worth 1, 2 or 3 points by difficulty
+  (`WEIGHTS`), so the hard question is what separates the top placements.
+- **Placing.** The share of points picks a placement (`PLACEMENTS`), and each
+  placement is a *start level* on the ladder:
+
+  | Share of points | Level | Starts at | Opens |
+  |---|---|---|---|
+  | under 40% | Beginner | Chapter 5 easy | easy (what skipping gives) |
+  | 40% | Intermediate | Chapter 5 medium | easy and medium |
+  | 70% | Advanced | Chapter 5 hard | all of Chapter 5 |
+  | 90% | Expert | Chapter 10 easy | Chapter 10 easy, and Chapter 5 |
+
+`progress.py` takes that start level as `start`: every level up to it is open,
+and every level below it counts as cleared (the dashboard says "Placed out by
+your level test"), so the ordinary rule carries on from there. Placed at
+Chapter 5 hard, Chapter 10 opens when hard is cleared, not after going back
+through easy and medium.
+
+The answers never reach the browser before the test is submitted: the page
+gets only prompts and choices. The questions dealt are stored on the profile,
+so reloading or skipping and coming back hands back the same test rather than
+a fresh draw to fish for easier ones. Submit sends only the answers, the
+server marks them against the stored questions, and a test is marked once:
+the write is a transaction, so two tabs cannot both set a placement.
 
 ## Generating questions
 
@@ -460,6 +515,14 @@ users/{uid}                        uid is the Firebase Auth uid
     created_at    timestamp
     last_login    timestamp
     stats         map              solved / attempted / streak
+    level_test    map              absent until the test is first opened
+        status      string         pending / skipped / done
+        questions   array          ids of the questions dealt
+        answers     map            question id -> chosen index, once done
+        earned, possible, right, total   the marking
+        level       string         e.g. "Intermediate"
+        placement   map            {chapter, band}: the start level earned
+        started_at, taken_at       timestamps
 
 users/{uid}/progress/{question id}
     chapter       number
@@ -488,6 +551,16 @@ questions/{fingerprint}            id is sha256(premises + goal), truncated
     created_at    timestamp
 
 question_pool/{fingerprint}        the waiting area; same fields, no `source`
+
+level_test_questions/{slug}        the level test's bank, multiple choice
+    topic         string           e.g. connectives, quantifier-rules
+    chapter       number
+    difficulty    string           easy / medium / hard
+    prompt        string
+    choices       array of string
+    answer        number           index into choices
+    explanation   string           shown in the review after submitting
+    active        boolean          false keeps it out of every test
 ```
 
 One progress document per question a user has met, under the profile. That is
@@ -585,6 +658,7 @@ own:
 python3 seed_questions.py --chapter all --dry-run
 python3 test_ch10_checker.py
 python3 test_progress.py
+python3 test_level_test.py
 ```
 
 The browser editor has its own suite, which needs a browser rather than Python:
@@ -593,6 +667,10 @@ start the app and open `/static/fitch_tests.html`.
 `test_ch10_checker.py` runs offline, with no key and no network. It verifies the
 proofs Chapter 10 works through in its own text and refuses the unsound
 patterns the chapter warns against.
+
+`test_level_test.py` runs offline as well. It checks dealing (the mix, topic
+spread, inactive questions never dealt), marking, placing, the ladder from a
+start level, and that the shipped bank can deal a full test.
 
 `test_progress.py` runs offline too. `progress.py` is pure, so the whole gating
 rule — what a new account can reach, what each solve opens, what a hand-typed
@@ -650,6 +728,8 @@ links inside cards included.
 | `app.py` | Routes, session cookies, auth API |
 | `firestore_db.py` | Firestore data layer and Admin SDK setup |
 | `progress.py` | The level ladder — which chapters and bands are unlocked |
+| `level_test.py` | The sign-up level test — dealing, marking, and the start level it earns |
+| `level_test_questions.json` | The level test's multiple-choice bank |
 | `fitch_checker.py` | Server-side proof checker, mirroring `static/fitch.js` |
 | `fitch_generator.py` | Writes exercises with the GPT API and verifies them |
 | `ch10_checker.py` | Proof checker for the relational system of Chapter 10 |
@@ -664,9 +744,11 @@ links inside cards included.
 | `static/generate.js` | The Generate page |
 | `static/auth.js` | Firebase Auth in the browser (ES module) |
 | `static/main.js` | Password strength, username availability, show/hide |
+| `static/level_test.js` | The level test page: one question at a time, then the result |
 | `templates/` | Jinja templates |
 | `firebase_web_config.json` | Public web app config |
 | `firestore.rules` | Locks Firestore to Admin SDK access only |
 | `test_app.py` | End-to-end tests |
 | `test_ch10_checker.py` | Offline tests for the Chapter 10 checker |
 | `test_progress.py` | Offline tests for the level ladder |
+| `test_level_test.py` | Offline tests for the level test |
