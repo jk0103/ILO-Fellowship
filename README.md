@@ -203,6 +203,7 @@ sides stay in step.
 | `POST /api/progress/solved` | The editor reports a finished proof; the ladder moves |
 | `POST /api/level-test/skip` | Put the level test off; the dashboard keeps offering it |
 | `POST /api/level-test/submit` | Mark the level test and set the starting level |
+| `POST /api/contact` | The landing page's contact form; no account needed |
 
 ## Levels
 
@@ -246,6 +247,28 @@ When a proof is finished the editor posts the question id to
 from Firestore, so the browser cannot claim a hard Chapter 10 solve for an easy
 Chapter 5 one. The reply says whether the solve was new and what it opened, and
 the editor prints that under the question.
+
+## The landing page
+
+`/` is one scrolling page for visitors who are not signed in: a hero with
+**Get Started**, why the app exists, who is behind it, the four main features,
+and a contact form. Get Started goes to `/register`, and a new account goes on
+to the level test from there. Signed-in visitors see the same page with a link
+to their dashboard instead.
+
+It is built to load quickly: no images or web fonts, and the proof in the
+hero is plain HTML styled like the Fitch tool. The only script of its own is
+`static/landing.js`, which posts the contact form.
+
+The contact form posts to `/api/contact`, which checks the fields (name, a
+plausible email, a message, each with a length cap) and stores the message in
+`contact_messages` for the team to read in the Firebase console. A hidden
+`website` field catches bots, and each address can send 5 messages an hour.
+That limit is kept in memory, so it is per process and resets on restart.
+
+The Contact section can also show an email address and a community link. They
+come from `ILO_CONTACT_EMAIL` and `ILO_COMMUNITY_URL`, and are left out while
+unset.
 
 ## The level test
 
@@ -552,6 +575,11 @@ questions/{fingerprint}            id is sha256(premises + goal), truncated
 
 question_pool/{fingerprint}        the waiting area; same fields, no `source`
 
+contact_messages/{auto id}         what the landing page's contact form sends
+    name, email, message  string
+    uid           string or null   set when the sender was signed in
+    created_at    timestamp
+
 level_test_questions/{slug}        the level test's bank, multiple choice
     topic         string           e.g. connectives, quantifier-rules
     chapter       number
@@ -639,6 +667,8 @@ Before deploying, add your production domain to the authorized domains list.
 | `CH10_VECTOR_STORE_ID` | Vector store holding Chapter 10 (has a default) |
 | `CH12_13_VECTOR_STORE_ID` | Vector store holding Chapters 12 and 13, `vs_6abfa15d0bf481919398f91c55d28dc7`; no generator reads it yet |
 | `CH15_VECTOR_STORE_ID` | Vector store holding Chapter 15, `vs_6abfa643a7988191b6ebaf99ed160697`; no generator reads it yet |
+| `ILO_CONTACT_EMAIL` | Shown in the landing page's Contact section; omitted when unset |
+| `ILO_COMMUNITY_URL` | A community link (Discord, forum…) shown beside it; omitted when unset |
 | `PORT` | Defaults to 5001 (macOS uses 5000 for AirPlay) |
 
 ## Tests
@@ -744,6 +774,7 @@ links inside cards included.
 | `static/generate.js` | The Generate page |
 | `static/auth.js` | Firebase Auth in the browser (ES module) |
 | `static/main.js` | Password strength, username availability, show/hide |
+| `static/landing.js` | The landing page's contact form |
 | `static/level_test.js` | The level test page: one question at a time, then the result |
 | `templates/` | Jinja templates |
 | `firebase_web_config.json` | Public web app config |

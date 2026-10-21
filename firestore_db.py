@@ -67,6 +67,16 @@ level_test_questions/{slug}
     The level test's own bank, multiple choice, loaded from
     `level_test_questions.json` by `seed_questions.py --level-test`.
 
+contact_messages/{auto id}
+    name          (str)
+    email         (str)
+    message       (str)
+    uid           (str or None)  set when the sender was signed in
+    created_at    (server timestamp)
+
+    What the landing page's contact form sends. Read it in the Firebase
+    console; nothing in the app shows it.
+
 question_pool/{fingerprint}
     The waiting area. Same fields as `questions`, minus `source`. A generator
     is always asked for more exercises than were wanted, since some candidates
@@ -102,6 +112,7 @@ USERNAMES = "usernames"
 QUESTIONS = "questions"
 POOL = "question_pool"
 LEVEL_TEST = "level_test_questions"
+CONTACT = "contact_messages"
 
 # How many spare exercises to hold per chapter. The pool is drained by ordinary
 # use, so this only matters for a band nobody asks for: without a cap those
@@ -801,3 +812,18 @@ def finish_level_test(uid, result):
         return True
 
     return _txn(db.transaction())
+
+
+# --- contact ----------------------------------------------------------------
+
+def save_contact_message(name, email, message, uid=None):
+    """Store one message from the landing page's contact form."""
+    ref = get_client().collection(CONTACT).document()
+    ref.set({
+        "name": name,
+        "email": email,
+        "message": message,
+        "uid": uid,
+        "created_at": firestore.SERVER_TIMESTAMP,
+    })
+    return ref.id

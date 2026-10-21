@@ -1,59 +1,283 @@
 {% extends "base.html" %}
-{% block title %}ILO Bank &middot; Train for the International Logic Olympiad{% endblock %}
+{% block title %}ILO Bank &middot; Practice for the International Logic Olympiad{% endblock %}
+{% block main_class %}landing-main{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">International Logic Olympiad</p>
-  <h1>Sharpen your reasoning,<br>one problem at a time.</h1>
-  <p class="lede">
-    A practice ground for ILO-style problems &mdash; propositional and predicate logic,
-    knights and knaves, grid puzzles, and formal proofs. Work at your own pace and
-    watch your accuracy climb.
-  </p>
-  <div class="hero-actions">
-    {% if current_user %}
-      <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}">Go to dashboard</a>
-      <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Fitch tool</a>
-    {% else %}
-      <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}">Start practicing</a>
-      <a class="btn btn-ghost btn-lg" href="{{ url_for('login') }}">I already have an account</a>
-      <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Fitch tool &mdash; no account needed</a>
+{# One scrolling page: hero, why it exists, who is behind it, what it does,
+   how to start, and how to reach us. Everything visual is HTML and CSS — the
+   editor in the hero, the mini interfaces in the feature cards — so there are
+   no images to wait for, and one small script. #}
+
+{# --- hero ------------------------------------------------------------- #}
+<section class="lp-hero">
+  <div class="lp-wrap lp-hero-grid">
+    <div class="lp-hero-copy">
+      <a class="lp-pill" href="#how">
+        <span class="lp-pill-tag">New</span>
+        Find your starting level in 5 questions
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <h1>Learn formal proof,<br><span class="lp-accent">one line at a time.</span></h1>
+      <p class="lp-lede">
+        Build natural-deduction proofs in an editor that checks every step,
+        starting at the level that fits you.
+      </p>
+      <div class="lp-actions">
+        {% if current_user %}
+          <a class="btn btn-primary btn-lg lp-btn" href="{{ url_for('dashboard') }}">Go to your dashboard <span aria-hidden="true">&rarr;</span></a>
+        {% else %}
+          <a class="btn btn-primary btn-lg lp-btn" href="{{ url_for('register') }}">Get Started <span aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn-ghost btn-lg" href="{{ url_for('fitch') }}">Try the proof editor</a>
+        {% endif %}
+      </div>
+      {% if not current_user %}
+      <p class="lp-small">Free to use. Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+      {% endif %}
+    </div>
+
+    {# The Fitch tool, drawn in HTML: the proof writes itself line by line. #}
+    <div class="lp-stage" aria-hidden="true">
+      <div class="lp-window">
+        <div class="lp-window-bar">
+          <span class="lp-dot"></span><span class="lp-dot"></span><span class="lp-dot"></span>
+          <span class="lp-window-title">Fitch tool</span>
+        </div>
+        <div class="lp-window-body">
+          <p class="lp-task"><span class="badge badge-easy">easy</span> Given p and p &rArr; q, prove q &and; p.</p>
+          <ol class="lp-proof">
+            <li style="--i: 0"><span class="lp-n">1</span><span class="lp-f">p</span><span class="lp-j">Premise</span></li>
+            <li style="--i: 1" class="lp-last-premise"><span class="lp-n">2</span><span class="lp-f">p &rArr; q</span><span class="lp-j">Premise</span></li>
+            <li style="--i: 2"><span class="lp-n">3</span><span class="lp-f">q</span><span class="lp-j">IE: 2, 1</span></li>
+            <li style="--i: 3" class="lp-goal"><span class="lp-n">4</span><span class="lp-f">q &and; p</span><span class="lp-j">AI: 3, 1</span></li>
+          </ol>
+          <div class="lp-rules">
+            <span>AI</span><span>AE</span><span>OI</span><span>OE</span>
+            <span class="is-on">IE</span><span>II</span><span>NI</span><span>NE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-float lp-float-check">
+        <span class="lp-check">&#10003;</span>
+        <div><strong>Goal reached</strong><small>Every line checked</small></div>
+      </div>
+      <div class="lp-float lp-float-level">
+        <small>Level test result</small>
+        <strong>Intermediate</strong>
+        <div class="lp-mini-meter"><span></span></div>
+        <small class="lp-unlocks"><span class="badge badge-easy">easy</span><span class="badge badge-medium">medium</span> unlocked</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-wrap">
+    <dl class="lp-stats">
+      <div><dt>21</dt><dd>inference rules</dd></div>
+      <div><dt>4</dt><dd>textbook chapters</dd></div>
+      <div><dt>3</dt><dd>difficulty bands</dd></div>
+      <div><dt>100%</dt><dd>of proofs verified</dd></div>
+    </dl>
+  </div>
+</section>
+
+{# --- motivation ------------------------------------------------------- #}
+<section class="lp-section" id="why" aria-labelledby="why-title">
+  <div class="lp-wrap">
+    <header class="lp-head reveal">
+      <p class="eyebrow">Why ILO Bank</p>
+      <h2 id="why-title">Logic is learned by proving things. Proofs are hard to practise alone.</h2>
+    </header>
+    <div class="lp-why">
+      <article class="lp-why-card reveal">
+        <span class="lp-why-num">01</span>
+        <h3>Too few exercises</h3>
+        <p>A chapter ends with a dozen problems. Once they're done, there's
+          nothing new to try before the contest.</p>
+        <p class="lp-fix"><span aria-hidden="true">&rarr;</span> New problems, each one checked by a proof checker before it's published.</p>
+      </article>
+      <article class="lp-why-card reveal">
+        <span class="lp-why-num">02</span>
+        <h3>No one to check your work</h3>
+        <p>A proof on paper can look right and still misuse a rule, and you
+          only find out when it's marked.</p>
+        <p class="lp-fix"><span aria-hidden="true">&rarr;</span> The editor checks every line the moment you add it.</p>
+      </article>
+      <article class="lp-why-card reveal">
+        <span class="lp-why-num">03</span>
+        <h3>No clear next step</h3>
+        <p>It's hard to tell whether you're ready for quantifiers or still
+          need the propositional rules.</p>
+        <p class="lp-fix"><span aria-hidden="true">&rarr;</span> A level ladder shows exactly what to work on next.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+{# --- about ------------------------------------------------------------ #}
+<section class="lp-section lp-dark" id="about" aria-labelledby="about-title">
+  <div class="lp-wrap lp-about">
+    <div class="reveal">
+      <p class="eyebrow">About</p>
+      <h2 id="about-title">Built for students preparing for the ILO.</h2>
+      {# Who is behind the project, in their own words: edit this paragraph. #}
+      <p>
+        ILO Bank is built in the ILO Fellowship, to give students preparing for
+        the International Logic Olympiad a place to practise the formal-proof
+        side of the contest that is free, always open, and honest about
+        mistakes.
+      </p>
+      <p>
+        It's an independent project, not an official Olympiad resource. The
+        exercises follow the Fitch system of Stanford's <em>Introduction to
+        Logic</em>, the same natural-deduction rules ILO students learn.
+      </p>
+    </div>
+    <dl class="lp-facts reveal">
+      <div><dt>Proof editor</dt><dd>Chapters 5, 10, 13 and 15: propositional, quantifier, induction and equality rules</dd></div>
+      <div><dt>Practice problems</dt><dd>Chapters 5 and 10, in three difficulty bands</dd></div>
+      <div><dt>Cost</dt><dd>Free, no account needed for the editor</dd></div>
+    </dl>
+  </div>
+</section>
+
+{# --- features ---------------------------------------------------------- #}
+<section class="lp-section" id="features" aria-labelledby="features-title">
+  <div class="lp-wrap">
+    <header class="lp-head reveal">
+      <p class="eyebrow">Main features</p>
+      <h2 id="features-title">Everything you need to practise proofs</h2>
+    </header>
+
+    <div class="lp-bento">
+      <article class="lp-tile lp-tile-wide reveal">
+        <div class="lp-tile-copy">
+          <span class="lp-icon lp-icon-blue" aria-hidden="true">&#8866;</span>
+          <h3>Fitch proof editor</h3>
+          <p>Tick the lines you want, press a rule, and the next step is added
+            for you, already justified. Mistakes are flagged as you make them.</p>
+          <a class="lp-link" href="{{ url_for('fitch') }}">Open the editor <span aria-hidden="true">&rarr;</span></a>
+        </div>
+        <div class="lp-mock lp-mock-rules" aria-hidden="true">
+          <span>AI</span><span>AE</span><span>OI</span><span>OE</span>
+          <span>NI</span><span>NE</span><span class="is-on">II</span><span>IE</span>
+          <span>UI</span><span>UE</span><span>EI</span><span>EE</span>
+        </div>
+      </article>
+
+      <article class="lp-tile reveal">
+        <span class="lp-icon lp-icon-orange" aria-hidden="true">&#9678;</span>
+        <h3>Level test</h3>
+        <p>Five quick questions at sign-up place you on the ladder, so you
+          skip what you already know.</p>
+        <div class="lp-mock lp-mock-choices" aria-hidden="true">
+          <span><b>A</b> ∃X.p(X)</span>
+          <span class="is-on"><b>B</b> ∀X.p(X)</span>
+        </div>
+      </article>
+
+      <article class="lp-tile reveal">
+        <span class="lp-icon lp-icon-red" aria-hidden="true">&#9998;</span>
+        <h3>Practice problems</h3>
+        <p>Propositional and relational exercises, each with a verified proof
+          behind it.</p>
+        <div class="lp-mock lp-mock-bands" aria-hidden="true">
+          <span class="badge badge-easy">easy</span>
+          <span class="badge badge-medium">medium</span>
+          <span class="badge badge-hard">hard</span>
+        </div>
+      </article>
+
+      <article class="lp-tile lp-tile-wide reveal">
+        <div class="lp-tile-copy">
+          <span class="lp-icon lp-icon-teal" aria-hidden="true">&#9650;</span>
+          <h3>Progress tracking</h3>
+          <p>Solve questions to clear a level and unlock the next. Your
+            dashboard shows every level, what's open, and how far you've come.</p>
+        </div>
+        <div class="lp-mock lp-mock-ladder" aria-hidden="true">
+          <div><span class="badge badge-easy">easy</span><i style="--w: 100%"></i><b>&#10003;</b></div>
+          <div><span class="badge badge-medium">medium</span><i style="--w: 60%"></i><b>6/10</b></div>
+          <div><span class="badge badge-hard">hard</span><i style="--w: 0%"></i><b>&#128274;</b></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+{# --- how to start ------------------------------------------------------ #}
+<section class="lp-section lp-soft" id="how" aria-labelledby="how-title">
+  <div class="lp-wrap">
+    <header class="lp-head lp-head-center reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-title">From sign-up to your first proof in minutes</h2>
+    </header>
+    <ol class="lp-steps">
+      <li class="reveal"><span>1</span><h3>Create an account</h3><p>Free, with email or Google.</p></li>
+      <li class="reveal"><span>2</span><h3>Take the level test</h3><p>Five questions set your starting level. You can skip it.</p></li>
+      <li class="reveal"><span>3</span><h3>Climb the ladder</h3><p>Solve proofs to unlock harder bands and chapters.</p></li>
+    </ol>
+
+    {% if not current_user %}
+    <div class="lp-cta reveal">
+      <div>
+        <h2>Ready to start proving?</h2>
+        <p>Create a free account and find your level in five questions.</p>
+      </div>
+      <a class="btn btn-lg lp-btn-light" href="{{ url_for('register') }}">Get Started <span aria-hidden="true">&rarr;</span></a>
+    </div>
     {% endif %}
   </div>
 </section>
 
-<section class="features">
-  <article class="card">
-    <div class="card-icon">&#9673;</div>
-    <h3>Topic-based sets</h3>
-    <p>Problems grouped by the reasoning skill they test, so you can drill exactly what is shaky.</p>
-  </article>
-  <article class="card">
-    <div class="card-icon">&#9202;</div>
-    <h3>Timed rounds</h3>
-    <p>Practice under contest conditions and learn to budget the clock across a full paper.</p>
-  </article>
-  <article class="card">
-    <div class="card-icon">&#9998;</div>
-    <h3>Worked solutions</h3>
-    <p>Every problem comes with a step-by-step explanation, not just the final answer.</p>
-  </article>
-  <article class="card">
-    <div class="card-icon">&#9650;</div>
-    <h3>Progress tracking</h3>
-    <p>Accuracy and speed per topic, so improvement is something you can actually see.</p>
-  </article>
+{# --- contact ------------------------------------------------------------ #}
+<section class="lp-section" id="contact" aria-labelledby="contact-title">
+  <div class="lp-wrap lp-contact">
+    <div class="reveal">
+      <p class="eyebrow">Contact</p>
+      <h2 id="contact-title">Questions, ideas, or a proof that looks wrong?</h2>
+      <p class="lp-muted">Send us a message and we'll get back to you by email.</p>
+      {% if contact.email or contact.community %}
+      <ul class="lp-reach">
+        {% if contact.email %}
+          <li><span class="lp-reach-icon" aria-hidden="true">@</span><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></li>
+        {% endif %}
+        {% if contact.community %}
+          <li><span class="lp-reach-icon" aria-hidden="true">#</span><a href="{{ contact.community }}" rel="noopener" target="_blank">Join the community</a></li>
+        {% endif %}
+      </ul>
+      {% endif %}
+    </div>
+
+    <form class="lp-form reveal" id="contact-form" novalidate>
+      <div class="auth-error" id="contact-error" hidden></div>
+      <div class="auth-note" id="contact-note" role="status" hidden></div>
+
+      <div class="lp-form-row">
+        <div>
+          <label for="contact-name">Name</label>
+          <input type="text" id="contact-name" name="name" autocomplete="name" maxlength="100" required
+                 value="{{ current_user.get('display_name', '') if current_user else '' }}">
+        </div>
+        <div>
+          <label for="contact-email">Email</label>
+          <input type="email" id="contact-email" name="email" autocomplete="email" maxlength="200" required
+                 value="{{ current_user.get('email', '') if current_user else '' }}">
+        </div>
+      </div>
+
+      <label for="contact-message">Message</label>
+      <textarea id="contact-message" name="message" rows="5" maxlength="5000" required></textarea>
+
+      {# Left empty by people; filled in by bots that fill in everything. #}
+      <div class="landing-trap" aria-hidden="true">
+        <label for="contact-website">Website</label>
+        <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="contact-submit">Send message</button>
+    </form>
+  </div>
 </section>
 
-<section class="topics">
-  <h2>What you'll practice</h2>
-  <ul class="topic-list">
-    <li>Propositional logic &amp; truth tables</li>
-    <li>Predicate logic &amp; quantifiers</li>
-    <li>Knights, knaves, and self-reference</li>
-    <li>Constraint and grid puzzles</li>
-    <li>Syllogisms &amp; formal fallacies</li>
-    <li>Proof construction</li>
-  </ul>
-</section>
+<script src="{{ url_for('static', filename='landing.js') }}" defer></script>
 {% endblock %}

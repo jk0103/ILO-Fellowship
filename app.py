@@ -1,7 +1,10 @@
+import collections
 import datetime
 import json
 import os
 import random
+import re
+import time
 
 from flask import (
     Flask, flash, g, jsonify, redirect, render_template, request, url_for
@@ -160,9 +163,17 @@ def handle_config_error(exc):
 
 # --- pages ------------------------------------------------------------------
 
+# Where the landing page's Contact section points, besides its form. Both are
+# optional; whichever is unset is simply not shown.
+CONTACT = {
+    "email": os.environ.get("ILO_CONTACT_EMAIL"),
+    "community": os.environ.get("ILO_COMMUNITY_URL"),
+}
+
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", contact=CONTACT)
 
 
 @app.route("/login")
@@ -665,6 +676,54 @@ def api_submit_level_test():
         review=review,
         redirect=url_for("dashboard"),
     )
+
+
+# --- contact API ------------------------------------------------------------
+
+EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+CONTACT_LIMITS = {"name": 100, "email": 200, "message": 5000}
+
+# At most this many messages per address per window. Kept in memory, so it
+# resets on restart and is per process: enough to stop a form being hammered,
+# not a substitute for real rate limiting.
+CONTACT_PER_WINDOW = 5
+CONTACT_WINDOW = 60 * 60
+_contact_sent = collections.defaultdict(collections.deque)
+
+
+@app.post("/api/contact")
+def api_contact():
+    """The landing page's contact form. No account needed.
+
+    The message is stored in Firestore for the team to read. A filled-in
+    `website` field is the honeypot: people never see it, bots fill it, and
+    they are told it worked so they do not try again.
+    """
+    payload = request.get_json(silent=True) or {}
+    fields = {key: str(payload.get(key) or "").strip() for key in CONTACT_LIMITS}
+
+    if payload.get("website"):
+        return jsonify(ok=True)
+    if not all(fields.values()):
+        return jsonify(error="Please fill in your name, email and message."), 400
+    if not EMAIL_RE.fullmatch(fields["email"]):
+        return jsonify(error="That doesn't look like a valid email address."), 400
+    for key, limit in CONTACT_LIMITS.items():
+        if len(fields[key]) > limit:
+            return jsonify(error="Your %s is too long (%d characters at most)."
+                           % (key, limit)), 400
+
+    now = time.time()
+    sent = _contact_sent[request.remote_addr]
+    while sent and now - sent[0] > CONTACT_WINDOW:
+        sent.popleft()
+    if len(sent) >= CONTACT_PER_WINDOW:
+        return jsonify(error="You've sent several messages already. "
+                             "Please try again later."), 429
+
+    store.save_contact_message(uid=(current_user() or {}).get("uid"), **fields)
+    sent.append(now)
+    return jsonify(ok=True)
 
 
 @app.get("/api/username-available")
