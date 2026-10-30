@@ -380,10 +380,20 @@ def level_test_page():
 
     dealt = test.get("questions") or []
     questions = store.get_level_test_questions(dealt) if dealt else []
+    def has_proofs(qs):
+        return any(level_test.kind(q) == level_test.FITCH for q in qs)
+
     if len(questions) != len(dealt) or not questions:
         # Never dealt, or a question has since been deleted: deal afresh.
         questions = level_test.select(store.list_level_test_questions())
         if questions:
+            store.deal_level_test(user["uid"], [q["id"] for q in questions])
+    elif not has_proofs(questions):
+        # Dealt before the bank had proofs. Deal again so it ends on proofs
+        # like everyone else's, if the bank has them now.
+        fresh = level_test.select(store.list_level_test_questions())
+        if has_proofs(fresh):
+            questions = fresh
             store.deal_level_test(user["uid"], [q["id"] for q in questions])
 
     return render_template(
@@ -723,13 +733,19 @@ def api_submit_level_test():
 
     # The test is over, so the answers can go to the browser now.
     by_id = {q["id"]: q for q in questions}
-    review = [{
-        "id": m["id"],
-        "correct": m["correct"],
-        "chosen": m["chosen"],
-        "answer": by_id[m["id"]]["answer"],
-        "explanation": by_id[m["id"]].get("explanation", ""),
-    } for m in marking["marked"]]
+    review = []
+    for m in marking["marked"]:
+        question = by_id[m["id"]]
+        entry = {"id": m["id"], "correct": m["correct"],
+                 "explanation": question.get("explanation", "")}
+        if level_test.kind(question) == level_test.FITCH:
+            # The steps are the browser's own; send back what was wrong with
+            # them and a worked proof, not the steps again.
+            entry["problems"] = m.get("problems") or []
+            entry["proof"] = level_test.worked_rows(question)
+        else:
+            entry.update(chosen=m["chosen"], answer=question["answer"])
+        review.append(entry)
 
     return jsonify(
         ok=True,

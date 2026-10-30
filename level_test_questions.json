@@ -233,5 +233,123 @@
     "choices": ["0", "1", "2", "3"],
     "answer": 1,
     "explanation": "The first two conjuncts make p and q agree; p ∨ q rules out both false. Only both true is left."
+  },
+  {
+    "id": "proof-chain",
+    "kind": "fitch",
+    "topic": "fitch-proof",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "Prove p ⇒ r from p ⇒ q and q ⇒ r.",
+    "premises": ["p ⇒ q", "q ⇒ r"],
+    "goal": "p ⇒ r",
+    "proof": [
+      {"formula": "p ⇒ q", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "q ⇒ r", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "p", "rule": "assume", "depth": 1, "refs": []},
+      {"formula": "q", "rule": "ie", "depth": 1, "refs": [1, 3]},
+      {"formula": "r", "rule": "ie", "depth": 1, "refs": [2, 4]},
+      {"formula": "p ⇒ r", "rule": "ii", "depth": 0, "refs": [], "subref": [3, 5]}
+    ],
+    "explanation": "Assume p, use Implication Elimination twice to reach r, then discharge with Implication Introduction."
+  },
+  {
+    "id": "proof-import",
+    "kind": "fitch",
+    "topic": "fitch-proof",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "Prove p ∧ q ⇒ r from p ⇒ (q ⇒ r).",
+    "premises": ["p ⇒ (q ⇒ r)"],
+    "goal": "p ∧ q ⇒ r",
+    "proof": [
+      {"formula": "p ⇒ (q ⇒ r)", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "p ∧ q", "rule": "assume", "depth": 1, "refs": []},
+      {"formula": "p", "rule": "ae", "depth": 1, "refs": [2]},
+      {"formula": "q", "rule": "ae", "depth": 1, "refs": [2]},
+      {"formula": "q ⇒ r", "rule": "ie", "depth": 1, "refs": [1, 3]},
+      {"formula": "r", "rule": "ie", "depth": 1, "refs": [5, 4]},
+      {"formula": "p ∧ q ⇒ r", "rule": "ii", "depth": 0, "refs": [], "subref": [2, 6]}
+    ],
+    "explanation": "Assume p ∧ q, take it apart with And Elimination, then apply Implication Elimination twice."
+  },
+  {
+    "id": "proof-cases",
+    "kind": "fitch",
+    "topic": "fitch-proof",
+    "chapter": 5,
+    "difficulty": "medium",
+    "prompt": "Prove r ∧ (p ∨ q) from p ∨ q, p ⇒ r and q ⇒ r.",
+    "premises": ["p ∨ q", "p ⇒ r", "q ⇒ r"],
+    "goal": "r ∧ (p ∨ q)",
+    "proof": [
+      {"formula": "p ∨ q", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "p ⇒ r", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "q ⇒ r", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "r", "rule": "oe", "depth": 0, "refs": [1, 2, 3]},
+      {"formula": "r ∧ (p ∨ q)", "rule": "ai", "depth": 0, "refs": [4, 1]}
+    ],
+    "explanation": "Or Elimination gives r from the disjunction and its two cases; And Introduction joins it to p ∨ q."
+  },
+  {
+    "id": "proof-contrapositive",
+    "kind": "fitch",
+    "topic": "fitch-proof",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "Prove ¬q ⇒ ¬p from p ⇒ q.",
+    "premises": ["p ⇒ q"],
+    "goal": "¬q ⇒ ¬p",
+    "proof": [
+      {"formula": "p ⇒ q", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "¬q", "rule": "assume", "depth": 1, "refs": []},
+      {"formula": "p", "rule": "assume", "depth": 2, "refs": []},
+      {"formula": "¬q", "rule": "reit", "depth": 2, "refs": [2]},
+      {"formula": "p ⇒ ¬q", "rule": "ii", "depth": 1, "refs": [], "subref": [3, 4]},
+      {"formula": "¬p", "rule": "ni", "depth": 1, "refs": [1, 5]},
+      {"formula": "¬q ⇒ ¬p", "rule": "ii", "depth": 0, "refs": [], "subref": [2, 6]}
+    ],
+    "explanation": "Assume ¬q. Inside, show p ⇒ ¬q by assuming p and reiterating ¬q; Negation Introduction with p ⇒ q gives ¬p."
+  },
+  {
+    "id": "proof-export",
+    "kind": "fitch",
+    "topic": "fitch-proof",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "Prove p ⇒ (q ⇒ r) from p ∧ q ⇒ r.",
+    "premises": ["p ∧ q ⇒ r"],
+    "goal": "p ⇒ (q ⇒ r)",
+    "proof": [
+      {"formula": "p ∧ q ⇒ r", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "p", "rule": "assume", "depth": 1, "refs": []},
+      {"formula": "q", "rule": "assume", "depth": 2, "refs": []},
+      {"formula": "p ∧ q", "rule": "ai", "depth": 2, "refs": [2, 3]},
+      {"formula": "r", "rule": "ie", "depth": 2, "refs": [1, 4]},
+      {"formula": "q ⇒ r", "rule": "ii", "depth": 1, "refs": [], "subref": [3, 5]},
+      {"formula": "p ⇒ (q ⇒ r)", "rule": "ii", "depth": 0, "refs": [], "subref": [2, 6]}
+    ],
+    "explanation": "Assume p, then q, join them with And Introduction, fire the premise, and discharge both assumptions in turn."
+  },
+  {
+    "id": "proof-or-commutes",
+    "kind": "fitch",
+    "topic": "fitch-proof",
+    "chapter": 5,
+    "difficulty": "hard",
+    "prompt": "Prove q ∨ p from p ∨ q.",
+    "premises": ["p ∨ q"],
+    "goal": "q ∨ p",
+    "proof": [
+      {"formula": "p ∨ q", "rule": "premise", "depth": 0, "refs": []},
+      {"formula": "p", "rule": "assume", "depth": 1, "refs": []},
+      {"formula": "q ∨ p", "rule": "oi", "depth": 1, "refs": [2]},
+      {"formula": "p ⇒ q ∨ p", "rule": "ii", "depth": 0, "refs": [], "subref": [2, 3]},
+      {"formula": "q", "rule": "assume", "depth": 1, "refs": []},
+      {"formula": "q ∨ p", "rule": "oi", "depth": 1, "refs": [5]},
+      {"formula": "q ⇒ q ∨ p", "rule": "ii", "depth": 0, "refs": [], "subref": [5, 6]},
+      {"formula": "q ∨ p", "rule": "oe", "depth": 0, "refs": [1, 4, 7]}
+    ],
+    "explanation": "Prove p ⇒ q ∨ p and q ⇒ q ∨ p with Or Introduction inside two subproofs, then use Or Elimination."
   }
 ]

@@ -4,8 +4,10 @@
 
 {% block content %}
 {# Three screens on one card — intro, question, result — switched by
-   level_test.js. Only prompts and choices are on the page; the answers arrive
-   with the result, after the test is submitted. #}
+   level_test.js. Only prompts, choices and the proofs' premises and goals are
+   on the page; the answers arrive with the result, after the test is
+   submitted. #}
+{% set proofs = questions | selectattr('kind', 'equalto', 'fitch') | list %}
 <div class="auth-card test-card">
   <div class="auth-error" id="test-error" hidden></div>
 
@@ -18,9 +20,12 @@
         to work through questions that are too easy for you.
       </p>
       <ul class="test-facts">
-        <li><strong>{{ questions | length }} questions</strong>, multiple choice, one at a time</li>
+        <li><strong>{{ questions | length }} questions</strong>, one at a time:
+          {{ questions | length - proofs | length }} multiple choice{% if proofs %},
+          then {{ proofs | length }} short Fitch proof{{ 's' if proofs | length != 1 }}{% endif %}</li>
         <li>Mostly easy and medium, with {{ questions | selectattr('difficulty', 'equalto', 'hard') | list | length or 'no' }} hard</li>
-        <li>About a minute each. You can go back before you submit</li>
+        <li>About a minute for each multiple-choice question{% if proofs %}, a few
+          minutes for each proof{% endif %}. You can go back before you submit</li>
         <li>You take it once. A higher score unlocks harder levels</li>
       </ul>
       <div class="test-actions">
@@ -54,6 +59,17 @@
       <div class="test-choices" id="test-choices"></div>
     </fieldset>
 
+    {% if proofs %}
+    {# One editor for every proof question; level_test.js loads each one into
+       it and keeps the lines when you move between them. #}
+    <div class="test-proof" id="test-proof" hidden>
+      <p class="hint">Build the proof with the rule buttons, as in practice. A
+        finished proof is checked again when you submit; you can move on
+        without finishing, but an unfinished proof scores nothing.</p>
+      {% include "_fitch_board.html" %}
+    </div>
+    {% endif %}
+
     <div class="test-nav">
       <button type="button" class="btn btn-ghost" id="test-back">Back</button>
       <button type="button" class="btn btn-primary" id="test-next" disabled>Next</button>
@@ -82,5 +98,6 @@
 <script>
   window.__ILO_TEST = { questions: {{ questions | tojson }} };
 </script>
+{% if proofs %}<script src="{{ url_for('static', filename='fitch.js') }}"></script>{% endif %}
 <script src="{{ url_for('static', filename='level_test.js') }}"></script>
 {% endblock %}

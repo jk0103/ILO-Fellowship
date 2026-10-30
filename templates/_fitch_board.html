@@ -1,0 +1,57 @@
+{# The Fitch editor's markup. fitch.js finds every piece of it by id, so a
+   page includes it at most once: the Fitch page, and the level test's
+   proof questions. #}
+<p id="fitch-verdict" class="fitch-verdict"></p>
+
+<section class="fitch-board">
+  <div class="fitch-language">
+    <div class="fitch-lang-row">
+      <button type="button" class="fitch-lang-btn" id="fitch-objects-add" title="Add object constants">+</button>
+      <button type="button" class="fitch-lang-btn" id="fitch-objects-remove" title="Remove object constants">&minus;</button>
+      <span class="fitch-lang-label">Objects:</span>
+      <span class="fitch-lang-list" id="fitch-objects"></span>
+    </div>
+    <div class="fitch-lang-row">
+      <button type="button" class="fitch-lang-btn" id="fitch-functions-add" title="Add function constants">+</button>
+      <button type="button" class="fitch-lang-btn" id="fitch-functions-remove" title="Remove function constants">&minus;</button>
+      <span class="fitch-lang-label">Functions:</span>
+      <span class="fitch-lang-list" id="fitch-functions"></span>
+    </div>
+  </div>
+
+  <div class="fitch-selectall">
+    <input type="checkbox" id="fitch-select-all">
+    <label for="fitch-select-all">Select all</label>
+    <span class="fitch-selected" id="fitch-selected"></span>
+  </div>
+
+  <div id="fitch-lines"></div>
+
+  <p class="fitch-message" id="fitch-message"></p>
+
+  <div class="fitch-entry" id="fitch-entry" hidden>
+    <p class="fitch-entry-label" id="fitch-entry-label"></p>
+    <div class="fitch-entry-row">
+      <input id="fitch-entry-input" spellcheck="false" placeholder="formula">
+      <button type="button" class="btn btn-primary" id="fitch-entry-ok">Add</button>
+      <button type="button" class="btn btn-ghost" id="fitch-entry-cancel">Cancel</button>
+    </div>
+    <div class="fitch-palette">
+      <button type="button" class="fitch-sym" data-symbol="¬">¬</button>
+      <button type="button" class="fitch-sym" data-symbol="∧">∧</button>
+      <button type="button" class="fitch-sym" data-symbol="∨">∨</button>
+      <button type="button" class="fitch-sym" data-symbol="⇒">⇒</button>
+      <button type="button" class="fitch-sym" data-symbol="⇔">⇔</button>
+      <button type="button" class="fitch-sym" data-symbol="∀">∀</button>
+      <button type="button" class="fitch-sym" data-symbol="∃">∃</button>
+      <button type="button" class="fitch-sym" data-symbol=" = ">=</button>
+      <button type="button" class="fitch-sym" data-symbol=" ≠ ">≠</button>
+      <span class="hint">or type <code>~ &amp; | =&gt; &lt;=&gt;</code> and <code>!=</code>.
+        Quantifiers: <code>&forall;X.p(X)</code> for every X, <code>&exist;X.p(X)</code> for some X
+        (or <code>AX: p(X)</code>, <code>EX: p(X)</code> from the keyboard)
+        &mdash; variables uppercase, constants lowercase.</span>
+    </div>
+  </div>
+
+  <div class="fitch-buttons" id="fitch-buttons"></div>
+</section>

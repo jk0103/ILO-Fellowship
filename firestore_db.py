@@ -812,9 +812,17 @@ def clear_progress(uid):
 # every gated route needs.
 
 def save_level_test_question(question):
-    """Write one level-test question under its slug. Safe to re-run."""
-    payload = {key: question[key] for key in (
-        "topic", "chapter", "difficulty", "prompt", "choices", "answer")}
+    """Write one level-test question under its slug. Safe to re-run.
+
+    A multiple-choice question carries its choices and answer; a proof
+    question (kind "fitch") its premises, goal and a worked proof instead.
+    """
+    if question.get("kind") == "fitch":
+        fields = ("kind", "topic", "chapter", "difficulty", "prompt",
+                  "premises", "goal", "proof")
+    else:
+        fields = ("topic", "chapter", "difficulty", "prompt", "choices", "answer")
+    payload = {key: question[key] for key in fields}
     payload["explanation"] = question.get("explanation", "")
     payload["active"] = question.get("active", True) is not False
     get_client().collection(LEVEL_TEST).document(question["id"]).set(payload)

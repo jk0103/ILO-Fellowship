@@ -171,6 +171,35 @@ try:
     check("duplicate handle auto-suffixed",
           r.status_code == 200 and body2.get("username") == USERNAME + "2")
 
+    # --- level test with proofs, on the second account ---------------------
+    # Submitting places the account, which would upset the ladder checks the
+    # first one has just run, so it is done here.
+    import level_test as lt
+    uid2 = created_uids[-1]
+    r = c2.get("/level-test")
+    dealt2 = store.get_level_test_questions(
+        store.get_profile(uid2)["level_test"]["questions"])
+    kinds = [lt.kind(q) for q in dealt2]
+    check("the test ends on Fitch proofs",
+          kinds[-sum(lt.FITCH_MIX.values()):] == [lt.FITCH] * sum(lt.FITCH_MIX.values())
+          and b"fitch-lines" in r.data)
+    answers = {q["id"]: (q["proof"] if lt.kind(q) == lt.FITCH else q["answer"])
+               for q in dealt2}
+    # Spoil the last proof: its final line is the goal no longer.
+    last = dealt2[-1]
+    answers[last["id"]] = last["proof"][:-1]
+    r = c2.post("/api/level-test/submit", json={"answers": answers})
+    body = r.get_json() or {}
+    review = {m["id"]: m for m in body.get("review", [])}
+    check("submitted proofs are marked",
+          r.status_code == 200 and body.get("right") == len(dealt2) - 1)
+    check("a broken proof says what is wrong",
+          review[last["id"]]["correct"] is False and review[last["id"]]["problems"]
+          and review[last["id"]]["proof"])
+    stored = store.get_profile(uid2)["level_test"]["answers"]
+    check("proof steps are kept with the test",
+          stored[dealt2[-2]["id"]][-1]["formula"] == dealt2[-2]["proof"][-1]["formula"])
+
     # --- profile page -------------------------------------------------------
     check("profile gated when anon",
           m.app.test_client().get("/profile").status_code == 302)

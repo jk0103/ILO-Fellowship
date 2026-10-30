@@ -153,9 +153,11 @@ def prepare_level_test():
             continue
         seen.add(qid)
         if not level_test.usable(question) or not question.get("topic"):
+            need = ("premises, a goal and a worked proof the checker accepts"
+                    if level_test.kind(question) == level_test.FITCH
+                    else "two or more choices and an answer among them")
             print(f"  question {i} ({qid}): needs a topic, a known difficulty, "
-                  f"a prompt, two or more choices and an answer among them",
-                  file=sys.stderr)
+                  f"a prompt, {need}", file=sys.stderr)
             failed = True
             continue
         questions.append(question)

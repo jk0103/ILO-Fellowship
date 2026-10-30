@@ -1662,3 +1662,27 @@ body.is-loading > .footer {
 @media (max-width: 820px) {
   .profile-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* The level test's proof questions: the card widens to the editor's width,
+   and the language row is hidden since the test's proofs are propositional. */
+.test-main.test-main-wide { max-width: 1080px; }
+.test-proof { margin-top: .4rem; }
+.test-proof > .hint { margin: 0 0 1rem; }
+.test-proof .fitch-language { display: none; }
+.test-card .fitch-board::before { display: none; }
+.test-worked {
+  margin: .5rem 0 0; padding: .5rem .8rem .5rem 2.2rem;
+  background: var(--bg-tint); border: 1px solid var(--border); border-radius: 8px;
+  font-size: .82rem; line-height: 1.6;
+}
+.test-review .test-worked { margin-top: .5rem; padding-left: 2.2rem; }
+.test-review .test-worked li { margin: 0; padding-left: .2rem; }
+.test-worked li > span { display: inline-block; vertical-align: top; }
+.test-worked-formula {
+  min-width: 55%;
+  /* One scope bar per level of subproof, as the editor draws them. */
+  padding-left: calc(var(--depth, 0) * .9rem);
+  background: repeating-linear-gradient(to right, var(--blue) 0 2px, transparent 2px .9rem)
+    left / calc(var(--depth, 0) * .9rem) 100% no-repeat;
+}
+.test-worked-rule { color: var(--muted); }

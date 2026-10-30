@@ -4,14 +4,34 @@
 // marked here: the answers are posted to /api/level-test/submit, which marks
 // them against the questions stored on the profile and sends back the level,
 // and only then the right answers for the review.
+//
+// The last questions may be Fitch proofs. They share the one editor on the
+// page (fitch.js): each is loaded into it when shown, its lines are kept when
+// you move away, and its answer is the proof's steps, which the server checks
+// with its own copy of the rules.
 
 (function () {
   const questions = (window.__ILO_TEST && window.__ILO_TEST.questions) || [];
   const $ = (id) => document.getElementById(id);
   if (!questions.length || !$("test-start")) return;
 
-  const answers = {};          // question id -> chosen index
+  const answers = {};          // question id -> chosen index, or proof steps
+  const proved = {};           // proof question id -> finished in the editor
+  const boards = {};           // proof question id -> its lines in the editor
   let index = 0;
+
+  const isProof = (q) => q.kind === "fitch";
+  const done = (q) => (isProof(q) ? !!proved[q.id] : q.id in answers);
+
+  // The editor reports every change; keep the current proof's answer in step.
+  document.addEventListener("fitch:change", (event) => {
+    const q = questions[index];
+    if (!q || !isProof(q) || $("test-question").hidden) return;
+    proved[q.id] = event.detail.proved;
+    answers[q.id] = window.Fitch.steps();
+    boards[q.id] = window.Fitch.state.lines;
+    refresh();
+  });
 
   function show(screen) {
     ["test-intro", "test-question", "test-result"].forEach((id) => {
@@ -32,14 +52,15 @@
     const q = questions[index];
     // The bar counts questions answered, not the one on screen, so it reaches
     // the end only when the last answer is in.
-    const answered = questions.filter((x) => x.id in answers).length;
+    const answered = questions.filter(done).length;
     $("test-meter").setAttribute("aria-valuenow", answered);
     $("test-meter-fill").style.width = (100 * answered / questions.length) + "%";
 
     $("test-back").disabled = index === 0;
     const next = $("test-next");
     next.textContent = index === questions.length - 1 ? "Submit" : "Next";
-    next.disabled = !(q.id in answers);
+    // A proof can be left unfinished; a choice has to be made.
+    next.disabled = !isProof(q) && !(q.id in answers);
   }
 
   function render() {
@@ -53,7 +74,23 @@
     $("test-prompt").textContent = q.prompt;
     const list = $("test-choices");
     list.replaceChildren();
-    q.choices.forEach((text, i) => {
+    list.hidden = isProof(q);
+    if ($("test-proof")) $("test-proof").hidden = !isProof(q);
+    // The editor needs more room than a list of choices.
+    document.querySelector("main").classList.toggle("test-main-wide", isProof(q));
+    if (isProof(q)) {
+      // Taken first: loading the problem reports a fresh board, which would
+      // otherwise be saved over the lines being returned to.
+      const kept = boards[q.id];
+      window.Fitch.loadProblem({ id: "loaded", premises: q.premises, goal: q.goal, objects: [] });
+      if (kept) {
+        window.Fitch.state.lines = kept;
+        window.Fitch.render();
+      }
+      refresh();
+      return;
+    }
+    (q.choices || []).forEach((text, i) => {
       const label = document.createElement("label");
       label.className = "test-choice";
       const input = document.createElement("input");
@@ -132,18 +169,42 @@
       prompt.textContent = (mark.correct ? "✓ " : "✗ ") + q.prompt;
       const answer = document.createElement("p");
       answer.className = "hint";
-      answer.textContent = mark.correct
-        ? "Your answer: " + q.choices[mark.answer]
-        : "Your answer: " + (mark.chosen == null ? "none" : q.choices[mark.chosen]) +
-          ". Correct: " + q.choices[mark.answer];
       const why = document.createElement("p");
       why.className = "hint";
       why.textContent = mark.explanation;
-      item.append(prompt, answer, why);
+      if (isProof(q)) {
+        answer.textContent = mark.correct
+          ? "Your proof checks out."
+          : "Not proved: " + ((mark.problems || [])[0] || "no proof was submitted") + ".";
+        // A worked proof, one row a line: number, scope bars, formula, rule.
+        const worked = document.createElement("ol");
+        worked.className = "test-worked";
+        worked.setAttribute("aria-label", "A worked proof");
+        (mark.proof || []).forEach((row) => {
+          const line = document.createElement("li");
+          const formula = document.createElement("span");
+          formula.className = "test-worked-formula";
+          formula.style.setProperty("--depth", row.depth);
+          formula.textContent = row.formula;
+          const rule = document.createElement("span");
+          rule.className = "test-worked-rule";
+          rule.textContent = row.rule + (row.cites ? " " + row.cites : "");
+          line.append(formula, rule);
+          worked.append(line);
+        });
+        item.append(prompt, answer, why, worked);
+      } else {
+        answer.textContent = mark.correct
+          ? "Your answer: " + q.choices[mark.answer]
+          : "Your answer: " + (mark.chosen == null ? "none" : q.choices[mark.chosen]) +
+            ". Correct: " + q.choices[mark.answer];
+        item.append(prompt, answer, why);
+      }
       review.append(item);
     });
 
     if (data.redirect) $("result-continue").href = data.redirect;
+    document.querySelector("main").classList.remove("test-main-wide");
     show("test-result");
     $("result-level").focus();
   }
@@ -174,7 +235,8 @@
   });
 
   $("test-next").addEventListener("click", () => {
-    if (!(questions[index].id in answers)) return;
+    const q = questions[index];
+    if (!isProof(q) && !(q.id in answers)) return;
     if (index === questions.length - 1) {
       submit();
     } else {

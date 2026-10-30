@@ -1748,6 +1748,21 @@
     }
 
     updateSelectionUI();
+    // For a page that embeds the editor, such as the level test.
+    document.dispatchEvent(new CustomEvent("fitch:change",
+      { detail: { proved: !!(state.goal && reached && allValid) } }));
+  }
+
+  /* The proof as fitch_checker.py reads it: 1-based line numbers rather than
+   * the editor's own line ids, so the server can mark it with the same rules. */
+  function steps() {
+    const at = new Map(state.lines.map((l, i) => [l.id, i + 1]));
+    return state.lines.map((l) => {
+      const step = { formula: show(l.formula), rule: l.rule, depth: l.depth,
+                     refs: l.refIds.map((id) => at.get(id) || 0) };
+      if (l.subRef) step.subref = [at.get(l.subRef.fromId) || 0, at.get(l.subRef.toId) || 0];
+      return step;
+    });
   }
 
   // Cheap enough to recompute on every checkbox click, and it keeps the
@@ -1929,6 +1944,7 @@
     APPLY: APPLY, substitute: substitute, instanceOf: instanceOf,
     freeNames: freeNames, isGround: isGround, showTerm: showTerm,
     vocabulary: vocabulary, parseTerm: parseTerm,
+    render: render, steps: steps,
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
