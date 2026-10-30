@@ -1,0 +1,105 @@
+{# The rules reference: a floating button bottom right, and the panel it
+   opens. Not modal, so the proof stays usable while it is open. Each rule is
+   written the way the chapter prints it — what it takes above the bar, what
+   it gives below — with a line on how to apply it in this editor.
+
+   Left off the level test on purpose: some of its questions ask which rule
+   does what. `rules_chapter` picks the tab it opens on. #}
+{% set rules_chapter = rules_chapter or 5 %}
+
+{% macro rule(name, short, above, below, how) %}
+<li class="rule">
+  <div class="rule-head">
+    <span class="rule-name">{{ name }}</span>
+    {% if short %}<span class="rule-short">{{ short }}</span>{% endif %}
+  </div>
+  <p class="rule-how">{{ how }}</p>
+  {% if below %}
+  <div class="rule-schema" aria-label="From {{ above | join(', ') or 'nothing' }}, conclude {{ below }}">
+    {% if above %}<div class="rule-above">{% for line in above %}<span>{{ line }}</span>{% endfor %}</div>{% endif %}
+    <div class="rule-below">{{ below }}</div>
+  </div>
+  {% endif %}
+</li>
+{% endmacro %}
+
+<button type="button" class="rules-fab" id="rules-fab"
+        aria-expanded="false" aria-controls="rules-panel" title="Fitch rules">
+  <span aria-hidden="true">&#8866;</span>
+  <span class="rules-fab-label">Rules</span>
+</button>
+
+<section class="rules-panel" id="rules-panel" role="dialog" aria-modal="false"
+         aria-labelledby="rules-title" hidden data-chapter="{{ rules_chapter }}">
+  <header class="rules-top">
+    <h2 id="rules-title">Fitch rules</h2>
+    <button type="button" class="rules-close" id="rules-close" aria-label="Close the rules">&times;</button>
+  </header>
+
+  <div class="rules-tabs" role="tablist" aria-label="Rules by chapter">
+    <button type="button" role="tab" data-rules-tab="5">Ch. 5</button>
+    <button type="button" role="tab" data-rules-tab="10">Ch. 10</button>
+    <button type="button" role="tab" data-rules-tab="13">Ch. 13</button>
+    <button type="button" role="tab" data-rules-tab="15">Ch. 15</button>
+  </div>
+
+  <div class="rules-body">
+    <p class="rules-note">Check lines with the boxes, then press the rule. Rules
+      that need a sentence or a term ask for it. φ and ψ stand for any
+      sentences; a line above the bar has to be in scope.</p>
+
+    <div role="tabpanel" data-rules-panel="5">
+      <h3>Every chapter</h3>
+      <ul class="rule-list">
+        {{ rule("Premise", "", [], "", "A sentence the problem gives you. On a loaded question the premises are already on the board.") }}
+        {{ rule("Assumption", "", [], "", "Press it and type any sentence. That opens a subproof: the lines after it are indented until it is discharged.") }}
+        {{ rule("Reiteration", "R", ["φ"], "φ", "Check one line to repeat it, usually to bring it into a subproof.") }}
+      </ul>
+      <h3>Chapter 5: propositional</h3>
+      <ul class="rule-list">
+        {{ rule("And Introduction", "AI", ["φ₁", "…", "φₙ"], "φ₁ ∧ … ∧ φₙ", "Check two or more lines. The conjuncts follow the order you ticked them.") }}
+        {{ rule("And Elimination", "AE", ["φ₁ ∧ … ∧ φₙ"], "φᵢ", "Check one conjunction; every conjunct is added.") }}
+        {{ rule("Or Introduction", "OI", ["φ"], "φ ∨ ψ", "Check one line, then type a disjunction that has it as a disjunct.") }}
+        {{ rule("Or Elimination", "OE", ["φ₁ ∨ … ∨ φₙ", "φ₁ ⇒ ψ", "…", "φₙ ⇒ ψ"], "ψ", "Check the disjunction and one implication per disjunct, all ending in ψ.") }}
+        {{ rule("Negation Introduction", "NI", ["φ ⇒ ψ", "φ ⇒ ¬ψ"], "¬φ", "Check two implications from the same φ to a sentence and its negation.") }}
+        {{ rule("Negation Elimination", "NE", ["¬¬φ"], "φ", "Check one double negation.") }}
+        {{ rule("Implication Introduction", "II", ["φ … ψ  (a subproof)"], "φ ⇒ ψ", "Check the line to discharge to, and optionally the assumption φ. This closes the subproof.") }}
+        {{ rule("Implication Elimination", "IE", ["φ ⇒ ψ", "φ"], "ψ", "Check the implication and its antecedent, in either order.") }}
+        {{ rule("Biconditional Introduction", "BI", ["φ ⇒ ψ", "ψ ⇒ φ"], "φ ⇔ ψ", "Check the two implications that run opposite ways.") }}
+        {{ rule("Biconditional Elimination", "BE", ["φ ⇔ ψ"], "φ ⇒ ψ  and  ψ ⇒ φ", "Check one biconditional; both directions are added.") }}
+      </ul>
+    </div>
+
+    <div role="tabpanel" data-rules-panel="10" hidden>
+      <h3>Chapter 10: quantifiers</h3>
+      <p class="rules-note">τ is a ground term, with no variables in it. φ[τ] is φ[X] with τ put in for X.</p>
+      <ul class="rule-list">
+        {{ rule("Universal Elimination", "UE", ["∀X.φ[X]"], "φ[τ]", "Check the universal line, then type the term τ to put in.") }}
+        {{ rule("Universal Introduction", "UI", ["φ[a]"], "∀X.φ[X]", "Check the line, then type the ∀ sentence. a has to be arbitrary: not in a premise or in an assumption still open.") }}
+        {{ rule("Existential Introduction", "EI", ["φ[τ]"], "∃X.φ[X]", "Check the line, then type the ∃ sentence to generalize it to.") }}
+        {{ rule("Existential Elimination", "EE", ["∃X.φ[X]", "∀X.(φ[X] ⇒ ψ)"], "ψ", "Check both lines. X may not occur free in ψ.") }}
+      </ul>
+    </div>
+
+    <div role="tabpanel" data-rules-panel="13" hidden>
+      <h3>Chapter 13: closure and induction</h3>
+      <p class="rules-note">These range over the language: set its object and function constants with the Objects and Functions rows above the proof.</p>
+      <ul class="rule-list">
+        {{ rule("Domain Closure", "DC", ["φ[a₁]", "…", "φ[aₙ]"], "∀X.φ[X]", "One instance for each object constant a₁ … aₙ, with no function constants. Check the instances, then type the conclusion.") }}
+        {{ rule("Induction", "Ind", ["φ[a]", "∀X.(φ[X] ⇒ φ[f(X)])"], "∀X.φ[X]", "A base case φ[a] for each object constant and an inductive case for each function constant. Check them all, then type the conclusion. Needs at least one function constant.") }}
+      </ul>
+    </div>
+
+    <div role="tabpanel" data-rules-panel="15" hidden>
+      <h3>Chapter 15: equality</h3>
+      <ul class="rule-list">
+        {{ rule("Equality Introduction", "QI", [], "σ = σ", "Type a ground term σ.") }}
+        {{ rule("Equality Elimination", "QE", ["φ", "σ = τ"], "φ with τ for σ", "Check the line to rewrite, then the equation, then type the rewritten line. Some or all occurrences may be replaced, either way round.") }}
+        {{ rule("Rational Equation", "RatEq", [], "σ = τ", "Type an equation between ground terms that agree once + and * are multiplied out.") }}
+        {{ rule("Rational Induction", "RatInd", ["φ[0]", "∀X.(φ[X] ⇒ φ[X + 1])"], "∀X.φ[X]", "Check the base case and the inductive case, then type the conclusion. Over the numbers only.") }}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='fitch_rules.js') }}"></script>
