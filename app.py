@@ -16,6 +16,7 @@ import fitch_checker as checker
 import fitch_generator as generator
 import ch10_checker
 import ch10_generator
+import demographics
 import firestore_db as store
 import level_test
 import progress
@@ -55,6 +56,12 @@ CHAPTERS = {
     },
 }
 
+# Chapters on the dashboard's ladder that have a seeded bank but no generator
+# yet, so they stay off the Generate page and its API.
+LADDER_ONLY = {
+    15: {"label": "Chapter 15 — induction and equality"},
+}
+
 DEFAULT_CHAPTER = store.DEFAULT_CHAPTER
 
 # The two generators raise their own error type for the same kinds of failure.
@@ -70,6 +77,19 @@ def chapter_arg(value, default=DEFAULT_CHAPTER):
     except (TypeError, ValueError):
         return None
     return number if number in CHAPTERS else None
+
+
+def ladder_chapter(value):
+    """The chapter a practice link names, or None if it is not on the ladder.
+
+    Wider than chapter_arg: a LADDER_ONLY chapter can be practiced, just not
+    generated for.
+    """
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number in progress.CHAPTER_ORDER else None
 
 
 app = Flask(__name__)
@@ -187,7 +207,14 @@ def login():
 def register():
     if current_user():
         return redirect(url_for("dashboard"))
-    return render_template("register.html")
+    return render_template(
+        "register.html",
+        genders=demographics.GENDERS,
+        countries=demographics.COUNTRIES,
+        age_min=demographics.AGE_MIN,
+        age_max=demographics.AGE_MAX,
+        school_max=demographics.SCHOOL_MAX,
+    )
 
 
 @app.route("/logout")
@@ -239,7 +266,7 @@ def practice():
     that clicking twice does not hand back the same proof. Everything already
     solved is only reached once the level has nothing new left.
     """
-    chapter = chapter_arg(request.args.get("chapter"))
+    chapter = ladder_chapter(request.args.get("chapter"))
     band = (request.args.get("difficulty") or "").strip()
     if chapter is None or band not in progress.BANDS:
         flash("That is not a level you can practice.", "error")
@@ -253,6 +280,10 @@ def practice():
 
     questions = store.list_questions(chapter=chapter, difficulty=band, limit=200)
     if not questions:
+        if chapter not in CHAPTERS:
+            flash("No %s questions for Chapter %d yet." % (band, chapter),
+                  "error")
+            return redirect(url_for("dashboard"))
         flash("No %s questions for Chapter %d yet — generate some first."
               % (band, chapter), "error")
         return redirect(url_for("generate_page", chapter=chapter))
@@ -287,10 +318,44 @@ def dashboard():
     """The level map: what is open, what is cleared, what is still shut."""
     user = current_user()
     counts, start = standing(user)
-    labels = {n: CHAPTERS[n]["label"] for n in CHAPTERS}
+    labels = {n: spec["label"]
+              for n, spec in list(CHAPTERS.items()) + list(LADDER_ONLY.items())}
     return render_template(
         "dashboard.html",
         ladder=progress.ladder(counts, labels, start),
+        to_clear=progress.TO_CLEAR,
+        level_test=user.get("level_test") or {},
+    )
+
+
+@app.route("/profile")
+@login_required
+def profile_page():
+    """Your details, editable, and two charts of how the practice is going."""
+    user = current_user()
+    records = store.list_progress(user["uid"])
+    by_level = progress.solved_by_level(records)
+    labels = {n: spec["label"]
+              for n, spec in list(CHAPTERS.items()) + list(LADDER_ONLY.items())}
+    return render_template(
+        "profile.html",
+        about=user.get("demographics") or {},
+        genders=demographics.GENDERS,
+        countries=demographics.COUNTRIES,
+        age_min=demographics.AGE_MIN,
+        age_max=demographics.AGE_MAX,
+        school_max=demographics.SCHOOL_MAX,
+        charts={
+            "byLevel": [
+                {"chapter": n, "label": "Ch. %d" % n,
+                 "title": labels.get(n, "Chapter %d" % n),
+                 "bands": by_level[n]}
+                for n in progress.CHAPTER_ORDER
+            ],
+            "byDay": progress.solves_by_day(
+                records, datetime.datetime.now(datetime.timezone.utc).date()),
+            "bands": list(progress.BANDS),
+        },
         to_clear=progress.TO_CLEAR,
         level_test=user.get("level_test") or {},
     )
@@ -339,6 +404,7 @@ def create_session():
     payload = request.get_json(silent=True) or {}
     id_token = payload.get("idToken")
     desired_username = (payload.get("username") or "").strip() or None
+    about = demographics.clean(payload.get("about"))
 
     if not id_token:
         return jsonify(error="Missing ID token."), 400
@@ -376,6 +442,7 @@ def create_session():
         provider=provider,
         providers=providers,
         desired_username=desired_username,
+        demographics=about,
     )
 
     try:
@@ -733,6 +800,38 @@ def username_available():
     if not store.is_valid_username(username):
         return jsonify(valid=False, available=False)
     return jsonify(valid=True, available=not store.username_taken(username))
+
+
+@app.post("/api/profile")
+def api_update_profile():
+    """Save the profile page's form: the username and the "about you" answers.
+
+    Unlike sign-up, nothing here is half-done if a value is bad, so a missing
+    or malformed answer is refused outright rather than dropped.
+    """
+    user = current_user()
+    if user is None:
+        return jsonify(error="Please log in again."), 401
+
+    payload = request.get_json(silent=True) or {}
+    username = (payload.get("username") or "").strip()
+    if not store.is_valid_username(username):
+        return jsonify(error="Username must be 3-20 characters: letters, "
+                             "numbers, underscores.", field="username"), 400
+
+    raw = payload.get("about") or {}
+    about = demographics.clean(raw)
+    for field in ("gender", "age", "school", "nationality"):
+        if field not in about:
+            return jsonify(error="Please check your %s." % field, field=field), 400
+
+    try:
+        profile = store.update_profile(user["uid"], username=username,
+                                       demographics=about)
+    except store.UsernameTaken:
+        return jsonify(error="%s is already taken." % username,
+                       field="username"), 409
+    return jsonify(ok=True, username=profile.get("username"))
 
 
 if __name__ == "__main__":

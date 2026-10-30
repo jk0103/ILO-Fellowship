@@ -26,7 +26,8 @@
       {% if current_user %}
         <a href="{{ url_for('generate_page') }}"{{ here('generate_page') }}>Generate</a>
         <a href="{{ url_for('dashboard') }}"{{ here('dashboard') }}>Dashboard</a>
-        <span class="nav-user">{{ current_user['username'] }}</span>
+        <a class="nav-user" href="{{ url_for('profile_page') }}"{{ here('profile_page') }}
+           title="Your profile">{{ current_user['username'] }}</a>
         <a class="btn btn-ghost" id="logout-btn" href="{{ url_for('logout') }}">Log out</a>
       {% else %}
         <a href="{{ url_for('login') }}"{{ here('login') }}>Log in</a>

@@ -40,7 +40,8 @@ usernames/{username_lower}
 
 questions/{fingerprint}
     statement     (str)  the exercise as prose
-    chapter       (int)  5 (propositional) or 10 (relational)
+    chapter       (int)  5 (propositional), 10 (relational) or 15
+                         (induction and equality)
     premises      (list[str])
     goal          (str)
     constants     (list[str])  object constants the language is limited to,
@@ -248,12 +249,18 @@ def get_profile(uid):
 
 
 def ensure_profile(uid, email, display_name=None, photo_url=None,
-                   provider=None, providers=None, desired_username=None):
+                   provider=None, providers=None, desired_username=None,
+                   demographics=None):
     """Create the profile on first sign-in, or refresh it on later ones.
 
     Returns (profile, created). The username is reserved transactionally; if
     `desired_username` is taken (or not given) a numbered variant is used, so
     signing in never fails just because a handle collided.
+
+    `demographics` is the sign-up form's cleaned "about you" answers. It is
+    written when the profile is created, or onto an existing profile that has
+    none yet (e.g. someone signing up with Google who already had an account),
+    and never overwrites answers already given.
     """
     db = get_client()
     existing = get_profile(uid)
@@ -273,6 +280,9 @@ def ensure_profile(uid, email, display_name=None, photo_url=None,
             [provider] if provider else None)
         if current is not None and sorted(current) != sorted(existing.get("providers") or []):
             updates["providers"] = current
+        if demographics and not existing.get("demographics"):
+            updates["demographics"] = dict(
+                demographics, collected_at=firestore.SERVER_TIMESTAMP)
         db.collection(USERS).document(uid).update(updates)
         return get_profile(uid), False
 
@@ -285,13 +295,14 @@ def ensure_profile(uid, email, display_name=None, photo_url=None,
         candidate = seed if attempt == 0 else "%s%d" % (seed[:18], attempt + 1)
         if _claim(db, uid, candidate, email, display_name, photo_url,
                   providers if providers is not None else
-                  ([provider] if provider else [])):
+                  ([provider] if provider else []), demographics):
             return get_profile(uid), True
 
     raise RuntimeError("Could not allocate a username for uid %s" % uid)
 
 
-def _claim(db, uid, username, email, display_name, photo_url, providers):
+def _claim(db, uid, username, email, display_name, photo_url, providers,
+           demographics=None):
     """Reserve `username` and write the profile atomically. False if taken."""
     name_ref = db.collection(USERNAMES).document(username.lower())
     user_ref = db.collection(USERS).document(uid)
@@ -302,7 +313,7 @@ def _claim(db, uid, username, email, display_name, photo_url, providers):
         if name_ref.get(transaction=transaction).exists:
             return False
         transaction.set(name_ref, {"uid": uid})
-        transaction.set(user_ref, {
+        profile = {
             "username": username,
             "email": (email or "").lower(),
             "display_name": display_name or username,
@@ -312,10 +323,67 @@ def _claim(db, uid, username, email, display_name, photo_url, providers):
             "created_at": firestore.SERVER_TIMESTAMP,
             "last_login": firestore.SERVER_TIMESTAMP,
             "stats": {"solved": 0, "attempted": 0, "streak": 0},
-        })
+        }
+        if demographics:
+            profile["demographics"] = dict(
+                demographics, collected_at=firestore.SERVER_TIMESTAMP)
+        transaction.set(user_ref, profile)
         return True
 
     return _txn(db.transaction())
+
+
+class UsernameTaken(Exception):
+    """The handle asked for on the profile page belongs to someone else."""
+
+
+def update_profile(uid, username=None, demographics=None):
+    """Apply the profile page's edits. Returns the refreshed profile.
+
+    A new `username` moves its reservation in the same transaction that
+    renames the profile, so two people can never end up holding one handle;
+    raises UsernameTaken if it is already reserved. `demographics` replaces
+    the "about you" answers, keeping when they were first collected.
+    """
+    db = get_client()
+    user_ref = db.collection(USERS).document(uid)
+
+    @firestore.transactional
+    def _txn(transaction):
+        snapshot = user_ref.get(transaction=transaction)
+        if not snapshot.exists:
+            raise KeyError(uid)
+        current = snapshot.to_dict() or {}
+        updates = {}
+
+        old = current.get("username") or ""
+        rename = username and username != old
+        if rename:
+            new_ref = db.collection(USERNAMES).document(username.lower())
+            holder = (new_ref.get(transaction=transaction).to_dict() or {}).get("uid")
+            if holder and holder != uid:
+                raise UsernameTaken(username)
+
+        # Reads are done; writes from here on.
+        if rename:
+            if old and old.lower() != username.lower():
+                transaction.delete(db.collection(USERNAMES).document(old.lower()))
+            transaction.set(new_ref, {"uid": uid})
+            updates["username"] = username
+
+        if demographics:
+            before = current.get("demographics") or {}
+            updates["demographics"] = dict(
+                demographics,
+                collected_at=before.get("collected_at") or firestore.SERVER_TIMESTAMP,
+                updated_at=firestore.SERVER_TIMESTAMP,
+            )
+
+        if updates:
+            transaction.update(user_ref, updates)
+
+    _txn(db.transaction())
+    return get_profile(uid)
 
 
 def delete_profile(uid):
@@ -336,7 +404,10 @@ def delete_profile(uid):
 # --- questions --------------------------------------------------------------
 
 def _parser_for(chapter):
-    """The module that parses and prints the formulas of `chapter`."""
+    """The module that parses and prints the formulas of `chapter`, or None
+    for Chapter 15, whose equations and terms only the browser checker reads."""
+    if int(chapter) == 15:
+        return None
     if int(chapter) == 10:
         import ch10_checker
         return ch10_checker
@@ -355,9 +426,12 @@ def question_id(premises, goal, chapter=DEFAULT_CHAPTER):
     """
     chapter = int(chapter)
     fc = _parser_for(chapter)
+    # Chapter 15's bank is written already printed by fitch.js, so its
+    # formulas are their own normal form up to spacing.
+    norm = (lambda s: fc.show(fc.parse(s))) if fc else \
+        (lambda s: " ".join(s.split()))
 
-    parts = sorted(fc.show(fc.parse(p)) for p in premises) + \
-        ["⊢ " + fc.show(fc.parse(goal))]
+    parts = sorted(norm(p) for p in premises) + ["⊢ " + norm(goal)]
     if chapter != DEFAULT_CHAPTER:
         parts.insert(0, "chapter %d" % chapter)
     digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()

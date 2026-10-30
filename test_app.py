@@ -69,7 +69,10 @@ try:
 
     # --- signup -> session --------------------------------------------------
     id_token = sign_up(EMAIL, PASSWORD)
-    r = c.post("/api/session", json={"idToken": id_token, "username": USERNAME})
+    ABOUT = {"gender": "female", "age": 17, "school": "Test High School",
+             "nationality": "South Korea"}
+    r = c.post("/api/session", json={"idToken": id_token, "username": USERNAME,
+                                     "about": dict(ABOUT, gender="bogus")})
     body = r.get_json() or {}
     check("session created from ID token", r.status_code == 200 and body.get("ok"))
     check("marked as new account", body.get("created") is True)
@@ -83,6 +86,9 @@ try:
     check("profile email correct", profile["email"] == EMAIL.lower())
     check("provider recorded", "password" in profile["providers"])
     check("stats initialised", profile["stats"]["solved"] == 0)
+    about = dict(profile.get("demographics") or {})
+    check("about-you answers stored", about.pop("collected_at", None) is not None
+          and about == {k: v for k, v in ABOUT.items() if k != "gender"})
     check("username index written",
           store.get_client().collection("usernames").document(USERNAME.lower())
           .get().to_dict()["uid"] == uid)
@@ -164,6 +170,43 @@ try:
     body2 = r.get_json() or {}
     check("duplicate handle auto-suffixed",
           r.status_code == 200 and body2.get("username") == USERNAME + "2")
+
+    # --- profile page -------------------------------------------------------
+    check("profile gated when anon",
+          m.app.test_client().get("/profile").status_code == 302)
+    r = c.get("/profile")
+    check("profile renders", r.status_code == 200)
+    check("profile shows stored answers", b"Test High School" in r.data)
+
+    names = store.get_client().collection("usernames")
+    first_collected = store.get_profile(uid)["demographics"]["collected_at"]
+    renamed = USERNAME + "x"
+    edit = dict(ABOUT, age=18, school="Another School")
+    r = c.post("/api/profile", json={"username": renamed, "about": edit})
+    after = store.get_profile(uid)
+    check("profile edit saved", r.status_code == 200 and after["username"] == renamed)
+    check("rename moves the username index",
+          names.document(renamed.lower()).get().to_dict()["uid"] == uid
+          and not names.document(USERNAME.lower()).get().exists)
+    check("edited answers stored",
+          after["demographics"]["age"] == 18
+          and after["demographics"]["school"] == "Another School")
+    check("first collection time kept",
+          after["demographics"]["collected_at"] == first_collected)
+
+    r = c.post("/api/profile", json={"username": USERNAME + "2", "about": edit})
+    check("someone else's username refused", r.status_code == 409)
+    r = c.post("/api/profile", json={"username": renamed,
+                                     "about": dict(edit, nationality="Narnia")})
+    check("bad answer refused", r.status_code == 400
+          and (r.get_json() or {}).get("field") == "nationality")
+    r = m.app.test_client().post("/api/profile", json={"username": renamed})
+    check("profile edit needs a session", r.status_code == 401)
+
+    # Back to the original, which the returning-user checks below expect.
+    r = c.post("/api/profile", json={"username": USERNAME, "about": edit})
+    check("rename back works", r.status_code == 200
+          and not names.document(renamed.lower()).get().exists)
 
     # --- logout -------------------------------------------------------------
     r = c.post("/api/logout")

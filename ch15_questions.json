@@ -1,0 +1,1678 @@
+[
+  {
+    "title": "Zero is a right identity",
+    "prompt": "Given ∀Y.plus(0,Y,Y) and ∀X.∀Y.∀Z.(plus(X,Y,Z) ⇒ plus(s(X),Y,s(Z))), use the Fitch System to prove ∀X.plus(X,0,X).",
+    "premises": [
+      "∀Y.plus(0,Y,Y)",
+      "∀X.∀Y.∀Z.(plus(X,Y,Z) ⇒ plus(s(X),Y,s(Z)))"
+    ],
+    "goal": "∀X.plus(X,0,X)",
+    "constants": [],
+    "hint": "The base case is plus(0,0,0). For the inductive case, take the second premise apart for a placeholder c and Y = 0, then generalize it and close with Induction.",
+    "rules_used": [
+      "ue",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "∀Y.plus(0,Y,Y)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.∀Y.∀Z.(plus(X,Y,Z) ⇒ plus(s(X),Y,s(Z)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "plus(0,0,0)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀Y.∀Z.(plus(c,Y,Z) ⇒ plus(s(c),Y,s(Z)))",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀Z.(plus(c,0,Z) ⇒ plus(s(c),0,s(Z)))",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "plus(c,0,c) ⇒ plus(s(c),0,s(c))",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(plus(X,0,X) ⇒ plus(s(X),0,s(X)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.plus(X,0,X)",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          3,
+          7
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Linear induction through a case split",
+    "prompt": "Given r(a), ∀X.(p(X) ⇒ r(s(X))), ∀X.(q(X) ⇒ r(s(X))) and ∀X.(r(X) ⇒ p(X) ∨ q(X)), use the Fitch System to prove ∀X.r(X).",
+    "premises": [
+      "r(a)",
+      "∀X.(p(X) ⇒ r(s(X)))",
+      "∀X.(q(X) ⇒ r(s(X)))",
+      "∀X.(r(X) ⇒ p(X) ∨ q(X))"
+    ],
+    "goal": "∀X.r(X)",
+    "constants": [],
+    "hint": "r(a) is the base case. Assume r(c), get p(c) ∨ q(c), and reach r(s(c)) from either side with Or Elimination; then generalize and use Induction.",
+    "rules_used": [
+      "assume",
+      "ue",
+      "ie",
+      "oe",
+      "ii",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "r(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(p(X) ⇒ r(s(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(q(X) ⇒ r(s(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(r(X) ⇒ p(X) ∨ q(X))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "r(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "r(c) ⇒ p(c) ∨ q(c)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∨ q(c)",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          6,
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ r(s(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c) ⇒ r(s(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(s(c))",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          7,
+          8,
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "r(c) ⇒ r(s(c))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          10
+        ]
+      },
+      {
+        "formula": "∀X.(r(X) ⇒ r(s(X)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          11
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.r(X)",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          1,
+          12
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Alternating p and q",
+    "prompt": "Given p(a), ∀X.(p(X) ⇒ q(f(X))) and ∀X.(q(X) ⇒ p(f(X))), use the Fitch System to prove ∀X.(p(X) ∨ q(X)).",
+    "premises": [
+      "p(a)",
+      "∀X.(p(X) ⇒ q(f(X)))",
+      "∀X.(q(X) ⇒ p(f(X)))"
+    ],
+    "goal": "∀X.(p(X) ∨ q(X))",
+    "constants": [],
+    "hint": "Induct on p(X) ∨ q(X) itself. In the inductive case, split p(c) ∨ q(c) with Or Elimination: each side gives the other predicate of f(c).",
+    "rules_used": [
+      "oi",
+      "assume",
+      "ue",
+      "ie",
+      "ii",
+      "oe",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "p(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(p(X) ⇒ q(f(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(q(X) ⇒ p(f(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a) ∨ q(a)",
+        "rule": "oi",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∨ q(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ q(f(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c) ⇒ p(f(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "q(f(c))",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          6,
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(f(c)) ∨ q(f(c))",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ p(f(c)) ∨ q(f(c))",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          8,
+          10
+        ]
+      },
+      {
+        "formula": "q(c)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(f(c))",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          7,
+          12
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(f(c)) ∨ q(f(c))",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "q(c) ⇒ p(f(c)) ∨ q(f(c))",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          12,
+          14
+        ]
+      },
+      {
+        "formula": "p(f(c)) ∨ q(f(c))",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          5,
+          11,
+          15
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∨ q(c) ⇒ p(f(c)) ∨ q(f(c))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          16
+        ]
+      },
+      {
+        "formula": "∀X.(p(X) ∨ q(X) ⇒ p(f(X)) ∨ q(f(X)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          17
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(p(X) ∨ q(X))",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          4,
+          18
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "A purebred line",
+    "prompt": "Given purebred(rex) and ∀X.(purebred(X) ⇒ purebred(f(X)) ∧ purebred(g(X))), use the Fitch System to prove ∀X.purebred(X).",
+    "premises": [
+      "purebred(rex)",
+      "∀X.(purebred(X) ⇒ purebred(f(X)) ∧ purebred(g(X)))"
+    ],
+    "goal": "∀X.purebred(X)",
+    "constants": [],
+    "hint": "The language has two functions, so Induction needs an inductive case for f and one for g. Both come out of the same subproof.",
+    "rules_used": [
+      "ue",
+      "assume",
+      "ie",
+      "ae",
+      "ii",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "purebred(rex)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(purebred(X) ⇒ purebred(f(X)) ∧ purebred(g(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "purebred(c) ⇒ purebred(f(c)) ∧ purebred(g(c))",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "purebred(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "purebred(f(c)) ∧ purebred(g(c))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          3,
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "purebred(f(c))",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "purebred(g(c))",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "purebred(c) ⇒ purebred(f(c))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          4,
+          6
+        ]
+      },
+      {
+        "formula": "purebred(c) ⇒ purebred(g(c))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          4,
+          7
+        ]
+      },
+      {
+        "formula": "∀X.(purebred(X) ⇒ purebred(f(X)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(purebred(X) ⇒ purebred(g(X)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.purebred(X)",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          1,
+          10,
+          11
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Tree induction over f and g",
+    "prompt": "Given p(a), ∀X.(p(X) ⇒ p(f(X))) and ∀X.(p(f(X)) ⇒ p(g(X))), use the Fitch System to prove ∀X.p(X).",
+    "premises": [
+      "p(a)",
+      "∀X.(p(X) ⇒ p(f(X)))",
+      "∀X.(p(f(X)) ⇒ p(g(X)))"
+    ],
+    "goal": "∀X.p(X)",
+    "constants": [],
+    "hint": "The second premise is already the inductive case for f. For g, assume p(c) and go through f(c).",
+    "rules_used": [
+      "assume",
+      "ue",
+      "ie",
+      "ii",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "p(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(p(X) ⇒ p(f(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(p(f(X)) ⇒ p(g(X)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ p(f(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(f(c))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          5,
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(f(c)) ⇒ p(g(c))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(g(c))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          7,
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ p(g(c))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          4,
+          8
+        ]
+      },
+      {
+        "formula": "∀X.(p(X) ⇒ p(g(X)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.p(X)",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          1,
+          2,
+          10
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Structural induction over h",
+    "prompt": "Given p(a) and ∀X.∀Y.(p(X) ∨ p(Y) ⇒ p(h(X,Y))), use the Fitch System to prove ∀X.p(X).",
+    "premises": [
+      "p(a)",
+      "∀X.∀Y.(p(X) ∨ p(Y) ⇒ p(h(X,Y)))"
+    ],
+    "goal": "∀X.p(X)",
+    "constants": [],
+    "hint": "h takes two arguments, so the inductive case is ∀X.∀Y.(p(X) ∧ p(Y) ⇒ p(h(X,Y))). Assume p(c) ∧ p(d) and use the premise.",
+    "rules_used": [
+      "assume",
+      "ae",
+      "oi",
+      "ue",
+      "ie",
+      "ii",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "p(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.∀Y.(p(X) ∨ p(Y) ⇒ p(h(X,Y)))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∧ p(d)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∨ p(d)",
+        "rule": "oi",
+        "depth": 1,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀Y.(p(c) ∨ p(Y) ⇒ p(h(c,Y)))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∨ p(d) ⇒ p(h(c,d))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(h(c,d))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          7,
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∧ p(d) ⇒ p(h(c,d))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          3,
+          8
+        ]
+      },
+      {
+        "formula": "∀Y.(p(c) ∧ p(Y) ⇒ p(h(c,Y)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.∀Y.(p(X) ∧ p(Y) ⇒ p(h(X,Y)))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          10
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.p(X)",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          1,
+          11
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Induction on a stronger claim",
+    "prompt": "Given ∀X.(p(X) ⇒ p(s(s(X)))), p(a) and p(s(a)), use the Fitch System to prove ∀X.p(X).",
+    "premises": [
+      "∀X.(p(X) ⇒ p(s(s(X))))",
+      "p(a)",
+      "p(s(a))"
+    ],
+    "goal": "∀X.p(X)",
+    "constants": [],
+    "hint": "p(X) alone does not carry over from c to s(c). Prove ∀X.(p(X) ∧ p(s(X))) by Induction instead, then take p(X) out of it.",
+    "rules_used": [
+      "ai",
+      "assume",
+      "ae",
+      "ue",
+      "ie",
+      "ii",
+      "ui",
+      "ind"
+    ],
+    "proof": [
+      {
+        "formula": "∀X.(p(X) ⇒ p(s(s(X))))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(s(a))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a) ∧ p(s(a))",
+        "rule": "ai",
+        "depth": 0,
+        "refs": [
+          2,
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∧ p(s(c))",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(s(c))",
+        "rule": "ae",
+        "depth": 1,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ⇒ p(s(s(c)))",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(s(s(c)))",
+        "rule": "ie",
+        "depth": 1,
+        "refs": [
+          8,
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(s(c)) ∧ p(s(s(c)))",
+        "rule": "ai",
+        "depth": 1,
+        "refs": [
+          7,
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∧ p(s(c)) ⇒ p(s(c)) ∧ p(s(s(c)))",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          10
+        ]
+      },
+      {
+        "formula": "∀X.(p(X) ∧ p(s(X)) ⇒ p(s(X)) ∧ p(s(s(X))))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          11
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(p(X) ∧ p(s(X)))",
+        "rule": "ind",
+        "depth": 0,
+        "refs": [
+          4,
+          12
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c) ∧ p(s(c))",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "ae",
+        "depth": 0,
+        "refs": [
+          14
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.p(X)",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          15
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Every number is even or odd",
+    "prompt": "Given even(0), ∀X.(even(X) ⇒ odd(X + 1)) and ∀X.(odd(X) ⇒ even(X + 1)), use the Fitch System to prove ∀X.(even(X) ∨ odd(X)).",
+    "premises": [
+      "even(0)",
+      "∀X.(even(X) ⇒ odd(X + 1))",
+      "∀X.(odd(X) ⇒ even(X + 1))"
+    ],
+    "goal": "∀X.(even(X) ∨ odd(X))",
+    "constants": [],
+    "hint": "This is induction over the numbers, so close with Rational Induction. The inductive case splits even(c) ∨ odd(c) with Or Elimination.",
+    "rules_used": [
+      "oi",
+      "assume",
+      "ue",
+      "ie",
+      "ii",
+      "oe",
+      "ui",
+      "rind"
+    ],
+    "proof": [
+      {
+        "formula": "even(0)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(even(X) ⇒ odd(X + 1))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(odd(X) ⇒ even(X + 1))",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "even(0) ∨ odd(0)",
+        "rule": "oi",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "even(c) ∨ odd(c)",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "even(c) ⇒ odd(c + 1)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "odd(c) ⇒ even(c + 1)",
+        "rule": "ue",
+        "depth": 1,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "even(c)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "odd(c + 1)",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          6,
+          8
+        ],
+        "subref": null
+      },
+      {
+        "formula": "even(c + 1) ∨ odd(c + 1)",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "even(c) ⇒ even(c + 1) ∨ odd(c + 1)",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          8,
+          10
+        ]
+      },
+      {
+        "formula": "odd(c)",
+        "rule": "assume",
+        "depth": 2,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "even(c + 1)",
+        "rule": "ie",
+        "depth": 2,
+        "refs": [
+          7,
+          12
+        ],
+        "subref": null
+      },
+      {
+        "formula": "even(c + 1) ∨ odd(c + 1)",
+        "rule": "oi",
+        "depth": 2,
+        "refs": [
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "odd(c) ⇒ even(c + 1) ∨ odd(c + 1)",
+        "rule": "ii",
+        "depth": 1,
+        "refs": [],
+        "subref": [
+          12,
+          14
+        ]
+      },
+      {
+        "formula": "even(c + 1) ∨ odd(c + 1)",
+        "rule": "oe",
+        "depth": 1,
+        "refs": [
+          5,
+          11,
+          15
+        ],
+        "subref": null
+      },
+      {
+        "formula": "even(c) ∨ odd(c) ⇒ even(c + 1) ∨ odd(c + 1)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          5,
+          16
+        ]
+      },
+      {
+        "formula": "∀X.(even(X) ∨ odd(X) ⇒ even(X + 1) ∨ odd(X + 1))",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          17
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.(even(X) ∨ odd(X))",
+        "rule": "rind",
+        "depth": 0,
+        "refs": [
+          4,
+          18
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Equals of equals",
+    "prompt": "Given b = a and b = c, use the Fitch System to prove a = c.",
+    "premises": [
+      "b = a",
+      "b = c"
+    ],
+    "goal": "a = c",
+    "constants": [],
+    "hint": "Equality Elimination works in either direction: put a in for b in b = c.",
+    "rules_used": [
+      "qe"
+    ],
+    "proof": [
+      {
+        "formula": "b = a",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "b = c",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "a = c",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          2,
+          1
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Putting equals into a predicate",
+    "prompt": "Given a = b and p(a), use the Fitch System to prove p(b).",
+    "premises": [
+      "a = b",
+      "p(a)"
+    ],
+    "goal": "p(b)",
+    "constants": [],
+    "hint": "One step of Equality Elimination.",
+    "rules_used": [
+      "qe"
+    ],
+    "proof": [
+      {
+        "formula": "a = b",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(b)",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          2,
+          1
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Equals inside a function",
+    "prompt": "Given f(a) = b and f(b) = a, use the Fitch System to prove f(f(a)) = a.",
+    "premises": [
+      "f(a) = b",
+      "f(b) = a"
+    ],
+    "goal": "f(f(a)) = a",
+    "constants": [],
+    "hint": "Replace only the b inside f(b) — Equality Elimination may change some occurrences and leave others.",
+    "rules_used": [
+      "qe"
+    ],
+    "proof": [
+      {
+        "formula": "f(a) = b",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "f(b) = a",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "f(f(a)) = a",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          2,
+          1
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Quincy is older than Pat",
+    "prompt": "Given father(pat) = quincy and ∀X.older(father(X),X), use the Fitch System to prove older(quincy,pat).",
+    "premises": [
+      "father(pat) = quincy",
+      "∀X.older(father(X),X)"
+    ],
+    "goal": "older(quincy,pat)",
+    "constants": [],
+    "hint": "Instantiate the universal for pat, then put quincy in for father(pat).",
+    "rules_used": [
+      "ue",
+      "qe"
+    ],
+    "proof": [
+      {
+        "formula": "father(pat) = quincy",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.older(father(X),X)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "older(father(pat),pat)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "older(quincy,pat)",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          3,
+          1
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "A disjunction of equations",
+    "prompt": "Given p(a), p(b) and a = c ∨ b = c, use the Fitch System to prove p(c).",
+    "premises": [
+      "p(a)",
+      "p(b)",
+      "a = c ∨ b = c"
+    ],
+    "goal": "p(c)",
+    "constants": [],
+    "hint": "Use Or Elimination: assume each equation in turn and substitute.",
+    "rules_used": [
+      "assume",
+      "qe",
+      "ii",
+      "oe"
+    ],
+    "proof": [
+      {
+        "formula": "p(a)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(b)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "a = c ∨ b = c",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "a = c",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "qe",
+        "depth": 1,
+        "refs": [
+          1,
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "a = c ⇒ p(c)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          4,
+          5
+        ]
+      },
+      {
+        "formula": "b = c",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "p(c)",
+        "rule": "qe",
+        "depth": 1,
+        "refs": [
+          2,
+          7
+        ],
+        "subref": null
+      },
+      {
+        "formula": "b = c ⇒ p(c)",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          7,
+          8
+        ]
+      },
+      {
+        "formula": "p(c)",
+        "rule": "oe",
+        "depth": 0,
+        "refs": [
+          3,
+          6,
+          9
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "Equality is symmetric",
+    "prompt": "Use the Fitch System to prove ∀X.∀Y.(X = Y ⇒ Y = X).",
+    "premises": [],
+    "goal": "∀X.∀Y.(X = Y ⇒ Y = X)",
+    "constants": [],
+    "hint": "Assume c = d. Equality Introduction gives c = c; replace its first c with d.",
+    "rules_used": [
+      "assume",
+      "qi",
+      "qe",
+      "ii",
+      "ui"
+    ],
+    "proof": [
+      {
+        "formula": "c = d",
+        "rule": "assume",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "c = c",
+        "rule": "qi",
+        "depth": 1,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "d = c",
+        "rule": "qe",
+        "depth": 1,
+        "refs": [
+          2,
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "c = d ⇒ d = c",
+        "rule": "ii",
+        "depth": 0,
+        "refs": [],
+        "subref": [
+          1,
+          3
+        ]
+      },
+      {
+        "formula": "∀Y.(c = Y ⇒ Y = c)",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          4
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.∀Y.(X = Y ⇒ Y = X)",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          5
+        ],
+        "subref": null
+      }
+    ]
+  },
+  {
+    "title": "The inverse of an inverse",
+    "prompt": "Given ∀X.∀Y.∀Z.(X*Y)*Z = X*(Y*Z), ∀X.X*e = X, ∀X.e*X = X, ∀X.X*inv(X) = e and ∀X.inv(X)*X = e, use the Fitch System to prove ∀X.inv(inv(X)) = X.",
+    "premises": [
+      "∀X.∀Y.∀Z.(X*Y)*Z = X*(Y*Z)",
+      "∀X.X*e = X",
+      "∀X.e*X = X",
+      "∀X.X*inv(X) = e",
+      "∀X.inv(X)*X = e"
+    ],
+    "goal": "∀X.inv(inv(X)) = X",
+    "constants": [],
+    "hint": "Start from (inv(inv(c))*inv(c))*c and rewrite it two ways: once to c, once by associativity to inv(inv(c))*(inv(c)*c).",
+    "rules_used": [
+      "ue",
+      "qi",
+      "qe",
+      "ui"
+    ],
+    "proof": [
+      {
+        "formula": "∀X.∀Y.∀Z.(X*Y)*Z = X*(Y*Z)",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.X*e = X",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.e*X = X",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.X*inv(X) = e",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "∀X.inv(X)*X = e",
+        "rule": "premise",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "inv(inv(c))*inv(c) = e",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "(inv(inv(c))*inv(c))*c = (inv(inv(c))*inv(c))*c",
+        "rule": "qi",
+        "depth": 0,
+        "refs": [],
+        "subref": null
+      },
+      {
+        "formula": "(inv(inv(c))*inv(c))*c = e*c",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          7,
+          6
+        ],
+        "subref": null
+      },
+      {
+        "formula": "e*c = c",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          3
+        ],
+        "subref": null
+      },
+      {
+        "formula": "(inv(inv(c))*inv(c))*c = c",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          8,
+          9
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀Y.∀Z.(inv(inv(c))*Y)*Z = inv(inv(c))*(Y*Z)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          1
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀Z.(inv(inv(c))*inv(c))*Z = inv(inv(c))*(inv(c)*Z)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          11
+        ],
+        "subref": null
+      },
+      {
+        "formula": "(inv(inv(c))*inv(c))*c = inv(inv(c))*(inv(c)*c)",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          12
+        ],
+        "subref": null
+      },
+      {
+        "formula": "inv(inv(c))*(inv(c)*c) = c",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          10,
+          13
+        ],
+        "subref": null
+      },
+      {
+        "formula": "inv(c)*c = e",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          5
+        ],
+        "subref": null
+      },
+      {
+        "formula": "inv(inv(c))*e = c",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          14,
+          15
+        ],
+        "subref": null
+      },
+      {
+        "formula": "inv(inv(c))*e = inv(inv(c))",
+        "rule": "ue",
+        "depth": 0,
+        "refs": [
+          2
+        ],
+        "subref": null
+      },
+      {
+        "formula": "inv(inv(c)) = c",
+        "rule": "qe",
+        "depth": 0,
+        "refs": [
+          16,
+          17
+        ],
+        "subref": null
+      },
+      {
+        "formula": "∀X.inv(inv(X)) = X",
+        "rule": "ui",
+        "depth": 0,
+        "refs": [
+          18
+        ],
+        "subref": null
+      }
+    ]
+  }
+]

@@ -10,6 +10,40 @@
   <div class="auth-error" id="auth-error" hidden></div>
   <div class="auth-note" id="auth-note" hidden></div>
 
+  <fieldset class="about-you" id="about-you">
+    <legend>About you</legend>
+    <small class="hint">Used only for research on who studies logic here.</small>
+
+    <div class="form-row">
+      <div>
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" required>
+          <option value="" disabled selected>Select&hellip;</option>
+          {% for key, label in genders %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="age">Age</label>
+        <input type="number" id="age" name="age" inputmode="numeric"
+               min="{{ age_min }}" max="{{ age_max }}" step="1" required>
+      </div>
+    </div>
+
+    <label for="school">School</label>
+    <input type="text" id="school" name="school" maxlength="{{ school_max }}"
+           autocomplete="organization" required>
+
+    <label for="nationality">Nationality</label>
+    <select id="nationality" name="nationality" required>
+      <option value="" disabled selected>Select&hellip;</option>
+      {% for country in countries %}
+      <option value="{{ country }}">{{ country }}</option>
+      {% endfor %}
+    </select>
+  </fieldset>
+
   <button type="button" class="btn btn-google" id="google-btn">
     <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true">
       <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"/>

@@ -109,6 +109,40 @@ check("a locked band's message names the band before it",
 check("nonsense gets a message too, not a crash",
       p.locked_message(blank, 7, "easy"))
 
+# --- profile charts ---------------------------------------------------------
+import datetime
+
+TODAY = datetime.date(2026, 10, 30)
+utc = datetime.timezone.utc
+records = [
+    {"chapter": FIRST, "difficulty": "easy", "solved": True,
+     "solved_at": datetime.datetime(2026, 10, 30, 9, tzinfo=utc)},
+    {"chapter": FIRST, "difficulty": "easy", "solved": True,
+     "solved_at": datetime.datetime(2026, 10, 30, 23, tzinfo=utc)},
+    {"chapter": FIRST, "difficulty": "medium", "solved": True,
+     "solved_at": datetime.datetime(2026, 10, 1, tzinfo=utc)},
+    {"chapter": FIRST, "difficulty": "hard", "solved": False},
+    {"chapter": SECOND, "difficulty": "hard", "solved": True,
+     "solved_at": datetime.datetime(2026, 9, 1, tzinfo=utc)},
+    {"chapter": FIRST, "difficulty": None, "solved": True},
+]
+by_level = p.solved_by_level(records)
+check("every level is in the chart, touched or not",
+      sorted(by_level) == sorted(p.CHAPTER_ORDER)
+      and all(sorted(cell) == sorted(p.BANDS) for cell in by_level.values()))
+check("solved per level counts only solves",
+      by_level[FIRST] == {"easy": 2, "medium": 1, "hard": 0}
+      and by_level[SECOND]["hard"] == 1)
+
+days = p.solves_by_day(records, TODAY)
+check("thirty days, oldest first, ending today",
+      len(days) == 30 and days[0]["date"] == "2026-10-01"
+      and days[-1]["date"] == "2026-10-30")
+check("solves land on their day",
+      days[-1]["solved"] == 2 and days[0]["solved"] == 1)
+check("solves before the window are left out",
+      sum(d["solved"] for d in days) == 3)
+
 failed = [label for label, ok in checks if not ok]
 print("\n%d/%d passed" % (len(checks) - len(failed), len(checks)))
 if failed:

@@ -30,6 +30,8 @@ builds and answers questions about them. Nothing in this module reads or
 writes.
 """
 
+import datetime
+
 # How many distinct questions clear one level. Raise it as the bank grows.
 TO_CLEAR = 10
 
@@ -37,8 +39,11 @@ TO_CLEAR = 10
 # three as DIFFICULTIES; this is the order they are climbed in.
 BANDS = ("easy", "medium", "hard")
 
-# The chapters in teaching order. A new chapter belongs here and in app.CHAPTERS.
-CHAPTER_ORDER = (5, 10)
+# The chapters in teaching order. A new chapter belongs here and in app.CHAPTERS
+# (or app.LADDER_ONLY, for one with a seeded bank but no generator yet).
+# Chapter 15 is induction and equality; its bands are not set by proof length
+# alone — see seed_questions.ch15_difficulty.
+CHAPTER_ORDER = (5, 10, 15)
 
 # Every level in climbing order, so "above" and "below" mean something.
 LEVELS = tuple((chapter, band) for chapter in CHAPTER_ORDER for band in BANDS)
@@ -192,3 +197,40 @@ def locked_message(counts, chapter, band, start=None):
     return ("The %s questions of Chapter %d are locked. Solve %d %s one%s "
             "first." % (band, chapter, TO_CLEAR, BANDS[step - 1],
                         "" if TO_CLEAR == 1 else "s"))
+
+
+# --- the profile page's charts ----------------------------------------------
+
+def solved_by_level(records):
+    """Distinct questions solved, per chapter and band, every level present.
+
+    Takes `firestore_db.list_progress` records rather than `progress_counts`,
+    so the profile page reads the progress collection once for both charts.
+    """
+    out = {chapter: {band: 0 for band in BANDS} for chapter in CHAPTER_ORDER}
+    for record in records:
+        cell = out.get(record.get("chapter"))
+        if cell is not None and record.get("solved") and \
+                record.get("difficulty") in cell:
+            cell[record["difficulty"]] += 1
+    return out
+
+
+def solves_by_day(records, today, days=30):
+    """First solves per UTC day for the `days` days ending `today`, oldest first.
+
+    `today` is a date, passed in so this stays pure (and testable). Records
+    solved before `solved_at` was stored have no date and are left out.
+    """
+    start = today - datetime.timedelta(days=days - 1)
+    tally = {start + datetime.timedelta(days=i): 0 for i in range(days)}
+    for record in records:
+        when = record.get("solved_at")
+        if not (record.get("solved") and when):
+            continue
+        if getattr(when, "tzinfo", None) is not None:
+            when = when.astimezone(datetime.timezone.utc)
+        day = when.date()
+        if day in tally:
+            tally[day] += 1
+    return [{"date": day.isoformat(), "solved": n} for day, n in tally.items()]

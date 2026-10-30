@@ -1,14 +1,18 @@
 """Load the starter questions that ship as JSON into Firestore.
 
 Chapter 5 comes from `seed_questions.json` (hand-written), Chapter 10 from
-`ch10_questions.json` (written by `ch10_generator.py` and kept in the repo).
-Every proof is checked with that chapter's own checker before it is written, so
+`ch10_questions.json` (written by `ch10_generator.py` and kept in the repo),
+and Chapter 15 — induction and equality — from `ch15_questions.json`
+(hand-written; its proofs are checked by `ch15_check.js`, which runs the
+editor's own rules under Node). Every proof is checked with that chapter's own
+checker before it is written, so
 this is safe to re-run: the document id is a fingerprint of the premises and
 goal, so a second run updates the same documents instead of adding more.
 
     python seed_questions.py                   # Chapter 5, verify and write
     python seed_questions.py --chapter 10      # Chapter 10
-    python seed_questions.py --chapter all     # both
+    python seed_questions.py --chapter 15      # Chapter 15
+    python seed_questions.py --chapter all     # all three
     python seed_questions.py --dry-run         # verify only
     python seed_questions.py --level-test      # the level test's own bank
 
@@ -21,6 +25,7 @@ question uses. The id is the document id, so re-running updates in place.
 import argparse
 import json
 import os
+import subprocess
 import sys
 
 import fitch_checker as fc
@@ -56,9 +61,49 @@ def _ch10(question):
     return []
 
 
+# Chapter 15's banding is its own: every Equality Elimination question is hard,
+# and the induction questions split on length — up to this many lines easy,
+# longer ones medium.
+CH15_EASY_LINES = 12
+
+
+def ch15_difficulty(proof):
+    """The band of a Chapter 15 question, from its worked proof."""
+    if any(step["rule"] == "qe" for step in proof):
+        return "hard"
+    return "easy" if len(proof) <= CH15_EASY_LINES else "medium"
+
+
+def _ch15(question):
+    """Chapter 15's proofs were checked as a batch by ch15_check.js already."""
+    question["difficulty"] = ch15_difficulty(question["proof"])
+    question["statement"] = question.get("prompt") or question.get("statement", "")
+    return []
+
+
+def _ch15_check(path):
+    """Run the editor's own rules (static/fitch.js, under Node) over the file.
+
+    Induction and the equality rules exist only in the browser checker, so
+    this is the one check Chapter 15 gets. Returns its complaints, if any.
+    """
+    try:
+        result = subprocess.run(
+            ["node", os.path.join(BASE_DIR, "ch15_check.js"), path],
+            capture_output=True, text=True, timeout=60)
+    except FileNotFoundError:
+        return ["Node is needed to check Chapter 15 (ch15_check.js)."]
+    complaints = result.stdout.splitlines() + result.stderr.splitlines()
+    if result.returncode and not complaints:
+        complaints = ["ch15_check.js exited with %d" % result.returncode]
+    return complaints
+
+
 CHAPTERS = {
     5: {"file": "seed_questions.json", "prepare": _ch5},
     10: {"file": "ch10_questions.json", "prepare": _ch10},
+    15: {"file": "ch15_questions.json", "prepare": _ch15,
+         "check_file": _ch15_check},
 }
 
 
@@ -70,6 +115,12 @@ def prepare(chapter):
         raw = json.load(fh)
 
     print(f"Chapter {chapter}  ({spec['file']})")
+    if spec.get("check_file"):
+        complaints = spec["check_file"](path)
+        for complaint in complaints:
+            print(f"  question {complaint}", file=sys.stderr)
+        if complaints:
+            return [], True
     questions, failed = [], False
     for i, question in enumerate(raw, 1):
         problems = spec["prepare"](question)
@@ -116,7 +167,7 @@ def prepare_level_test():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--chapter", default="5", choices=["5", "10", "all"],
+    parser.add_argument("--chapter", default="5", choices=["5", "10", "15", "all"],
                         help="which chapter's starter questions to load "
                              "(default: 5)")
     parser.add_argument("--dry-run", action="store_true",

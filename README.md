@@ -224,6 +224,16 @@ planned on top of the count; `progress_counts` already returns how many
 questions were opened alongside how many were solved, so the ratio is there
 waiting for it.
 
+Chapter 15 — induction and equality — comes after Chapter 10 and bands its
+questions its own way rather than by proof length alone: every question that
+uses Equality Elimination is **hard**, and the induction questions (Induction
+and Rational Induction) are **easy** at twelve lines or fewer and **medium**
+above that. The rule is `ch15_difficulty` in `seed_questions.py`. The chapter
+has no generator yet, so it sits in `app.LADDER_ONLY` rather than
+`app.CHAPTERS`: it is on the dashboard and `/practice`, but not on the Generate
+page. Its bank is small for now — fewer questions per band than it takes to
+clear one — and the cards still ask for `TO_CLEAR` like every other level.
+
 `progress.py` is pure — it takes counts and answers questions about them,
 reading and writing nothing — which is why the whole rule can be tested offline.
 The counts come from `users/{uid}/progress`, one document per question the user
@@ -442,8 +452,10 @@ is why several natural-looking problems come out `hard`.
 
 `seed_questions.py` loads the starter questions that ship as JSON — Chapter 5
 from the five hand-written ones in `seed_questions.json`, Chapter 10 from
-`ch10_questions.json` — checking every proof with that chapter's own checker
-first. It is safe to re-run: a question's document id is a fingerprint of its
+`ch10_questions.json`, Chapter 15 from `ch15_questions.json` — checking every
+proof with that chapter's own checker first. Chapter 15's rules live only in
+`static/fitch.js`, so its proofs are checked by `ch15_check.js`, which runs that
+file under Node. It is safe to re-run: a question's document id is a fingerprint of its
 premises and goal, so a second run updates the same documents rather than
 adding more.
 
@@ -452,7 +464,8 @@ export OPENAI_API_KEY=...
 python3 fitch_generator.py -n 3 -d medium --proofs   # CLI, prints only
 python3 seed_questions.py --dry-run                  # verify the seed data
 python3 seed_questions.py --chapter 10               # load Chapter 10
-python3 seed_questions.py --chapter all              # load both
+python3 seed_questions.py --chapter 15               # load Chapter 15 (needs node)
+python3 seed_questions.py --chapter all              # load all three
 ```
 
 ## Chapter 10: relational exercises
@@ -766,9 +779,11 @@ links inside cards included.
 | `ch10_generator.py` | Writes Chapter 10 exercises and verifies them |
 | `openai_vector_store.py` | Uploads a chapter and indexes it for `file_search`, as UTF-8 even when the file is saved as Windows-1252 |
 | `load_env.py` | Reads `.env` into the environment, without a dependency |
-| `seed_questions.py` | Loads either chapter's starter questions into Firestore |
+| `seed_questions.py` | Loads each chapter's starter questions into Firestore |
 | `seed_questions.json` | The five hand-written Chapter 5 starters and their proofs |
 | `ch10_questions.json` | The Chapter 10 starters, written by `ch10_generator.py` |
+| `ch15_questions.json` | The Chapter 15 induction and equality starters and their proofs |
+| `ch15_check.js` | Checks the Chapter 15 proofs with `static/fitch.js`, under Node |
 | `static/fitch_tests.html` | Browser tests for the editor; open `/static/fitch_tests.html` |
 | `static/style.css` | The whole stylesheet; the palette is the `:root` block at the top |
 | `static/generate.js` | The Generate page |
