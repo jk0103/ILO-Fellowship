@@ -83,6 +83,7 @@
       // otherwise be saved over the lines being returned to.
       const kept = boards[q.id];
       window.Fitch.loadProblem({ id: "loaded", premises: q.premises, goal: q.goal, objects: [] });
+      window.Fitch.setChapter(q.chapter || 5);
       if (kept) {
         window.Fitch.state.lines = kept;
         window.Fitch.render();

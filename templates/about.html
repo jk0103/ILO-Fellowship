@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}About you &middot; ILO Bank{% endblock %}
+{% block main_class %}auth-main{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <p class="eyebrow">One more step</p>
+  <h1>About you</h1>
+  <p class="auth-sub">Four quick questions before your level test.</p>
+
+  <div class="auth-error" id="about-error" hidden></div>
+
+  <form id="about-form" novalidate>
+    {% include "_about_fields.html" %}
+
+    <p class="consent-note">
+      We collect these answers for research on who learns logic with ILO Bank.
+      They are never shown to other users, and you can change them any time on
+      your profile.
+    </p>
+
+    <button type="submit" class="btn btn-primary btn-block" id="about-save">Continue</button>
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='about.js') }}"></script>
+{% endblock %}

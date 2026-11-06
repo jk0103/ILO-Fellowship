@@ -249,18 +249,12 @@ def get_profile(uid):
 
 
 def ensure_profile(uid, email, display_name=None, photo_url=None,
-                   provider=None, providers=None, desired_username=None,
-                   demographics=None):
+                   provider=None, providers=None, desired_username=None):
     """Create the profile on first sign-in, or refresh it on later ones.
 
     Returns (profile, created). The username is reserved transactionally; if
     `desired_username` is taken (or not given) a numbered variant is used, so
     signing in never fails just because a handle collided.
-
-    `demographics` is the sign-up form's cleaned "about you" answers. It is
-    written when the profile is created, or onto an existing profile that has
-    none yet (e.g. someone signing up with Google who already had an account),
-    and never overwrites answers already given.
     """
     db = get_client()
     existing = get_profile(uid)
@@ -280,9 +274,6 @@ def ensure_profile(uid, email, display_name=None, photo_url=None,
             [provider] if provider else None)
         if current is not None and sorted(current) != sorted(existing.get("providers") or []):
             updates["providers"] = current
-        if demographics and not existing.get("demographics"):
-            updates["demographics"] = dict(
-                demographics, collected_at=firestore.SERVER_TIMESTAMP)
         db.collection(USERS).document(uid).update(updates)
         return get_profile(uid), False
 
@@ -295,14 +286,13 @@ def ensure_profile(uid, email, display_name=None, photo_url=None,
         candidate = seed if attempt == 0 else "%s%d" % (seed[:18], attempt + 1)
         if _claim(db, uid, candidate, email, display_name, photo_url,
                   providers if providers is not None else
-                  ([provider] if provider else []), demographics):
+                  ([provider] if provider else [])):
             return get_profile(uid), True
 
     raise RuntimeError("Could not allocate a username for uid %s" % uid)
 
 
-def _claim(db, uid, username, email, display_name, photo_url, providers,
-           demographics=None):
+def _claim(db, uid, username, email, display_name, photo_url, providers):
     """Reserve `username` and write the profile atomically. False if taken."""
     name_ref = db.collection(USERNAMES).document(username.lower())
     user_ref = db.collection(USERS).document(uid)
@@ -313,7 +303,7 @@ def _claim(db, uid, username, email, display_name, photo_url, providers,
         if name_ref.get(transaction=transaction).exists:
             return False
         transaction.set(name_ref, {"uid": uid})
-        profile = {
+        transaction.set(user_ref, {
             "username": username,
             "email": (email or "").lower(),
             "display_name": display_name or username,
@@ -323,11 +313,7 @@ def _claim(db, uid, username, email, display_name, photo_url, providers,
             "created_at": firestore.SERVER_TIMESTAMP,
             "last_login": firestore.SERVER_TIMESTAMP,
             "stats": {"solved": 0, "attempted": 0, "streak": 0},
-        }
-        if demographics:
-            profile["demographics"] = dict(
-                demographics, collected_at=firestore.SERVER_TIMESTAMP)
-        transaction.set(user_ref, profile)
+        })
         return True
 
     return _txn(db.transaction())

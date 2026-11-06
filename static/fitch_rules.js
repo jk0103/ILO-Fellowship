@@ -29,7 +29,7 @@
     fab.setAttribute("aria-expanded", show ? "true" : "false");
     fab.classList.toggle("is-open", show);
     if (show) panel.querySelector('[aria-selected="true"]').focus();
-    else fab.focus();
+    else if (fab.offsetParent) fab.focus();     // hidden on phones
   }
 
   tabs.forEach(function (tab) {
@@ -48,6 +48,11 @@
   });
 
   fab.addEventListener("click", function () { open(panel.hidden); });
+  // The editor's own Rules button, which stands in for this one on phones.
+  // It is built by fitch.js, so listen on the document rather than on it.
+  document.addEventListener("click", function (event) {
+    if (event.target.closest("[data-rules-open]")) open(panel.hidden);
+  });
   document.getElementById("rules-close").addEventListener("click", function () { open(false); });
   document.addEventListener("keydown", function (event) {
     // Escape belongs to the formula box while a rule is waiting on input.

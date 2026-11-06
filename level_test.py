@@ -63,8 +63,8 @@ PLACEMENTS = (
 
 # The fields of a question it is safe to send to the browser. The answer, the
 # worked proof and the explanation stay on the server until it is submitted.
-PUBLIC_FIELDS = ("id", "kind", "topic", "difficulty", "prompt", "choices",
-                 "premises", "goal")
+PUBLIC_FIELDS = ("id", "kind", "topic", "chapter", "difficulty", "prompt",
+                 "choices", "premises", "goal")
 
 
 def is_active(question):

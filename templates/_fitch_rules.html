@@ -57,9 +57,9 @@
       </ul>
       <h3>Chapter 5: propositional</h3>
       <ul class="rule-list">
-        {{ rule("And Introduction", "AI", ["φ₁", "…", "φₙ"], "φ₁ ∧ … ∧ φₙ", "Check two or more lines. The conjuncts follow the order you ticked them.") }}
+        {{ rule("And Introduction", "AI", ["φ", "ψ"], "φ ∧ ψ", "Check one or more lines. Every ordered pair is added, so p and q give p ∧ p, p ∧ q, q ∧ p and q ∧ q.") }}
         {{ rule("And Elimination", "AE", ["φ₁ ∧ … ∧ φₙ"], "φᵢ", "Check one conjunction; every conjunct is added.") }}
-        {{ rule("Or Introduction", "OI", ["φ"], "φ ∨ ψ", "Check one line, then type a disjunction that has it as a disjunct.") }}
+        {{ rule("Or Introduction", "OI", ["φ"], "φ ∨ ψ", "Check one or more lines, then type ψ. Each line gives both φ ∨ ψ and ψ ∨ φ.") }}
         {{ rule("Or Elimination", "OE", ["φ₁ ∨ … ∨ φₙ", "φ₁ ⇒ ψ", "…", "φₙ ⇒ ψ"], "ψ", "Check the disjunction and one implication per disjunct, all ending in ψ.") }}
         {{ rule("Negation Introduction", "NI", ["φ ⇒ ψ", "φ ⇒ ¬ψ"], "¬φ", "Check two implications from the same φ to a sentence and its negation.") }}
         {{ rule("Negation Elimination", "NE", ["¬¬φ"], "φ", "Check one double negation.") }}
@@ -79,6 +79,7 @@
         {{ rule("Existential Introduction", "EI", ["φ[τ]"], "∃X.φ[X]", "Check the line, then type the ∃ sentence to generalize it to.") }}
         {{ rule("Existential Elimination", "EE", ["∃X.φ[X]", "∀X.(φ[X] ⇒ ψ)"], "ψ", "Check both lines. X may not occur free in ψ.") }}
       </ul>
+      <p class="rules-note">Chapter 10 practice also allows Domain Closure for a finite language; it is under Ch. 13.</p>
     </div>
 
     <div role="tabpanel" data-rules-panel="13" hidden>

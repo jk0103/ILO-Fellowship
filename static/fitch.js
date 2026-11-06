@@ -5,9 +5,9 @@
  * Chapter 13, and the equality rules of Chapter 15 with the Stanford tool's
  * Rational Equation and Rational Induction. You select lines with the
  * checkboxes and press a rule button; the rule is applied for you and the new
- * lines are appended. Nothing is typed except premises, assumptions, the target
- * of Or Introduction, the term or sentence a quantifier rule needs, the
- * conclusion of an induction, and the result of an equality rule.
+ * lines are appended. Nothing is typed except premises, assumptions, the
+ * sentence Or Introduction disjoins, the term or sentence a quantifier rule
+ * needs, the conclusion of an induction, and the result of an equality rule.
  *
  * Quantifiers are shown the way the textbook writes them: ∀X.p(X) for every X,
  * ∃X.p(X) for some X. They can be typed that way or as the Stanford tool's
@@ -176,10 +176,14 @@
       throw new Error('Expected a formula, found "' + tok.text + '".');
     }
 
+    // Binary and right associative, as the Stanford tool reads them: p ∧ q ∧ r
+    // is p ∧ (q ∧ r). And Introduction only joins two lines, so this is the
+    // shape it can reach.
     function nary(kind, next) {
-      const args = [next()];
-      while (peek() && peek().kind === kind) { pos++; args.push(next()); }
-      return args.length === 1 ? args[0] : { t: kind, args: args };
+      const left = next();
+      if (!peek() || peek().kind !== kind) return left;
+      pos++;
+      return { t: kind, args: [left, nary(kind, next)] };
     }
 
     const and = () => nary("and", unary);
@@ -258,8 +262,9 @@
         break;
       case "and":
       case "or":
-        // A nested conjunction keeps its parentheses: (p ∧ q) ∧ r is a
-        // different line from p ∧ q ∧ r, and And Elimination treats it so.
+        // A nested conjunction keeps its parentheses, on either side, as the
+        // Stanford tool prints it: (p ∧ q) ∧ r and p ∧ (q ∧ r) are different
+        // lines, and And Elimination treats them so.
         out = f.args.map((a) => show(a, prec + 0.5)).join(" " + SYM[f.t] + " ");
         break;
       case "imp":
@@ -489,7 +494,8 @@
   function inductiveCase(conclusion, fn, vars) {
     const hyps = vars.map((v) => caseOf(conclusion, constant(v)));
     const step = caseOf(conclusion, { n: fn, args: vars.map(constant) });
-    let out = imp(hyps.length === 1 ? hyps[0] : { t: "and", args: hyps }, step);
+    const both = hyps.reduceRight((rest, h) => ({ t: "and", args: [h, rest] }));
+    let out = imp(both, step);
     for (let i = vars.length - 1; i >= 0; i--) out = { t: "all", v: vars[i], a: out };
     return out;
   }
@@ -589,7 +595,7 @@
         if (body.t !== "imp") continue;
         let phi = null;
         if (vars.length === 1) phi = body.a;
-        else if (body.a.t === "and" && body.a.args.length === vars.length) phi = body.a.args[0];
+        else if (body.a.t === "and") phi = body.a.args[0];
         if (!phi) continue;
         const guess = { t: "all", v: vars[0], a: phi };
         if (!inductionCases(guess, language, formulas).error) return guess;
@@ -776,6 +782,18 @@
   ];
   const RULE_BY_ID = {};
   RULES.forEach((r) => { RULE_BY_ID[r.id] = r; });
+
+  // The rules each practice chapter uses, as the server's checkers do: Chapter
+  // 5 is propositional, Chapter 10 adds the quantifiers and Domain Closure,
+  // Chapter 15 everything. A question shows only its chapter's buttons; the
+  // free tool, with no chapter, shows them all.
+  const PROPOSITIONAL = ["premise", "assume", "reit", "ai", "ae", "oi", "oe",
+                         "ni", "ne", "ii", "ie", "bi", "be"];
+  const CHAPTER_RULES = {
+    5: PROPOSITIONAL,
+    10: PROPOSITIONAL.concat(["ue", "ui", "ei", "ee", "dc"]),
+  };
+  const rulesFor = (chapter) => CHAPTER_RULES[chapter] || null;
 
   /* Walks the flat line list and works out the subproof structure.
    *
@@ -1101,11 +1119,20 @@
    * formula the user entered. */
 
   function citeIds(selected) { return selected.map((l) => l.id); }
+  const inProofOrder = (selected) => selected.slice().sort((x, y) => x.index - y.index);
 
   const APPLY = {
+    /* As the Stanford tool does it: every ordered pair of the checked lines,
+     * a line with itself included, in proof order. p and q give p ∧ p, p ∧ q,
+     * q ∧ p and q ∧ q. */
     ai: function (sel) {
-      if (sel.length < 2) return { error: "Check two or more lines to conjoin." };
-      return { lines: [{ formula: { t: "and", args: sel.map((l) => l.formula) }, rule: "ai", refIds: citeIds(sel) }] };
+      if (!sel.length) return { error: "Check at least one line to conjoin." };
+      const rows = inProofOrder(sel);
+      const lines = [];
+      rows.forEach((x) => rows.forEach((y) => {
+        lines.push({ formula: { t: "and", args: [x.formula, y.formula] }, rule: "ai", refIds: [x.id, y.id] });
+      }));
+      return { lines: lines };
     },
 
     ae: function (sel) {
@@ -1115,16 +1142,21 @@
       return { lines: f.args.map((arg) => ({ formula: arg, rule: "ae", refIds: citeIds(sel) })) };
     },
 
+    /* As the Stanford tool does it: you type only the sentence to disjoin, and
+     * each checked line φ gets both φ ∨ ψ and ψ ∨ φ. */
     oi: function (sel, typed) {
-      if (sel.length !== 1) return { error: "Check exactly one line to weaken into a disjunction." };
+      if (!sel.length) return { error: "Check at least one line to disjoin a sentence to." };
       if (!typed) {
-        return { prompt: "Or Introduction — type the disjunction to introduce. It has to contain " + show(sel[0].formula) + " as a disjunct.", seed: show(sel[0].formula) + " ∨ " };
+        return { prompt: "Or Introduction — type the sentence to disjoin to the checked lines. Each line φ then gives φ ∨ ψ and ψ ∨ φ.", seed: "" };
       }
-      if (typed.t !== "or") return { error: "That is not a disjunction." };
-      if (!typed.args.some((a) => same(a, sel[0].formula))) {
-        return { error: show(sel[0].formula) + " is not one of those disjuncts." };
-      }
-      return { lines: [{ formula: typed, rule: "oi", refIds: citeIds(sel) }] };
+      const open = [...freeNames(typed)].find(isVariable);
+      if (open) return { error: open + " is a free variable, and Or Introduction only disjoins a closed sentence." };
+      const lines = [];
+      inProofOrder(sel).forEach((l) => {
+        lines.push({ formula: { t: "or", args: [l.formula, typed] }, rule: "oi", refIds: [l.id] });
+        lines.push({ formula: { t: "or", args: [typed, l.formula] }, rule: "oi", refIds: [l.id] });
+      });
+      return { lines: lines };
     },
 
     oe: function (sel) {
@@ -1745,6 +1777,9 @@
     } else {
       banner.textContent = "Goal: " + show(state.goal) + " — not derived yet.";
       banner.classList.add("verdict-working");
+      // A loaded question states its goal already; say it again only once
+      // something has happened to it.
+      if (state.problem && state.problem.id === "loaded") banner.hidden = true;
     }
 
     updateSelectionUI();
@@ -1825,6 +1860,13 @@
     note.textContent = parts.join(" ");
     note.classList.toggle("is-unlock", !!(data.unlocked && data.unlocked.length));
     note.hidden = false;
+
+    // Done here: the way on is the next question at this level.
+    const next = $("#fitch-next");
+    if (next) {
+      next.textContent = "Next question →";
+      next.className = "btn btn-primary";
+    }
   }
 
   /* ------------------------------------------------------------------ setup */
@@ -1864,6 +1906,9 @@
   }
 
   const ruleButtons = {};
+  // A phone's button grid has room for about six letters; these two rules'
+  // justification labels are words, so their buttons get shorter ones.
+  const BUTTON_ABBR = { premise: "Prem", assume: "Assume" };
 
   function buildButtons() {
     // Laid out in the Stanford tool's five columns: Premise and the editing
@@ -1881,7 +1926,11 @@
     columns.forEach((ids) => {
       const col = el("div", "fitch-bcol");
       ids.forEach((id) => {
-        const b = el("button", "fitch-rule-btn", RULE_BY_ID[id].label);
+        const b = el("button", "fitch-rule-btn");
+        b.append(el("span", "rule-long", RULE_BY_ID[id].label),
+                 el("span", "rule-abbr", BUTTON_ABBR[id] || RULE_BY_ID[id].short));
+        b.title = RULE_BY_ID[id].label;
+        b.dataset.rule = id;
         b.type = "button";
         b.addEventListener("click", () => runRule(id));
         ruleButtons[id] = b;
@@ -1897,6 +1946,26 @@
       b.addEventListener("click", fn);
       first.appendChild(b);
     });
+    // On a phone the floating Rules button would sit on these, so the panel
+    // is opened from here instead (fitch_rules.js listens for it).
+    const help = el("button", "fitch-rule-btn fitch-util fitch-rules-open", "Rules");
+    help.type = "button";
+    help.dataset.rulesOpen = "";
+    first.appendChild(help);
+  }
+
+  /* Show only the buttons a chapter uses, and the language row only where a
+   * rule ranges over the language. No chapter (the free tool) shows them all. */
+  function setChapter(chapter) {
+    const allowed = rulesFor(chapter);
+    Object.keys(ruleButtons).forEach((id) => {
+      ruleButtons[id].hidden = !!allowed && !allowed.includes(id);
+    });
+    document.querySelectorAll("#fitch-buttons .fitch-bcol").forEach((col) => {
+      col.hidden = ![...col.children].some((b) => !b.hidden);
+    });
+    const language = $(".fitch-language");
+    if (language) language.hidden = !!allowed && !allowed.includes("dc");
   }
 
   function init() {
@@ -1935,6 +2004,7 @@
     const q = window.__ILO_QUESTION;
     loadProblem(q ? { id: "loaded", premises: q.premises, goal: q.goal, objects: q.objects || [] }
                   : { id: "blank", premises: [], goal: "" });
+    setChapter(q ? q.chapter : null);
   }
 
   // Exposed for the console and for tests.
@@ -1944,7 +2014,7 @@
     APPLY: APPLY, substitute: substitute, instanceOf: instanceOf,
     freeNames: freeNames, isGround: isGround, showTerm: showTerm,
     vocabulary: vocabulary, parseTerm: parseTerm,
-    render: render, steps: steps,
+    render: render, steps: steps, setChapter: setChapter,
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

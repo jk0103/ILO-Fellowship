@@ -331,7 +331,8 @@ try {
   /* ---- Chapter 13: the language, Domain Closure, and Induction ---- */
   roundTrip("AY: plus(0,Y,Y)", "∀Y.plus(0,Y,Y)");          // numerals are names
   roundTrip("(p & q) & r", "(p ∧ q) ∧ r");                   // nesting stays visible
-  roundTrip("p & q & r", "p ∧ q ∧ r");
+  roundTrip("p & q & r", "p ∧ (q ∧ r)");                     // right associative, as Stanford reads it
+  roundTrip("p | q | r", "p ∨ (q ∨ r)");
 
   const vocab = F.vocabulary(["purebred(rex)", "AX: (purebred(X) => purebred(f(X)) & purebred(g(X)))",
                               "AX: AY: (p(X) | p(Y) => p(h(X,Y)))"].map(F.parse));
@@ -643,7 +644,7 @@ try {
 
   /* ---- Chapter 13: induction, through the buttons ---- */
   const lang = () => F.state.language.objects.join(",") + " / " + F.state.language.functions.join(",");
-  const button = (label) => [...document.querySelectorAll(".fitch-rule-btn")].find((b) => b.textContent === label);
+  const button = (label) => [...document.querySelectorAll(".rule-long")].find((s) => s.textContent === label).parentNode;
   const inputSeed = () => document.getElementById("fitch-entry-input").value;
 
   load("Zero is a right identity");
@@ -700,14 +701,14 @@ try {
   load("Structural induction over h");
   run("assume", "p(c) & p(d)");
   pick(3); run("ae");                                    // 4: p(c), 5: p(d)
-  pick(4); run("oi", "p(c) | p(d)");
+  pick(4); run("oi", "p(d)");                            // 6: p(c) ∨ p(d), 7: p(d) ∨ p(c)
   pick(2); run("ue", "c");
-  pick(7); run("ue", "d");
-  pick(8, 6); run("ie");
-  pick(3, 9); run("ii");
-  pick(10); run("ui", "AY: (p(c) & p(Y) => p(h(c,Y)))");
-  pick(11); run("ui", "AX: AY: (p(X) & p(Y) => p(h(X,Y)))");
-  pick(1, 12); run("ind", "AX: p(X)");
+  pick(8); run("ue", "d");
+  pick(9, 6); run("ie");
+  pick(3, 10); run("ii");
+  pick(11); run("ui", "AY: (p(c) & p(Y) => p(h(c,Y)))");
+  pick(12); run("ui", "AX: AY: (p(X) & p(Y) => p(h(X,Y)))");
+  pick(1, 13); run("ind", "AX: p(X)");
   check("every h-tree is p, by structural induction", verdict().indexOf("✓ Proved") === 0,
         verdict() + "\n" + proofText() + "\n" + message());
 
@@ -785,22 +786,22 @@ try {
 
   load("Every number is even or odd");
   check("arithmetic enables Rational Induction", !button("Rational Induction").disabled, lang());
-  pick(1); run("oi", "even(0) | odd(0)");                                 // 4
-  run("assume", "even(c) | odd(c)");                                      // 5
-  pick(2); runTerm("ue", "c");                                            // 6
-  pick(3); runTerm("ue", "c");                                            // 7
-  run("assume", "even(c)");                                               // 8
-  pick(6, 8); run("ie");                                                  // 9
-  pick(9); run("oi", "even(c + 1) | odd(c + 1)");                         // 10
-  pick(8, 10); run("ii");                                                 // 11
-  run("assume", "odd(c)");                                                // 12
-  pick(7, 12); run("ie");                                                 // 13
-  pick(13); run("oi", "even(c + 1) | odd(c + 1)");                        // 14
-  pick(12, 14); run("ii");                                                // 15
-  pick(5, 11, 15); run("oe");                                             // 16
-  pick(5, 16); run("ii");                                                 // 17
-  pick(17); run("ui", "AX: (even(X) | odd(X) => even(X + 1) | odd(X + 1))");
-  pick(4, 18); F.runRule("rind");
+  pick(1); run("oi", "odd(0)");                                           // 4, 5
+  run("assume", "even(c) | odd(c)");                                      // 6
+  pick(2); runTerm("ue", "c");                                            // 7
+  pick(3); runTerm("ue", "c");                                            // 8
+  run("assume", "even(c)");                                               // 9
+  pick(7, 9); run("ie");                                                  // 10
+  pick(10); run("oi", "even(c + 1)");                                     // 11, 12
+  pick(9, 12); run("ii");                                                 // 13
+  run("assume", "odd(c)");                                                // 14
+  pick(8, 14); run("ie");                                                 // 15
+  pick(15); run("oi", "odd(c + 1)");                                      // 16, 17
+  pick(14, 16); run("ii");                                                // 18
+  pick(6, 13, 18); run("oe");                                             // 19
+  pick(6, 19); run("ii");                                                 // 20
+  pick(20); run("ui", "AX: (even(X) | odd(X) => even(X + 1) | odd(X + 1))");
+  pick(4, 21); F.runRule("rind");
   check("Rational Induction suggests its conclusion", inputSeed() === "∀X.(even(X) ∨ odd(X))", inputSeed());
   accept();
   check("every number is even or odd, by Rational Induction", verdict().indexOf("✓ Proved") === 0,
@@ -822,6 +823,75 @@ try {
   [...document.querySelectorAll(".fitch-util")].find((b) => b.textContent === "Reset").click();
   check("Reset clears a free-form proof", F.state.lines.length === 0 && F.state.premises.length === 0 && lang() === " / ",
         lang());
+
+  /* ---- And and Or Introduction, line for line with the Stanford tool ---- */
+  const shown = () => F.state.lines.map((l) => F.show(l.formula));
+  const justs = () => [...document.querySelectorAll("#fitch-lines .fitch-just")].map((j) => j.textContent);
+  const blank = (...premises) => {
+    F.loadProblem({ id: "blank", premises: [], goal: "" });
+    premises.forEach((p) => run("premise", p));
+  };
+
+  blank("a", "b");
+  pick(1, 2); run("ai");
+  check("AI on a and b gives all four ordered pairs",
+        shown().slice(2).join("; ") === "a ∧ a; a ∧ b; b ∧ a; b ∧ b", proofText());
+  check("each pair cites its own two lines",
+        justs().slice(2).join("; ") === "1, 1 AI; 1, 2 AI; 2, 1 AI; 2, 2 AI", justs().join("; "));
+  check("and every one of them checks", F.state.lines.every((l) => l.result.ok), proofText());
+
+  blank("a", "b");
+  pick(2, 1); run("ai");
+  check("AI goes in proof order, whichever box was ticked first",
+        shown().slice(2).join("; ") === "a ∧ a; a ∧ b; b ∧ a; b ∧ b", proofText());
+
+  blank("a");
+  pick(1); run("ai");
+  check("AI on one line conjoins it with itself", shown()[1] === "a ∧ a", proofText());
+
+  blank("a", "b", "c");
+  pick(1, 2, 3); run("ai");
+  check("AI on three lines gives nine pairs, each binary",
+        F.state.lines.length === 12 && F.state.lines.slice(3).every((l) => l.formula.args.length === 2), proofText());
+
+  blank("a");
+  run("ai");
+  check("AI needs a checked line", message().indexOf("at least one line") > 0, message());
+
+  blank("a");
+  pick(1); F.runRule("oi");
+  check("OI starts from an empty entry, not a seeded disjunction", inputSeed() === "", inputSeed());
+  document.getElementById("fitch-entry-input").value = "b";
+  accept();
+  check("OI types only the other disjunct and gives both orders",
+        shown().slice(1).join("; ") === "a ∨ b; b ∨ a", proofText());
+  check("both cite the checked line", justs().slice(1).join("; ") === "1 OI; 1 OI", justs().join("; "));
+
+  blank("a", "c");
+  pick(1, 2); run("oi", "b");
+  check("OI on two lines disjoins the sentence to each",
+        shown().slice(2).join("; ") === "a ∨ b; b ∨ a; c ∨ b; b ∨ c", proofText());
+
+  blank("a");
+  pick(1); run("oi", "b | c");
+  check("OI keeps a typed disjunction whole",
+        shown().slice(1).join("; ") === "a ∨ (b ∨ c); (b ∨ c) ∨ a", proofText());
+
+  blank("a");
+  pick(1); run("oi", "p(X)");
+  check("OI refuses a sentence with a free variable",
+        message().indexOf("free variable") > 0 && F.state.lines.length === 1, message());
+
+  F.loadProblem({ id: "blank", premises: ["p", "q", "r"], goal: "p & q & r" });
+  pick(2, 3); run("ai");                                 // 4–7, q ∧ r is 5
+  pick(1, 5); run("ai");                                 // 8–11, p ∧ (q ∧ r) is 9
+  check("a three-way conjunction is reached two lines at a time",
+        verdict().indexOf("✓ Proved") === 0, verdict() + "\n" + proofText());
+
+  blank("p & q & r");
+  pick(1); run("ae");
+  check("AE takes a three-way conjunction apart one level at a time",
+        shown().slice(1).join("; ") === "p; q ∧ r", proofText());
 
   /* ---- the propositional rules still work, unchanged ---- */
   load("Peirce's law");

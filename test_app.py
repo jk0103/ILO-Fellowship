@@ -71,8 +71,7 @@ try:
     id_token = sign_up(EMAIL, PASSWORD)
     ABOUT = {"gender": "female", "age": 17, "school": "Test High School",
              "nationality": "South Korea"}
-    r = c.post("/api/session", json={"idToken": id_token, "username": USERNAME,
-                                     "about": dict(ABOUT, gender="bogus")})
+    r = c.post("/api/session", json={"idToken": id_token, "username": USERNAME})
     body = r.get_json() or {}
     check("session created from ID token", r.status_code == 200 and body.get("ok"))
     check("marked as new account", body.get("created") is True)
@@ -86,16 +85,27 @@ try:
     check("profile email correct", profile["email"] == EMAIL.lower())
     check("provider recorded", "password" in profile["providers"])
     check("stats initialised", profile["stats"]["solved"] == 0)
-    about = dict(profile.get("demographics") or {})
-    check("about-you answers stored", about.pop("collected_at", None) is not None
-          and about == {k: v for k, v in ABOUT.items() if k != "gender"})
     check("username index written",
           store.get_client().collection("usernames").document(USERNAME.lower())
           .get().to_dict()["uid"] == uid)
     check("no password stored in firestore",
           not any("pass" in k for k in profile.keys()))
-    check("a new account is sent to the level test",
-          (body.get("redirect") or "").endswith("/level-test"))
+    check("a new account is asked about itself first",
+          (body.get("redirect") or "").endswith("/welcome"))
+
+    # --- about you ----------------------------------------------------------
+    check("welcome page renders", c.get("/welcome").status_code == 200)
+    r = c.post("/api/about", json={"about": dict(ABOUT, gender="bogus")})
+    check("a bad answer is refused", r.status_code == 400
+          and (r.get_json() or {}).get("field") == "gender")
+    r = c.post("/api/about", json={"about": ABOUT})
+    check("then it goes to the level test", r.status_code == 200
+          and (r.get_json() or {}).get("redirect", "").endswith("/level-test"))
+    about = dict(store.get_profile(uid).get("demographics") or {})
+    check("about-you answers stored", about.pop("collected_at", None) is not None
+          and about.pop("updated_at", None) is not None and about == ABOUT)
+    check("answered, the welcome page hands over to the profile",
+          c.get("/welcome").status_code == 302)
 
     # --- the level test -----------------------------------------------------
     # Dealing, marking and placing are tested offline in test_level_test.py;
@@ -250,6 +260,8 @@ try:
     check("returning login works", r.status_code == 200)
     check("not marked as new", body3.get("created") is False)
     check("username unchanged", body3.get("username") == USERNAME)
+    check("answered already, a returning user goes to the dashboard",
+          (body3.get("redirect") or "").endswith("/dashboard"))
     check("dashboard reachable again", c3.get("/dashboard").status_code == 200)
 
     # --- rejected tokens ----------------------------------------------------

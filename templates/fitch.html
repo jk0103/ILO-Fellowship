@@ -1,21 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Fitch tool &middot; ILO Bank{% endblock %}
+{% block title %}{{ 'Practice' if question else 'Fitch tool' }} &middot; ILO Bank{% endblock %}
 {% block main_class %}fitch-main{% endblock %}
 
 {% block content %}
+{% set practising = question and current_user and question.get('difficulty') in ('easy', 'medium', 'hard') %}
+{# A stored question is practice at a level, so the page says which one and
+   leads back to the ladder; the bare editor is the Fitch tool. #}
 <section class="hero hero-compact">
-  <h1>Fitch tool</h1>
+  {% if practising %}
+    <a class="back-link" href="{{ url_for('dashboard') }}">&larr; Dashboard</a>
+  {% endif %}
+  {% if question %}
+    <p class="eyebrow">Chapter {{ question.get('chapter', 5) }} &middot; {{ question['difficulty'] }}</p>
+    <h1>Practice</h1>
+  {% else %}
+    <h1>Fitch tool</h1>
+  {% endif %}
 </section>
 
 {% if question %}
 <section class="fitch-loaded">
-  <span class="badge badge-{{ question['difficulty'] }}">{{ question['difficulty'] }}</span>
-  <span class="hint">Chapter {{ question.get('chapter', 5) }}</span>
   <p class="gen-statement">{{ question['statement'] }}</p>
   {% if question.get('hint') %}<p class="hint">Hint: {{ question['hint'] }}</p>{% endif %}
   {# Filled in by fitch.js once the proof is finished and the server has
      counted it towards the level. #}
   <p class="level-report" id="fitch-progress" hidden></p>
+  {% if practising %}
+  <div class="fitch-next">
+    {# Shown as the primary action once the proof is done; until then a quiet
+       way to swap for another question at the same level. #}
+    <a class="btn btn-ghost" id="fitch-next"
+       href="{{ url_for('practice', chapter=question.get('chapter', 5), difficulty=question['difficulty']) }}">Another question</a>
+  </div>
+  {% endif %}
 </section>
 <script>
   window.__ILO_QUESTION = {
@@ -25,7 +42,9 @@
     premises: {{ question['premises'] | tojson }},
     goal: {{ question['goal'] | tojson }},
     // A Chapter 10 exercise that fixes its language: what Domain Closure needs.
-    objects: {{ (question.get('constants') or []) | tojson }}
+    objects: {{ (question.get('constants') or []) | tojson }},
+    // Which rule buttons to show: the ones this chapter's proofs use.
+    chapter: {{ question.get('chapter', 5) | tojson }}
   };
 </script>
 {% endif %}

@@ -40,12 +40,16 @@ It works the way the Stanford tool does. Tick the lines you want to work from,
 press a rule button, and the rule is *applied* — the resulting lines are
 appended, already justified. And Elimination on `p ∧ q` gives you two lines,
 `p` and `q`; Biconditional Elimination gives you both implications. Nothing is
-typed except premises, assumptions, the target of Or Introduction, and the term
-or sentence a quantifier rule needs, each of which opens a small entry bar.
+typed except premises, assumptions, the sentence Or Introduction disjoins, and
+the term or sentence a quantifier rule needs, each of which opens a small entry
+bar.
 
-Order matters where the rule cares: And Introduction builds its conjunction in
-the order you ticked the boxes, so ticking `q` then `p` turns `p ∧ q` into
-`q ∧ p`.
+And Introduction and Or Introduction follow the Stanford tool's source exactly.
+And Introduction adds every ordered pair of the checked lines, so `p` and `q`
+give `p ∧ p`, `p ∧ q`, `q ∧ p` and `q ∧ q`, and one checked line gives `p ∧ p`.
+Or Introduction asks only for the sentence to disjoin, and each checked line
+gets it on both sides, so `p` with `q` gives `p ∨ q` and `q ∨ p`. Both connectives are binary and right associative, so `p ∧ q ∧ r` reads
+as `p ∧ (q ∧ r)`, is printed that way, and And Elimination gives `p` and `q ∧ r`.
 
 The proof grows downward, so a rule always adds to the subproof you are
 currently inside. Assumption opens one; Implication Introduction discharges it

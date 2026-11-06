@@ -132,11 +132,12 @@ def parse(src):
 
     def nary(op, below, tag):
         nonlocal pos
-        args = [below()]
-        while peek() == op:
-            pos += 1
-            args.append(below())
-        return args[0] if len(args) == 1 else (tag, tuple(args))
+        # Binary and right associative, as the Stanford tool reads them.
+        left = below()
+        if peek() != op:
+            return left
+        pos += 1
+        return (tag, (left, nary(op, below, tag)))
 
     def conj():
         return nary(AND, unary, "and")
@@ -179,7 +180,8 @@ def show(node, parent_prec=-1):
     prec = _PREC[kind]
     if kind in ("and", "or"):
         glue = f" {AND if kind == 'and' else OR} "
-        out = glue.join(show(a, prec) for a in node[1])
+        # Nested ones keep their parentheses, as the browser prints them.
+        out = glue.join(show(a, prec + 0.5) for a in node[1])
     elif kind == "imp":
         # Right associative, so the left side needs parens at equal precedence.
         out = f"{show(node[1], prec + 0.5)} {IMP} {show(node[2], prec)}"

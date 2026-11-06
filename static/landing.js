@@ -1,28 +1,6 @@
-// The landing page: sections that fade up as they scroll in, and the contact
-// form, which posts to /api/contact and says how it went. The server does the
-// real validation; the checks here only save a round trip.
-
-(function () {
-  // Reveal on scroll. The page is only marked once the observer exists, so
-  // without it (or without this script) every section is simply visible.
-  const items = document.querySelectorAll(".reveal");
-  if (items.length && "IntersectionObserver" in window) {
-    document.documentElement.classList.add("js-reveal");
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-    // Siblings in a row come in one after another rather than all at once.
-    items.forEach((item) => {
-      const siblings = [...item.parentElement.children].filter((el) => el.classList.contains("reveal"));
-      item.style.transitionDelay = Math.min(siblings.indexOf(item), 4) * 80 + "ms";
-      observer.observe(item);
-    });
-  }
-})();
+// The landing page's contact form, which posts to /api/contact and says how it
+// went. The server does the real validation; the checks here only save a
+// round trip.
 
 (function () {
   const form = document.getElementById("contact-form");

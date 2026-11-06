@@ -1,5 +1,24 @@
 // Progressive form polish. Sign-in itself lives in auth.js.
 
+// The nav's menu button, shown on phones only (see .nav-toggle in style.css).
+var navToggle = document.getElementById("nav-toggle");
+if (navToggle) {
+  var navLinks = document.getElementById("nav-links");
+  var setNav = function (open) {
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    navLinks.classList.toggle("is-open", open);
+  };
+  navToggle.addEventListener("click", function () {
+    setNav(navToggle.getAttribute("aria-expanded") !== "true");
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && navLinks.classList.contains("is-open")) {
+      setNav(false);
+      navToggle.focus();
+    }
+  });
+}
+
 // Show/hide password toggles
 document.querySelectorAll(".toggle-pw").forEach(function (btn) {
   btn.addEventListener("click", function () {

@@ -93,9 +93,9 @@ arbitrary conclusion. Each line of a proof carries a rule id:
   premise  a premise, at depth 0
   assume   an assumption; it opens a subproof and is the first line of it
   reit     "refs":[i]        repeat line i verbatim
-  ai       "refs":[i,j,...]  from the conjuncts, in order, infer the conjunction
+  ai       "refs":[i,j]      from φ and ψ, in that order, infer φ ∧ ψ
   ae       "refs":[i]        from a conjunction infer one conjunct
-  oi       "refs":[i]        from φ infer any disjunction with φ as a disjunct
+  oi       "refs":[i]        from φ infer φ ∨ ψ or ψ ∨ φ, for any ψ
   oe       "refs":[d,c1,c2]  from a disjunction and one implication per disjunct,
                              all sharing the same consequent, infer it
   ni       "refs":[i,j]      from φ ⇒ ψ and φ ⇒ ¬ψ infer ¬φ

@@ -2,9 +2,11 @@
 {% block title %}Dashboard &middot; ILO Bank{% endblock %}
 
 {% block content %}
-{% set stats = current_user.get('stats') or {} %}
+{# A lock, drawn rather than an emoji so it matches the rest of the icons. #}
+{% macro lock() %}<svg class="level-lock" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none"/></svg>{% endmacro %}
 <section class="hero hero-compact">
   <h1>Hi, {{ current_user['username'] }}.</h1>
+  <p class="lede">Pick up where you left off: each level opens the next.</p>
 </section>
 
 {% if level_test.get('status') == 'done' %}
@@ -12,8 +14,9 @@
     <strong>{{ level_test.get('level') }}</strong>.</p>
 {% else %}
   <aside class="test-callout">
-    <p><strong>Start at your level.</strong> A short multiple-choice test can unlock
-      harder questions straight away.</p>
+    <p><strong>Start at your level.</strong> A short test &mdash; a few
+      multiple-choice questions, then two short proofs &mdash; can unlock harder
+      questions straight away.</p>
     <a class="btn btn-primary" href="{{ url_for('level_test_page') }}">Take the level test</a>
   </aside>
 {% endif %}
@@ -29,7 +32,7 @@
       {% if chapter.cleared %}
         <span class="level-flag is-cleared">Cleared</span>
       {% elif not chapter.unlocked %}
-        <span class="level-flag is-shut">Locked &mdash; clear Chapter {{ chapter.requires }} to open</span>
+        <span class="level-flag is-shut">{{ lock() }} Clear Chapter {{ chapter.requires }} to open</span>
       {% else %}
         <span class="level-flag">{{ chapter.solved }} solved</span>
       {% endif %}
@@ -41,7 +44,7 @@
         <div class="level-card-head">
           <span class="badge badge-{{ level.band }}">{{ level.band }}</span>
           {% if level.cleared %}<span class="level-tick" aria-hidden="true">&#10003;</span>
-          {% elif not level.unlocked %}<span class="level-tick" aria-hidden="true">&#128274;</span>{% endif %}
+          {% elif not level.unlocked and chapter.unlocked %}<span class="level-tick">{{ lock() }}</span>{% endif %}
         </div>
 
         <p class="level-count">
@@ -55,12 +58,11 @@
         </div>
         <p class="hint level-note">{{ level.note }}</p>
 
+        {# A shut level has its note to say what opens it; there is nothing to press. #}
         {% if level.unlocked %}
           <a class="btn {% if level.cleared %}btn-ghost{% else %}btn-primary{% endif %}"
              href="{{ url_for('practice', chapter=level.chapter, difficulty=level.band) }}">
             {% if level.cleared %}Practice more{% else %}Practice{% endif %}</a>
-        {% else %}
-          <span class="btn btn-ghost is-disabled" aria-disabled="true">Locked</span>
         {% endif %}
       </li>
       {% endfor %}
@@ -69,23 +71,15 @@
   {% endfor %}
 </section>
 
-<section class="features">
-  <article class="card">
-    <div class="card-icon">&#8866;</div>
-    <h3><a href="{{ url_for('fitch') }}">Free practice</a></h3>
-    <p>The built-in problems and your own, with no level attached.</p>
-  </article>
-  <article class="card">
-    <h3>Problems solved</h3>
-    <p class="stat">{{ stats.get('solved', 0) }}</p>
-  </article>
-  <article class="card">
-    <h3>Attempted</h3>
-    <p class="stat">{{ stats.get('attempted', 0) }}</p>
-  </article>
-  <article class="card">
-    <h3>Current streak</h3>
-    <p class="stat">{{ stats.get('streak', 0) }} days</p>
-  </article>
+{# Ways off the ladder. The numbers themselves live on the profile. #}
+<section class="dash-links">
+  <a class="dash-link" href="{{ url_for('fitch') }}">
+    <strong>Free practice</strong>
+    <span>The built-in problems and your own, with no level attached.</span>
+  </a>
+  <a class="dash-link" href="{{ url_for('profile_page') }}">
+    <strong>Your progress</strong>
+    <span>Solves by level, the last 30 days, and your details.</span>
+  </a>
 </section>
 {% endblock %}

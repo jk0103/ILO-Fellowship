@@ -207,14 +207,41 @@ def login():
 def register():
     if current_user():
         return redirect(url_for("dashboard"))
-    return render_template(
-        "register.html",
-        genders=demographics.GENDERS,
-        countries=demographics.COUNTRIES,
-        age_min=demographics.AGE_MIN,
-        age_max=demographics.AGE_MAX,
-        school_max=demographics.SCHOOL_MAX,
-    )
+    return render_template("register.html")
+
+
+def about_choices():
+    """What the "about you" fields are drawn from, for _about_fields.html."""
+    return {
+        "genders": demographics.GENDERS,
+        "countries": demographics.COUNTRIES,
+        "age_min": demographics.AGE_MIN,
+        "age_max": demographics.AGE_MAX,
+        "school_max": demographics.SCHOOL_MAX,
+    }
+
+
+def after_about(user):
+    """Where someone goes once their "about you" answers are in."""
+    if (user.get("level_test") or {}).get("status") not in ("done", "skipped"):
+        return url_for("level_test_page")
+    return url_for("dashboard")
+
+
+@app.route("/welcome")
+@login_required
+def about_page():
+    """The "about you" questions, asked once, straight after sign-up.
+
+    Asked here rather than on the sign-up form so creating an account stays
+    short, and so everyone is asked — including someone whose first sign-in
+    was with Google from the login page, and accounts made before the
+    questions existed. Answered already, it is the profile's job instead.
+    """
+    user = current_user()
+    if user.get("demographics"):
+        return redirect(url_for("profile_page"))
+    return render_template("about.html", about={}, **about_choices())
 
 
 @app.route("/logout")
@@ -340,11 +367,7 @@ def profile_page():
     return render_template(
         "profile.html",
         about=user.get("demographics") or {},
-        genders=demographics.GENDERS,
-        countries=demographics.COUNTRIES,
-        age_min=demographics.AGE_MIN,
-        age_max=demographics.AGE_MAX,
-        school_max=demographics.SCHOOL_MAX,
+        **about_choices(),
         charts={
             "byLevel": [
                 {"chapter": n, "label": "Ch. %d" % n,
@@ -414,7 +437,6 @@ def create_session():
     payload = request.get_json(silent=True) or {}
     id_token = payload.get("idToken")
     desired_username = (payload.get("username") or "").strip() or None
-    about = demographics.clean(payload.get("about"))
 
     if not id_token:
         return jsonify(error="Missing ID token."), 400
@@ -452,7 +474,6 @@ def create_session():
         provider=provider,
         providers=providers,
         desired_username=desired_username,
-        demographics=about,
     )
 
     try:
@@ -465,8 +486,11 @@ def create_session():
         ok=True,
         created=created,
         username=profile.get("username"),
-        # A new account takes the level test first; it can skip it from there.
-        redirect=url_for("level_test_page" if created else "dashboard"),
+        # Anyone without "about you" answers is asked for them first; a new
+        # account then takes the level test, which it can skip from there.
+        redirect=(url_for("about_page") if not profile.get("demographics")
+                  else url_for("level_test_page") if created
+                  else url_for("dashboard")),
     )
     response.set_cookie(
         SESSION_COOKIE,
@@ -816,6 +840,20 @@ def username_available():
     if not store.is_valid_username(username):
         return jsonify(valid=False, available=False)
     return jsonify(valid=True, available=not store.username_taken(username))
+
+
+@app.post("/api/about")
+def api_save_about():
+    """Save the welcome page's "about you" answers, all four required."""
+    user = current_user()
+    if user is None:
+        return jsonify(error="Please log in again."), 401
+    about = demographics.clean((request.get_json(silent=True) or {}).get("about"))
+    for field in ("gender", "age", "school", "nationality"):
+        if field not in about:
+            return jsonify(error="Please check your %s." % field, field=field), 400
+    store.update_profile(user["uid"], demographics=about)
+    return jsonify(ok=True, redirect=after_about(user))
 
 
 @app.post("/api/profile")

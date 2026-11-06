@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ILO Bank{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script>
     // Public Firebase web config: it identifies the project, it grants nothing.
@@ -20,8 +23,15 @@
       <span class="brand-text">Bank</span>
     </a>
     {# The link for the page you are on keeps its hover underline. #}
-    {% macro here(endpoint) %}{% if request.endpoint == endpoint %} aria-current="page"{% endif %}{% endmacro %}
-    <nav class="nav-links">
+    {# Practice opens in the Fitch editor but belongs to the ladder. #}
+    {% set section = 'dashboard' if (request.endpoint == 'fitch' and request.args.get('q') and current_user) else request.endpoint %}
+    {% macro here(endpoint) %}{% if section == endpoint %} aria-current="page"{% endif %}{% endmacro %}
+    {# On a phone the links fold behind this button (main.js opens them). #}
+    <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false"
+            aria-controls="nav-links" aria-label="Menu">
+      <span aria-hidden="true"></span>
+    </button>
+    <nav class="nav-links" id="nav-links">
       <a href="{{ url_for('fitch') }}"{{ here('fitch') }}>Fitch</a>
       {% if current_user %}
         <a href="{{ url_for('generate_page') }}"{{ here('generate_page') }}>Generate</a>

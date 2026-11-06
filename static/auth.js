@@ -79,57 +79,13 @@ function describe(error) {
   return MESSAGES[error?.code] || error?.message || "Something went wrong.";
 }
 
-/**
- * Read the sign-up page's "about you" answers. Returns null off that page,
- * or { error, field } when one is missing so the caller can stop and say so.
- */
-function readAboutYou() {
-  if (!$("about-you")) return null;
-  const about = {
-    gender: $("gender").value,
-    age: $("age").value.trim(),
-    school: $("school").value.trim(),
-    nationality: $("nationality").value,
-  };
-  const age = Number(about.age);
-  const min = Number($("age").min), max = Number($("age").max);
-  if (!about.gender) return { error: "Please select your gender.", field: "gender" };
-  if (!Number.isInteger(age) || age < min || age > max) {
-    return { error: `Please enter your age (${min}–${max}).`, field: "age" };
-  }
-  if (!about.school) return { error: "Please enter your school.", field: "school" };
-  if (!about.nationality) {
-    return { error: "Please select your nationality.", field: "nationality" };
-  }
-  return { about: { ...about, age } };
-}
-
-/** Show the first missing "about you" answer. True if the page may go on. */
-function checkAboutYou() {
-  const result = readAboutYou();
-  if (result?.error) {
-    showError(result.error);
-    $(result.field).focus();
-    return false;
-  }
-  return true;
-}
-
 /** Trade the Firebase ID token for a server session cookie, then continue. */
 async function startSession(user, username) {
-  // After the Google redirect fallback the form comes back empty, so fall
-  // back to the answers stashed before leaving.
-  let about = readAboutYou()?.about || null;
-  if (!about) {
-    try { about = JSON.parse(sessionStorage.getItem("ilo:about")); } catch {}
-  }
-  sessionStorage.removeItem("ilo:about");
-
   const idToken = await user.getIdToken(/* forceRefresh */ true);
   const response = await fetch("/api/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken, username: username || null, about }),
+    body: JSON.stringify({ idToken, username: username || null }),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -145,7 +101,6 @@ async function startSession(user, username) {
 
 async function googleSignIn() {
   showError("");
-  if (!checkAboutYou()) return;
   setBusy(true);
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -154,8 +109,6 @@ async function googleSignIn() {
     if (error?.code === "auth/popup-blocked") {
       // Popups blocked: fall back to a full-page redirect.
       sessionStorage.setItem("ilo:redirecting", "1");
-      const about = readAboutYou()?.about;
-      if (about) sessionStorage.setItem("ilo:about", JSON.stringify(about));
       await signInWithRedirect(auth, googleProvider);
       return;
     }
@@ -243,7 +196,6 @@ async function init() {
       const email = $("email").value.trim();
       const password = $("password").value;
 
-      if (!checkAboutYou()) return;
       if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
         showError("Username must be 3-20 characters: letters, numbers, underscores.");
         return;

@@ -71,17 +71,20 @@
   }
 
   function card(question) {
-    const article = el("article", "card gen-card");
+    const article = el("article", "gen-card");
 
     const head = el("div", "gen-card-head");
     head.appendChild(el("span", "badge badge-" + question.difficulty, question.difficulty));
-    head.appendChild(el("span", "hint", question.line_count + " lines"));
+    head.appendChild(el("span", "gen-lines", question.line_count + " lines"));
+    article.appendChild(head);
+    // The rules the worked proof uses, as small chips under the head.
     const used = rulesUsed(question.proof);
     if (used.length) {
-      head.appendChild(el("span", "hint",
-        used.map((r) => RULES[r] || r).join(", ")));
+      const list = el("ul", "gen-rules");
+      list.setAttribute("aria-label", "Rules used");
+      used.forEach((r) => list.appendChild(el("li", null, RULES[r] || r)));
+      article.appendChild(list);
     }
-    article.appendChild(head);
 
     article.appendChild(el("p", "gen-statement", question.statement));
     if (question.constants && question.constants.length) {
